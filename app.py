@@ -1,0 +1,1 @@
+# Full app entry point
