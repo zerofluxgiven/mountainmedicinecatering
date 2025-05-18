@@ -1,3 +1,1 @@
-from auth import require_login
-from firestore_utils import restore_file
-...
+def show(): import streamlit as st; st.title('Admin Panel')

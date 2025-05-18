@@ -1,3 +1,3 @@
 # Catering Management App
 
-Setup instructions...
+Instructions and structure overview.
