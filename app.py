@@ -1,3 +1,6 @@
+import sys
+import os
+sys.path.append(os.path.abspath("src"))
 import streamlit as st
 from src.auth import load_user_session, is_authenticated, get_user_role
 from src.layout import load_css, show_event_header
