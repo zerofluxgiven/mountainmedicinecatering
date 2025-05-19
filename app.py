@@ -19,7 +19,7 @@ from pdf_export import pdf_export_ui
 from post_event import post_event_ui
 
 # 🎨 Layout Helpers
-from layout import show_event_mode_banner
+from layout import show_event_mode_banner, inject_custom_css  # ✅ add inject_custom_css
 from utils import format_date  # ✅ import once, here
 
 # ⚙️ Toggle this to simulate public or locked mode
