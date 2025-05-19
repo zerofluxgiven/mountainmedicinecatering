@@ -8,7 +8,7 @@ from auth import load_user_session, require_role
 # 📦 Core UI Modules
 from files import file_manager_ui
 from tags import admin_tag_manager_ui
-from events import event_ui
+from events import event_ui, get_active_event  # ✅ include here
 from menu_editor import menu_editor_ui
 from suggestions import suggestions_ui
 from event_modifications import event_modifications_ui
@@ -20,6 +20,7 @@ from post_event import post_event_ui
 
 # 🎨 Layout Helpers
 from layout import show_event_mode_banner
+from utils import format_date  # ✅ import once, here
 
 # ⚙️ Toggle this to simulate public or locked mode
 PUBLIC_MODE = False  # Set to True to disable login (view-only)
@@ -68,8 +69,28 @@ def main():
 
     # Route Tabs
     if tab == "Dashboard":
-        st.subheader("📊 Welcome")
-        st.info("Select a feature from the sidebar.")
+        st.subheader("📊 Dashboard Overview")
+
+        event = get_active_event()
+        if event:
+            st.success(f"📅 Active Event: **{event.get('name', 'Unnamed')}**")
+            st.markdown(f"📍 Location: *{event.get('location', 'Unknown')}*")
+            st.markdown(f"🗓️ Date: *{format_date(event.get('date'))}*")
+
+            st.markdown("### Quick Status")
+            col1, col2, col3 = st.columns(3)
+            col1.metric("👥 Guests", event.get("guest_count", "-"))
+            col2.metric("🧑‍🍳 Staff", event.get("staff_count", "-"))
+            col3.metric("🍽️ Menu Items", len(event.get("menu", [])))
+
+            st.markdown("### ✅ Today's Checklist")
+            st.checkbox("Prep station setup complete")
+            st.checkbox("Reviewed schedule with staff")
+            st.checkbox("Checked inventory and supplies")
+
+        else:
+            st.info("No active event is currently set.")
+            st.markdown("You can view or activate an upcoming event under the **Events** tab.")
 
     elif tab == "Files":
         file_manager_ui(user)
@@ -104,4 +125,3 @@ def main():
 
 if __name__ == "__main__":
     main()
-
