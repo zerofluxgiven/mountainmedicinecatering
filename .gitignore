@@ -1,0 +1,25 @@
+# Python
+__pycache__/
+*.pyc
+*.pyo
+*.pyd
+env/
+.venv/
+venv/
+
+# Streamlit
+.streamlit/secrets.toml
+.streamlit/config.toml
+
+# OS-specific
+.DS_Store
+Thumbs.db
+
+# Byte-compiled and logs
+*.log
+
+# VS Code
+.vscode/
+
+# Other
+*.bak
