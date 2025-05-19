@@ -6,7 +6,7 @@ initialize_firebase()
 from auth import load_user_session, require_role
 
 # 📦 Core UI Modules
-# from files import file_manager_ui
+from files import file_manager_ui
 from tags import admin_tag_manager_ui
 from events import event_ui
 from menu_editor import menu_editor_ui
