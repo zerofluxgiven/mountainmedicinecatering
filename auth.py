@@ -10,30 +10,33 @@ USER_COLLECTION = "users"
 # ------------------------------
 
 def load_user_session():
-    """Returns the user dict stored in session, or None if not logged in."""
+    # Step 1: check if user already stored
+    if "user" in st.session_state:
+        return st.session_state["user"]
+
+    # Step 2: try loading from session
     user = session_get("user")
     if user:
+        st.session_state["user"] = user
         return user
 
-    # Simulate login prompt (replace with actual OAuth if needed)
-    if "auth_pending" not in st.session_state:
-        st.session_state["auth_pending"] = True
-        with st.form("login_form"):
-            email = st.text_input("Email")
-            name = st.text_input("Name")
-            submitted = st.form_submit_button("Log in")
-            if submitted and email:
-                user_id = email.lower().replace("@", "_at_").replace(".", "_dot_")
-                user_data = {
-                    "id": user_id,
-                    "email": email,
-                    "name": name or email.split("@")[0],
-                }
-                db.collection(USER_COLLECTION).document(user_id).set(user_data, merge=True)
-                session_set("user", user_data)
-                st.success("Logged in.")
-                st.experimental_rerun()
-        return None
+    # Step 3: show login form
+    with st.form("login_form"):
+        st.subheader("🔐 Login Required")
+        email = st.text_input("Email")
+        name = st.text_input("Name")
+        submitted = st.form_submit_button("Log in")
+        if submitted and email:
+            user_id = email.lower().replace("@", "_at_").replace(".", "_dot_")
+            user_data = {
+                "id": user_id,
+                "email": email,
+                "name": name or email.split("@")[0],
+            }
+            db.collection(USER_COLLECTION).document(user_id).set(user_data, merge=True)
+            session_set("user", user_data)
+            st.session_state["user"] = user_data
+            st.experimental_rerun()
 
     return None
 
