@@ -10,9 +10,9 @@ from utils import generate_id
 db = firestore.client()
 COLLECTION = "menu_items"
 
-# -------------------------------
-# 🔍 Load Menu Items
-# -------------------------------
+# ----------------------------
+# 📦 Data Access
+# ----------------------------
 
 def get_menu_items(event_id=None):
     ref = db.collection(COLLECTION)
@@ -25,11 +25,7 @@ def get_menu_item(item_id):
     doc = db.collection(COLLECTION).document(item_id).get()
     return doc.to_dict() | {"id": doc.id} if doc.exists else None
 
-# -------------------------------
-# ➕ Add Menu Item
-# -------------------------------
-
-def add_menu_item(name, tags, event_id):
+def add_menu_item(name, tags, event_id, uploaded_by):
     item_id = generate_id("menu")
     db.collection(COLLECTION).document(item_id).set({
         "id": item_id,
@@ -38,18 +34,19 @@ def add_menu_item(name, tags, event_id):
         "event_id": event_id,
         "leftovers": "",
         "notes": "",
+        "created_at": firestore.SERVER_TIMESTAMP,
+        "uploaded_by": uploaded_by,
     })
     for tag in tags:
         increment_tag_usage(tag)
     st.success("Item added.")
 
-# -------------------------------
-# ✏️ Menu Item Editor
-# -------------------------------
+# ----------------------------
+# ✏️ Editor
+# ----------------------------
 
 def menu_item_editor(item, user):
-    st.markdown("### 🍴 Menu Item")
-    st.write(f"📄 ID: `{item['id']}`")
+    st.markdown("### 🍽️ Menu Item")
     show_event_tag_label(item["event_id"])
 
     locked = is_locked(item["event_id"])
@@ -57,35 +54,23 @@ def menu_item_editor(item, user):
         show_locked_notice()
 
     name = suggestion_input(
-        "Name", item["name"],
-        document_type="menu_item",
-        document_id=item["id"],
-        user=user
+        "Name", item["name"], "menu_item", item["id"], user
     ) if locked else st.text_input("Name", item["name"])
 
     tags_str = ", ".join(item.get("tags", []))
     tags_input = suggestion_input(
-        "Tags (comma-separated)", tags_str,
-        document_type="menu_item",
-        document_id=item["id"],
-        user=user
+        "Tags (comma-separated)", tags_str, "menu_item", item["id"], user
     ) if locked else st.text_input("Tags (comma-separated)", tags_str)
 
     leftovers = suggestion_input(
-        "Leftovers / Overages", item.get("leftovers", ""),
-        document_type="menu_item",
-        document_id=item["id"],
-        user=user
+        "Leftovers / Overages", item.get("leftovers", ""), "menu_item", item["id"], user
     ) if locked else st.text_area("Leftovers / Overages", item.get("leftovers", ""))
 
     notes = suggestion_input(
-        "Staff Notes", item.get("notes", ""),
-        document_type="menu_item",
-        document_id=item["id"],
-        user=user
+        "Staff Notes", item.get("notes", ""), "menu_item", item["id"], user
     ) if locked else st.text_area("Staff Notes", item.get("notes", ""))
 
-    if not locked and st.button("💾 Save Changes"):
+    if not locked and st.button("💾 Save Changes", key=f"save_{item['id']}"):
         updated_tags = [get_suggested_tag(t.strip()) for t in tags_input.split(",") if t.strip()]
         db.collection(COLLECTION).document(item["id"]).update({
             "name": name,
@@ -98,9 +83,9 @@ def menu_item_editor(item, user):
         st.success("Changes saved.")
         st.experimental_rerun()
 
-# -------------------------------
-# 📋 Page UI
-# -------------------------------
+# ----------------------------
+# 📋 UI Entry
+# ----------------------------
 
 def menu_editor_ui(user):
     st.subheader("🍽️ Menu Editor")
@@ -128,5 +113,6 @@ def menu_editor_ui(user):
         submitted = st.form_submit_button("Add")
         if submitted and name:
             tag_list = [get_suggested_tag(t.strip()) for t in tags.split(",") if t.strip()]
-            add_menu_item(name, tag_list, scoped_event_id)
+            add_menu_item(name, tag_list, scoped_event_id, uploaded_by=user["name"])
             st.experimental_rerun()
+
