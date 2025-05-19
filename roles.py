@@ -1,114 +1,74 @@
 import streamlit as st
 from firebase_admin import firestore
-from datetime import datetime, timedelta
-from auth import get_user_id
+from auth import get_user_id, get_all_users
+from utils import session_get
 
 db = firestore.client()
-COLLECTION = "notifications"
+USER_COLLECTION = "users"
 
-# ----------------------------
-# 🔧 Notification Data
-# ----------------------------
+# -------------------------------
+# 🔐 Role-Based Access Checks
+# -------------------------------
 
-def send_notification(to_user_id, message, level="info", link=None, system=False):
-    notif_ref = db.collection(COLLECTION).document()
-    notif_ref.set({
-        "id": notif_ref.id,
-        "to_user_id": to_user_id,
-        "message": message,
-        "level": level,
-        "link": link,
-        "is_read": False,
-        "created_at": firestore.SERVER_TIMESTAMP,
-        "system": system,
-    })
-
-def mark_all_read(user_id):
-    notifs = db.collection(COLLECTION)\
-        .where("to_user_id", "==", user_id)\
-        .where("is_read", "==", False)\
-        .stream()
-    for doc in notifs:
-        doc.reference.update({"is_read": True})
-
-def get_unread_count(user_id):
-    return len(list(
-        db.collection(COLLECTION)
-        .where("to_user_id", "==", user_id)
-        .where("is_read", "==", False)
-        .stream()
-    ))
-
-def get_user_notifications(user_id):
-    docs = db.collection(COLLECTION)\
-        .where("to_user_id", "==", user_id)\
-        .order_by("created_at", direction=firestore.Query.DESCENDING)\
-        .limit(30)\
-        .stream()
-    return [doc.to_dict() for doc in docs]
-
-# ----------------------------
-# 🧠 System-Wide Broadcast
-# ----------------------------
-
-def broadcast_notification(message, level="info", link=None):
-    # Mark as visible to all users
-    ref = db.collection(COLLECTION).document()
-    ref.set({
-        "id": ref.id,
-        "to_user_id": "global",
-        "message": message,
-        "level": level,
-        "link": link,
-        "is_read": False,
-        "created_at": firestore.SERVER_TIMESTAMP,
-        "system": True,
-    })
-
-def get_global_notifications():
-    return list(db.collection(COLLECTION)
-        .where("to_user_id", "==", "global")
-        .order_by("created_at", direction=firestore.Query.DESCENDING)
-        .limit(10)
-        .stream()
-    )
-
-# ----------------------------
-# 🔔 UI Sidebar Display
-# ----------------------------
-
-def notifications_sidebar(user):
+def get_user_role(user):
     if not user:
+        return "viewer"
+    user_id = get_user_id(user)
+    doc = db.collection(USER_COLLECTION).document(user_id).get()
+    if doc.exists:
+        return doc.to_dict().get("role", "viewer")
+    return "viewer"
+
+def require_role(user, role_required):
+    roles = ["viewer", "manager", "admin"]
+    user_role = get_user_role(user)
+    return roles.index(user_role) >= roles.index(role_required)
+
+def is_admin(user):
+    return get_user_role(user) == "admin"
+
+def is_manager(user):
+    return get_user_role(user) in ["manager", "admin"]
+
+# -------------------------------
+# ⚙️ Admin UI: Role Assignment
+# -------------------------------
+
+def role_admin_ui():
+    st.subheader("🔐 Role Management (Admins Only)")
+
+    current_user = session_get("user")
+    if not is_admin(current_user):
+        st.warning("You do not have permission to manage roles.")
         return
 
-    user_id = get_user_id(user)
-    unread = get_unread_count(user_id)
+    users = get_all_users()
+    if not users:
+        st.info("No users found.")
+        return
 
-    with st.sidebar.expander(f"🔔 Notifications ({unread})", expanded=False):
-        notifs = get_user_notifications(user_id)
+    st.write("### Current Users and Roles")
+    for user in users:
+        user_id = user.get("id")
+        email = user.get("email", "unknown")
+        name = user.get("name", "Unnamed")
+        role = get_user_role(user)
 
-        if not notifs:
-            st.caption("No new notifications.")
-        else:
-            for n in notifs:
-                level = n.get("level", "info")
-                prefix = "ℹ️" if level == "info" else "⚠️" if level == "warn" else "❗"
-                st.markdown(f"{prefix} {n['message']}")
-                if n.get("link"):
-                    st.markdown(f"[Open →]({n['link']})")
+        with st.expander(f"{name} ({email})"):
+            st.write(f"🧾 Current Role: **{role}**")
+            new_role = st.selectbox(
+                "Change Role", ["viewer", "manager", "admin"], index=["viewer", "manager", "admin"].index(role),
+                key=f"role_{user_id}"
+            )
+            if st.button("Update Role", key=f"update_{user_id}"):
+                db.collection(USER_COLLECTION).document(user_id).set(
+                    {"role": new_role}, merge=True
+                )
+                st.success(f"Updated {name}'s role to {new_role}.")
 
-        if notifs:
-            st.button("Mark all as read", on_click=mark_all_read, args=(user_id,))
+# -------------------------------
+# 🔧 Utility: Promote on demand
+# -------------------------------
 
-# ----------------------------
-# 🧹 Expiration (Optional Cleanup)
-# ----------------------------
-
-def clean_old_notifications(days=30):
-    """Admin cleanup function: call manually or via scheduler."""
-    cutoff = datetime.now() - timedelta(days=days)
-    docs = db.collection(COLLECTION)\
-        .where("created_at", "<", cutoff)\
-        .stream()
-    for doc in docs:
-        doc.reference.delete()
+def promote_user(user_id: str, role: str):
+    db.collection(USER_COLLECTION).document(user_id).set({"role": role}, merge=True)
