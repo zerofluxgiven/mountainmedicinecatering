@@ -6,10 +6,12 @@ from utils import format_date
 # ----------------------------
 # 📢 Event Mode Banner
 # ----------------------------
-
 def inject_custom_css():
-    with open("public/style.css") as f:
-        st.markdown(f"<style>{f.read()}</style>", unsafe_allow_html=True)
+    try:
+        with open("public/style.css") as f:
+            st.markdown(f"<style>{f.read()}</style>", unsafe_allow_html=True)
+    except FileNotFoundError:
+        st.warning("⚠️ style.css not found in /public.")
 
 def show_event_mode_banner():
     active_event = get_active_event()
