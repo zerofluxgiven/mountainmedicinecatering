@@ -10,7 +10,7 @@ from files import file_manager_ui
 from tags import admin_tag_manager_ui
 from events import event_ui, get_active_event  # ✅ include here
 from menu_editor import menu_editor_ui
-from suggestions import suggestions_ui
+# from suggestions import suggestions_ui
 from event_modifications import event_modifications_ui
 from notifications import notifications_sidebar
 from roles import role_admin_ui
