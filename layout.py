@@ -17,7 +17,7 @@ def show_event_mode_banner():
     location = active_event.get("location", "Unknown")
 
     st.markdown(f"""
-    <div style="background-color:#FFF3CD;padding:12px;border-radius:8px;margin:10px 0;border:1px solid #FFEeba;">
+    <div style="background-color:#fff8e1;padding:12px;border-radius:10px;margin:12px 0;border:1px solid #ffecb3;">
         <strong>📅 Event Mode Active:</strong> {name}
         <br>📍 <i>{location}</i> on <b>{date}</b>
         <br>✏️ Only content tagged to this event is editable.
@@ -25,7 +25,7 @@ def show_event_mode_banner():
     """, unsafe_allow_html=True)
 
 # ----------------------------
-# 🔒 Lock Indicator for UI
+# 🔒 Lock Indicator
 # ----------------------------
 
 def is_locked_for_editing(item_event_id: str):
@@ -36,7 +36,7 @@ def show_locked_notice():
     st.warning("🔒 This item is locked for editing due to Event Mode.")
 
 # ----------------------------
-# 🔔 Badge for Notifications (Sidebar or Header)
+# 🔔 Notification Sidebar Badge
 # ----------------------------
 
 def show_notification_badge(user):
@@ -44,7 +44,10 @@ def show_notification_badge(user):
         return
     count = get_suggestion_count()
     if count > 0:
-        st.sidebar.markdown(f"🔔 **{count} pending suggestions**")
+        st.sidebar.markdown(
+            f"<div style='margin-top:10px;color:#B00020;font-weight:bold;'>🔔 {count} pending suggestion(s)</div>",
+            unsafe_allow_html=True
+        )
 
 # ----------------------------
 # 📎 Event Tag Label
@@ -58,11 +61,10 @@ def show_event_tag_label(event_id):
         st.markdown("🔒 *Not part of the active event*", unsafe_allow_html=True)
 
 # ----------------------------
-# 📦 Page Wrapper
+# 📦 Layout Wrapper (optional)
 # ----------------------------
 
 def render_page(user, content_func):
-    """Optional wrapper if you want consistent layout across all views."""
     if user:
         show_notification_badge(user)
     show_event_mode_banner()
