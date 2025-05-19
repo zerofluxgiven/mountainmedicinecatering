@@ -32,6 +32,8 @@ PUBLIC_MODE = False  # Set to True to disable login (view-only)
 
 def main():
     st.set_page_config(page_title="Mountain Medicine Catering", layout="wide")
+        inject_custom_css()  # ✅ this line loads style.css
+
 
     # Load current user session
     user = load_user_session()
