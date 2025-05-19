@@ -1,71 +1,105 @@
 import streamlit as st
+
+# 🔐 Auth and permissions
 from auth import load_user_session, require_role
+
+# 📦 Core UI Modules
 from files import file_manager_ui
 from tags import admin_tag_manager_ui
 from events import event_ui
+from menu_editor import menu_editor_ui
 from suggestions import suggestions_ui
+from event_modifications import event_modifications_ui
 from notifications import notifications_sidebar
 from roles import role_admin_ui
 from audit import audit_log_ui
 from pdf_export import pdf_export_ui
+from post_event import post_event_ui
 
-# Optional: Debug toggle for development
-PUBLIC_MODE = False  # Flip to True to allow unauthenticated viewing
+# 🎨 Layout Helpers
+from layout import show_event_mode_banner
+
+# ⚙️ Toggle this to simulate public or locked mode
+PUBLIC_MODE = False  # Set to True to disable login (view-only)
+
+
+# ----------------------------
+# 🚀 Main App Logic
+# ----------------------------
 
 def main():
     st.set_page_config(page_title="Mountain Medicine Catering", layout="wide")
 
+    # Load current user session
     user = load_user_session()
 
-    # If public mode is off, require login
+    # Require login unless PUBLIC_MODE is True
     if not PUBLIC_MODE and not user:
         st.warning("Please log in to continue.")
         return
 
-    st.title("Mountain Medicine Catering")
+    st.title("🌄 Mountain Medicine Catering")
 
+    # Left Sidebar
     if user:
-        st.sidebar.write(f"👋 Welcome, **{user.get('name', 'User')}**")
+        st.sidebar.write(f"👤 Logged in as **{user.get('name', 'User')}**")
         notifications_sidebar(user)
     else:
-        st.sidebar.write("👀 Viewing as Guest")
+        st.sidebar.write("👀 Viewing as guest")
 
-    tab = st.sidebar.radio("Navigation", [
-        "Files", 
-        "Tags", 
-        "Events", 
-        "Suggestions", 
-        "PDF Export", 
-        "Audit Logs", 
-        "Admin"
+    # Sidebar Navigation
+    tab = st.sidebar.radio("📚 Navigation", [
+        "Dashboard",
+        "Files",
+        "Tags",
+        "Menu",
+        "Events",
+        "Post-Event",
+        "Suggestions",
+        "PDF Export",
+        "Audit Logs",
+        "Admin Panel"
     ])
 
-    # Route pages
-    if tab == "Files":
+    # Show Event Mode banner globally
+    show_event_mode_banner()
+
+    # Route Tabs
+    if tab == "Dashboard":
+        st.subheader("📊 Welcome")
+        st.info("Select a feature from the sidebar.")
+
+    elif tab == "Files":
         file_manager_ui(user)
 
     elif tab == "Tags":
         if user:
             admin_tag_manager_ui()
 
+    elif tab == "Menu":
+        menu_editor_ui(user)
+
     elif tab == "Events":
         event_ui(user)
 
+    elif tab == "Post-Event":
+        post_event_ui(user)
+
     elif tab == "Suggestions":
-        if user:
-            suggestions_ui(user)
+        event_modifications_ui(user)
 
     elif tab == "PDF Export":
-        if user:
-            pdf_export_ui(user)
+        pdf_export_ui(user)
 
     elif tab == "Audit Logs":
-        if user:
-            audit_log_ui(user)
+        audit_log_ui(user)
 
-    elif tab == "Admin":
+    elif tab == "Admin Panel":
         if require_role(user, "admin"):
             role_admin_ui()
+        else:
+            st.warning("Admin access required.")
 
 if __name__ == "__main__":
     main()
+
