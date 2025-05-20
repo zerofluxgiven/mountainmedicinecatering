@@ -29,7 +29,10 @@ def format_date(ts):
         return "Unknown"
     if isinstance(ts, datetime):
         return ts.strftime("%b %d, %Y %H:%M")
-    return str(ts)
+    try:
+        return ts.to_datetime().strftime("%b %d, %Y %H:%M")  # Firestore timestamps
+    except Exception:
+        return str(ts)
 
 # ----------------------------
 # 🧬 Safe Dict Merge
