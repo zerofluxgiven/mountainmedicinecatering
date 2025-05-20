@@ -1,30 +1,30 @@
-# pages/dashboard.py
 import streamlit as st
-from firestore_utils import get_active_event
-from auth import is_authenticated
+from event_mode import get_event_context
+from utils import format_date
 
-def show():
-    st.title("Dashboard")
+def show_dashboard():
+    st.title("📊 Dashboard")
 
-    event = get_active_event()
+    event = get_event_context()
+
     if event:
-        st.success(f"Active Event: {event.get('name', 'Unnamed')}")
+        st.success(f"📅 Active Event: **{event.get('name', 'Unnamed')}**")
+        st.markdown(f"📍 Location: *{event.get('location', 'Unknown')}*")
+        st.markdown(f"🗓️ Date: *{format_date(event.get('start_datetime'))} → {format_date(event.get('end_datetime'))}*")
 
-        st.markdown("### Quick Status")
+        st.markdown("### 📈 Quick Stats")
         col1, col2, col3 = st.columns(3)
-        with col1:
-            st.metric("Guests", event.get("guest_count", "-"))
-        with col2:
-            st.metric("Staff", event.get("staff_count", "-"))
-        with col3:
-            st.metric("Menu Items", len(event.get("menu", [])))
+        col1.metric("👥 Guests", event.get("guest_count", "-"))
+        col2.metric("🧑‍🍳 Staff", event.get("staff_count", "-"))
+        col3.metric("🍽️ Menu Items", len(event.get("menu", [])))
 
-        st.markdown("### Today's Checklist")
-        st.checkbox("Confirm prep station setup")
-        st.checkbox("Review schedule with staff")
-        st.checkbox("Inventory checked")
+        st.markdown("### ✅ Today's Checklist")
+        st.checkbox("Prep station setup complete")
+        st.checkbox("Reviewed schedule with staff")
+        st.checkbox("Checked inventory and supplies")
+        st.checkbox("Load equipment into transport")
+        st.checkbox("Set up dishwashing station")
 
     else:
-        st.info("No active event.")
-        st.markdown("### Planning Overview")
-        st.write("You can view and edit upcoming events under the 'Events' tab.")
+        st.info("No active event selected.")
+        st.markdown("Navigate to the **Events** tab to activate or create one.")
