@@ -2,12 +2,13 @@ import streamlit as st
 from firebase_admin import firestore
 from datetime import datetime, timedelta
 from auth import get_user_id, get_user_role
+from utils import session_get
 
 db = firestore.client()
 COLLECTION = "notifications"
 
 # ----------------------------
-# 🔧 Notification Actions
+# 📩 Notification Actions
 # ----------------------------
 
 def send_notification(to_user_id, message, level="info", link=None, system=False):
@@ -24,7 +25,7 @@ def send_notification(to_user_id, message, level="info", link=None, system=False
             "system": system,
         })
     except Exception as e:
-        st.warning(f"Failed to send notification: {e}")
+        st.warning(f"❌ Failed to send notification: {e}")
 
 def broadcast_notification(message, level="info", link=None):
     send_notification("global", message, level=level, link=link, system=True)
@@ -38,7 +39,7 @@ def mark_all_read(user_id):
         for doc in notifs:
             doc.reference.update({"is_read": True})
     except Exception as e:
-        st.warning(f"Failed to mark notifications as read: {e}")
+        st.warning(f"❌ Failed to mark notifications read: {e}")
 
 def get_unread_count(user_id):
     try:
@@ -52,7 +53,7 @@ def get_unread_count(user_id):
         return 0
 
 # ----------------------------
-# 🔍 Get Notifications
+# 📬 Notification Retrieval
 # ----------------------------
 
 def get_user_notifications(user_id):
@@ -64,23 +65,23 @@ def get_user_notifications(user_id):
             .stream()
         return [doc.to_dict() for doc in docs]
     except Exception as e:
-        st.warning(f"Could not load notifications: {e}")
+        st.warning(f"⚠️ Could not load notifications: {e}")
         return []
 
 def get_global_notifications():
     try:
-        return list(db.collection(COLLECTION)
-            .where("to_user_id", "==", "global")
-            .order_by("created_at", direction=firestore.Query.DESCENDING)
-            .limit(10)
+        docs = db.collection(COLLECTION)\
+            .where("to_user_id", "==", "global")\
+            .order_by("created_at", direction=firestore.Query.DESCENDING)\
+            .limit(10)\
             .stream()
-        )
+        return [doc.to_dict() for doc in docs]
     except Exception as e:
-        st.warning(f"Could not load global notifications: {e}")
+        st.warning(f"⚠️ Could not load global notifications: {e}")
         return []
 
 # ----------------------------
-# 🔔 UI Sidebar Display
+# 🔔 Sidebar UI Display
 # ----------------------------
 
 def notifications_sidebar(user):
@@ -90,7 +91,7 @@ def notifications_sidebar(user):
     user_id = get_user_id(user)
     unread = get_unread_count(user_id)
 
-    # Bell icon with red badge
+    # Bell icon + badge
     st.sidebar.markdown(f"""
         <style>
         .notif-badge {{
@@ -126,11 +127,10 @@ def notifications_sidebar(user):
             st.button("Mark all as read", on_click=mark_all_read, args=(user_id,))
 
 # ----------------------------
-# 🧪 Admin Test Button
+# 🧪 Admin Test Sender
 # ----------------------------
 
 def test_notification_button(user):
-    """Optional admin-side test sender."""
     if get_user_role(user) != "admin":
         return
 
@@ -139,14 +139,14 @@ def test_notification_button(user):
     target = st.text_input("Target user ID", value=get_user_id(user))
     if st.button("Send Test"):
         send_notification(to_user_id=target, message=msg, level="info")
-        st.success("Notification sent.")
+        st.success("✅ Notification sent.")
 
 # ----------------------------
-# 🧹 Expiration Cleanup
+# 🧹 Cleanup Old Notifications
 # ----------------------------
 
 def clean_old_notifications(days=30):
-    """Admin cleanup function: call manually or via scheduler."""
+    """Deletes notifications older than X days."""
     try:
         cutoff = datetime.now() - timedelta(days=days)
         docs = db.collection(COLLECTION)\
@@ -155,5 +155,4 @@ def clean_old_notifications(days=30):
         for doc in docs:
             doc.reference.delete()
     except Exception as e:
-        st.warning(f"Failed cleanup: {e}")
-
+        st.warning(f"❌ Failed to clean notifications: {e}")
