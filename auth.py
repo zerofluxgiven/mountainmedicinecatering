@@ -10,17 +10,15 @@ USER_COLLECTION = "users"
 # ------------------------------
 
 def load_user_session():
-    # Step 1: check if user already stored
+    """Returns the user dict stored in session, or None if not logged in."""
     if "user" in st.session_state:
         return st.session_state["user"]
 
-    # Step 2: try loading from session
     user = session_get("user")
     if user:
         st.session_state["user"] = user
         return user
 
-    # Step 3: show login form
     with st.form("login_form"):
         st.subheader("🔐 Login Required")
         email = st.text_input("Email")
@@ -33,11 +31,14 @@ def load_user_session():
                 "email": email,
                 "name": name or email.split("@")[0],
             }
-            db.collection(USER_COLLECTION).document(user_id).set(user_data, merge=True)
-            session_set("user", user_data)
-            st.session_state["user"] = user_data
-            st.experimental_rerun()
-
+            try:
+                db.collection(USER_COLLECTION).document(user_id).set(user_data, merge=True)
+                session_set("user", user_data)
+                st.session_state["user"] = user_data
+                st.success("Logged in.")
+                st.experimental_rerun()
+            except Exception as e:
+                st.error(f"❌ Failed to log in: {e}")
     return None
 
 # ------------------------------
@@ -65,5 +66,9 @@ def require_role(user, role_required):
 # ------------------------------
 
 def get_all_users():
-    docs = db.collection(USER_COLLECTION).stream()
-    return [doc.to_dict() | {"id": doc.id} for doc in docs]
+    try:
+        docs = db.collection(USER_COLLECTION).stream()
+        return [doc.to_dict() | {"id": doc.id} for doc in docs]
+    except Exception as e:
+        st.error(f"⚠️ Could not fetch user list: {e}")
+        return []
