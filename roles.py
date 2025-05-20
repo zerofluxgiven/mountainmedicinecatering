@@ -19,7 +19,7 @@ def get_user_role(user):
         if doc.exists:
             return doc.to_dict().get("role", "viewer")
     except Exception as e:
-        st.warning(f"Could not fetch user role: {e}")
+        st.warning(f"⚠️ Could not fetch user role: {e}")
     return "viewer"
 
 def require_role(user, role_required):
@@ -77,7 +77,7 @@ def role_admin_ui():
                         st.error(f"❌ Failed to update role: {e}")
 
 # -------------------------------
-# 🔧 Utility: Promote on demand
+# 🔧 Utility: Promote on Demand
 # -------------------------------
 
 def promote_user(user_id: str, role: str):
@@ -85,4 +85,3 @@ def promote_user(user_id: str, role: str):
         db.collection(USER_COLLECTION).document(user_id).set({"role": role}, merge=True)
     except Exception as e:
         st.error(f"❌ Failed to promote user {user_id} to {role}: {e}")
-
