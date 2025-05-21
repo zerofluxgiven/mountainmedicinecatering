@@ -12,7 +12,6 @@ def inject_custom_css():
     except FileNotFoundError:
         st.warning("⚠️ style.css not found in /public.")
 
-    # Inject floating assistant JS button
     st.markdown("""
     <script>
     const fab = window.parent.document.querySelector('#ai-fab');
@@ -43,7 +42,7 @@ def inject_custom_css():
     """, unsafe_allow_html=True)
 
 # ----------------------------
-# 💬 Assistant Floating Panel
+# 💬 Floating Assistant
 # ----------------------------
 def render_floating_assistant():
     user = session_get("user")
@@ -55,7 +54,6 @@ def render_floating_assistant():
     with st.expander("💬 Assistant", expanded=False):
         ai_chat_ui()
 
-    # Hidden button for JS toggler
     st.button("toggle", key="streamlit-assistant-toggle", on_click=toggle_assistant_visibility)
     st.markdown("</div>", unsafe_allow_html=True)
 
@@ -87,7 +85,7 @@ def show_event_mode_banner():
     """, unsafe_allow_html=True)
 
 # ----------------------------
-# 🔒 Lock Notice Banner
+# 🔒 Lock Banner
 # ----------------------------
 def show_locked_notice():
     st.info(
@@ -96,7 +94,7 @@ def show_locked_notice():
     )
 
 # ----------------------------
-# 🏷️ Event Tag Label
+# 🏷️ Tag Label by Event
 # ----------------------------
 def show_event_tag_label(event_id):
     from events import get_event_by_id
@@ -110,7 +108,7 @@ def show_event_tag_label(event_id):
     )
 
 # ----------------------------
-# 🧭 Top Navigation Tabs
+# 🧭 Top Navigation
 # ----------------------------
 def render_top_navbar(tabs):
     st.markdown("<div class='nav-tabs'>", unsafe_allow_html=True)
