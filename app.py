@@ -2,97 +2,84 @@ import streamlit as st
 from firebase_config import initialize_firebase
 initialize_firebase()
 
-# 🔐 Auth and permissions
+# 🔐 Auth & Roles
 from auth import load_user_session, require_role
-
-# 📦 Core UI Modules
-from files import file_manager_ui
-from tags import admin_tag_manager_ui
-from events import event_ui, get_active_event
-from menu_editor import menu_editor_ui
-from event_modifications import event_modifications_ui
+from utils import format_date
+from layout import (
+    inject_custom_css,
+    render_top_navbar,
+    render_floating_assistant,
+    show_event_mode_banner
+)
 from notifications import notifications_sidebar
-from roles import role_admin_ui
-from audit import audit_log_ui
-from pdf_export import pdf_export_ui
+
+# 🌟 Core Feature Modules
+from events import event_ui, get_active_event
 from post_event import post_event_ui
+from files import file_manager_ui
+from event_modifications import event_modifications_ui
+from audit import audit_log_ui
+from roles import role_admin_ui
+from tags import admin_tag_manager_ui
 from ai_chat import ai_chat_ui
-import streamlit as st
-import streamlit as st
-from ai_chat import ai_chat_ui
-from layout import inject_custom_css, render_floating_assistant, show_event_mode_banner
+from pdf_export import pdf_export_ui
+from menu_editor import menu_editor_ui
 
-# Inject custom CSS and JavaScript
-inject_custom_css()
+# 🧪 Feature Flag
+PUBLIC_MODE = False  # Set to True to simulate guest view
 
-# Render floating assistant button
-render_floating_assistant()
-
-# Show event mode banner if applicable
-show_event_mode_banner()
-
-# Define available pages
-PAGES = {
-    "Dashboard": "pages.dashboard",
-    "Events": "pages.events",
-    "Assistant": "pages.assistant"
+# 📂 Tab Routing
+TABS = {
+    "Dashboard": "dashboard",
+    "Events": "events",
+    "Recipes": "recipes",
+    "Upload": "files",
+    "Post-Event": "post_event",
+    "Suggestions": "suggestions",
+    "PDF Export": "pdf_export",
+    "Audit Logs": "audit_logs",
+    "Explore Tags": "tags",
+    "Admin Panel": "admin",
+    "Assistant": "assistant"
 }
 
-# Sidebar navigation
-st.sidebar.title("Navigation")
-selection = st.sidebar.radio("Go to", list(PAGES.keys()))
 
-# Load the selected page
-page_module = __import__(PAGES[selection], fromlist=["show"])
-page_module.show()
-
-
-# 🎨 Layout Helpers
-
-from layout import show_event_mode_banner, inject_custom_css
-from utils import format_date
-
-# ⚙️ Toggle this to simulate public or locked mode
-PUBLIC_MODE = False  # Set to True to disable login (view-only)
-
-# ----------------------------
-# 🚀 Main App Logic
-# ----------------------------
 def main():
     st.set_page_config(page_title="Mountain Medicine Catering", layout="wide")
+
     inject_custom_css()
-
     user = load_user_session()
-    if not PUBLIC_MODE and not user:
-        st.warning("Please log in to continue.")
-        return
 
-    st.title("🌄 Mountain Medicine Catering")
+    # 🧭 Public mode — redirect to landing page
+    if PUBLIC_MODE and not user:
+        st.switch_page("landing.py")
 
+    render_floating_assistant() if user else None
+    show_event_mode_banner()
+
+    # 🧭 Top title
+    st.markdown("## 🌄 Mountain Medicine Catering")
+
+    # 🔔 Sidebar status
     if user:
         st.sidebar.write(f"👤 Logged in as **{user.get('name', 'User')}**")
         notifications_sidebar(user)
     else:
         st.sidebar.write("👀 Viewing as guest")
 
-    tab = st.sidebar.radio("📚 Navigation", [
-        "Dashboard",
-        "Files",
-        "Tags",
-        "Menu",
-        "Events",
-        "Post-Event",
-        "Suggestions",
-        "PDF Export",
-        "Audit Logs",
-        "Admin Panel",
-        "Assistant"
-    ])
+    # 🚀 Top Navbar Navigation
+    nav_tabs = list(TABS.keys())
 
-    show_event_mode_banner()
+    # Hide restricted tabs in public mode
+    if PUBLIC_MODE and not user:
+        nav_tabs = [tab for tab in nav_tabs if tab not in ("Dashboard", "Assistant")]
 
-    if tab == "Dashboard":
-        st.subheader("📊 Dashboard Overview")
+    selected_tab = render_top_navbar(nav_tabs)
+
+    # --------------------
+    # Page Routing
+    # --------------------
+    if selected_tab == "Dashboard":
         event = get_active_event()
         if event:
             st.success(f"📅 Active Event: **{event.get('name', 'Unnamed')}**")
@@ -111,41 +98,47 @@ def main():
             st.checkbox("Checked inventory and supplies")
         else:
             st.info("No active event is currently set.")
-            st.markdown("You can view or activate an upcoming event under the **Events** tab.")
+            st.markdown("You can activate an event in the **Events** tab.")
 
-    elif tab == "Files":
-        file_manager_ui(user)
-
-    elif tab == "Tags":
-        if user:
-            admin_tag_manager_ui()
-
-    elif tab == "Menu":
-        menu_editor_ui(user)
-
-    elif tab == "Events":
+    elif selected_tab == "Events":
         event_ui(user)
 
-    elif tab == "Post-Event":
+    elif selected_tab == "Recipes":
+        menu_editor_ui(user)
+
+    elif selected_tab == "Upload":
+        file_manager_ui(user)
+
+    elif selected_tab == "Post-Event":
         post_event_ui(user)
 
-    elif tab == "Suggestions":
+    elif selected_tab == "Suggestions":
         event_modifications_ui(user)
 
-    elif tab == "PDF Export":
+    elif selected_tab == "PDF Export":
         pdf_export_ui(user)
 
-    elif tab == "Audit Logs":
+    elif selected_tab == "Audit Logs":
         audit_log_ui(user)
 
-    elif tab == "Admin Panel":
+    elif selected_tab == "Explore Tags":
+        if user:
+            admin_tag_manager_ui()
+        else:
+            st.info("🔒 Login required to manage tags.")
+
+    elif selected_tab == "Admin Panel":
         if require_role(user, "admin"):
             role_admin_ui()
         else:
-            st.warning("Admin access required.")
+            st.warning("⚠️ Admin access required.")
 
-    elif tab == "Assistant":
-        ai_chat_ui()
+    elif selected_tab == "Assistant":
+        if user:
+            ai_chat_ui()
+        else:
+            st.warning("🔒 Login required to use the assistant.")
+
 
 if __name__ == "__main__":
     main()
