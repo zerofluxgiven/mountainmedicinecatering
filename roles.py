@@ -1,34 +1,51 @@
 import streamlit as st
 from firebase_admin import firestore
-from auth import require_role
+from auth import get_user_id
 
 db = firestore.client()
+COLLECTION = "users"
 
 # ----------------------------
-# 🔐 Admin Role Manager UI
+# 📥 Fetch Roles
+# ----------------------------
+def get_user_role(user_id):
+    doc = db.collection(COLLECTION).document(user_id).get()
+    if doc.exists:
+        return doc.to_dict().get("role", "user")
+    return "user"
+
+def require_role(user, role_required):
+    if not user:
+        return False
+
+    role_hierarchy = {
+        "user": 1,
+        "manager": 2,
+        "admin": 3
+    }
+
+    user_role = user.get("role", "user")
+    return role_hierarchy.get(user_role, 0) >= role_hierarchy.get(role_required, 0)
+
+# ----------------------------
+# 👥 Admin UI for Role Management
 # ----------------------------
 def role_admin_ui():
-    st.subheader("🛡 User Role Management")
+    st.subheader("🔐 User Role Management")
 
-    users = db.collection("users").stream()
-    user_list = [doc.to_dict() | {"id": doc.id} for doc in users]
+    users = db.collection(COLLECTION).stream()
+    all_users = [{"id": doc.id, **doc.to_dict()} for doc in users]
 
-    for user in user_list:
-        col1, col2 = st.columns([3, 2])
-        with col1:
-            st.markdown(f"**{user.get('name', 'Unknown')}**")
-            st.caption(user.get("email", ""))
-        with col2:
-            current_role = user.get("role", "user")
+    for u in all_users:
+        with st.expander(f"{u.get('name', 'Unnamed User')} ({u['id']})"):
+            st.write(f"Email: {u.get('email', 'N/A')}")
+            current_role = u.get("role", "user")
             new_role = st.selectbox(
-                "Role",
-                options=["user", "manager", "admin"],
+                "Role", options=["user", "manager", "admin"],
                 index=["user", "manager", "admin"].index(current_role),
-                key=f"role_select_{user['id']}"
+                key=f"role_{u['id']}"
             )
-
-            if new_role != current_role:
-                if st.button("💾 Update", key=f"update_{user['id']}"):
-                    db.collection("users").document(user["id"]).update({"role": new_role})
-                    st.success(f"Updated {user['name']} to {new_role}")
-                    st.experimental_rerun()
+            if new_role != current_role and st.button("Update Role", key=f"update_{u['id']}"):
+                db.collection(COLLECTION).document(u["id"]).update({"role": new_role})
+                st.success("Role updated.")
+                st.experimental_rerun()
