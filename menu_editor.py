@@ -1,3 +1,4 @@
+
 import streamlit as st
 from firebase_admin import firestore
 from auth import require_role
@@ -10,9 +11,6 @@ from utils import generate_id
 db = firestore.client()
 COLLECTION = "menu_items"
 
-# ----------------------------
-# 📦 Data Access
-# ----------------------------
 def get_menu_items(event_id=None):
     ref = db.collection(COLLECTION)
     if event_id:
@@ -40,33 +38,19 @@ def add_menu_item(name, tags, event_id, uploaded_by):
         increment_tag_usage(tag)
     st.success("Item added.")
 
-# ----------------------------
-# ✏️ Editor
-# ----------------------------
 def menu_item_editor(item, user):
     st.markdown("### 🍽️ Menu Item")
     show_event_tag_label(item["event_id"])
-
     locked = is_locked(item["event_id"])
+
     if locked:
         show_locked_notice()
 
-    name = suggestion_input(
-        "Name", item["name"], "menu_item", item["id"], user
-    ) if locked else st.text_input("Name", item["name"])
-
+    name = suggestion_input("Name", item["name"], "menu_item", item["id"], user) if locked else st.text_input("Name", item["name"])
     tags_str = ", ".join(item.get("tags", []))
-    tags_input = suggestion_input(
-        "Tags (comma-separated)", tags_str, "menu_item", item["id"], user
-    ) if locked else st.text_input("Tags (comma-separated)", tags_str)
-
-    leftovers = suggestion_input(
-        "Leftovers / Overages", item.get("leftovers", ""), "menu_item", item["id"], user
-    ) if locked else st.text_area("Leftovers / Overages", item.get("leftovers", ""))
-
-    notes = suggestion_input(
-        "Staff Notes", item.get("notes", ""), "menu_item", item["id"], user
-    ) if locked else st.text_area("Staff Notes", item.get("notes", ""))
+    tags_input = suggestion_input("Tags (comma-separated)", tags_str, "menu_item", item["id"], user) if locked else st.text_input("Tags (comma-separated)", tags_str)
+    leftovers = suggestion_input("Leftovers / Overages", item.get("leftovers", ""), "menu_item", item["id"], user) if locked else st.text_area("Leftovers / Overages", item.get("leftovers", ""))
+    notes = suggestion_input("Staff Notes", item.get("notes", ""), "menu_item", item["id"], user) if locked else st.text_area("Staff Notes", item.get("notes", ""))
 
     if not locked and st.button("💾 Save Changes", key=f"save_{item['id']}"):
         updated_tags = [get_suggested_tag(t.strip()) for t in tags_input.split(",") if t.strip()]
@@ -81,12 +65,8 @@ def menu_item_editor(item, user):
         st.success("Changes saved.")
         st.experimental_rerun()
 
-# ----------------------------
-# 📋 UI Entry
-# ----------------------------
 def menu_editor_ui(user):
     st.subheader("🍽️ Menu Editor")
-
     scoped_event_id = get_scoped_event_id()
     menu_items = get_menu_items(event_id=scoped_event_id)
 
