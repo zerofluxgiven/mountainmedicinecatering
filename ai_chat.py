@@ -5,7 +5,7 @@ from firebase_admin import firestore
 from utils import format_date, generate_id
 from auth import get_user_role
 
-# 🔐 Graceful key loading
+# 🔐 Load OpenAI key safely
 openai.api_key = st.secrets.get("openai", {}).get("api_key", "")
 
 db = firestore.client()
@@ -24,7 +24,6 @@ def ai_chat_ui():
 
     role = get_user_role(user)
 
-    # Chat input
     query = st.text_input("Ask something...")
     if st.button("Submit") and query:
         with st.spinner("Thinking..."):
@@ -32,7 +31,6 @@ def ai_chat_ui():
             st.success("AI Response:")
             st.write(response)
 
-            # Optional: Save to Firestore log
             db.collection("ai_logs").add({
                 "query": query,
                 "response": response,
