@@ -1,58 +1,74 @@
 import streamlit as st
-from roles import role_admin_ui
-from suggestions import suggestions_ui
-from audit import audit_log_ui
-from tags import tag_merge_ui
-from auth import get_user_role
-from utils import session_get
+from firebase_admin import firestore
+from auth import is_admin, session_get
 
 # ----------------------------
-# ⚙️ Admin Panel
+# 🔧 Firestore Setup
 # ----------------------------
+db = firestore.client()
+CONFIG_DOC = "assistant_config"
+CONFIG_COLLECTION = "system"
 
+# ----------------------------
+# 🔐 Admin Panel Entry
+# ----------------------------
 def admin_panel_ui():
     user = session_get("user")
-    role = get_user_role(user)
-
-    if role != "admin":
-        st.warning("🔒 Admin access required.")
+    if not is_admin(user):
+        st.warning("Admin access only.")
         return
 
-    st.title("🛠 Admin Panel")
+    st.title("🛠️ Admin Panel")
 
-    tabs = st.tabs(["Roles", "Suggestions", "Tag Merge", "Audit Logs", "AI Controls"])
+    tab = st.selectbox("Admin Sections", ["AI Assistant Config", "Other Admin Tools (Coming Soon)"])
 
-    with tabs[0]:
-        role_admin_ui()
+    if tab == "AI Assistant Config":
+        render_ai_config_panel()
 
-    with tabs[1]:
-        suggestions_ui()
-
-    with tabs[2]:
-        tag_merge_ui()
-
-    with tabs[3]:
-        audit_log_ui()
-
-    with tabs[4]:
-        ai_instruction_editor()
-        
 # ----------------------------
-# 🤖 Admin-Controlled AI Prompt Boundaries
+# 🧠 AI Assistant Config Panel
 # ----------------------------
+def render_ai_config_panel():
+    st.subheader("🤖 Assistant Configuration")
 
-def ai_instruction_editor():
-    st.subheader("🧠 AI Assistant Instructions")
+    config_ref = db.collection(CONFIG_COLLECTION).document(CONFIG_DOC)
+    config = config_ref.get().to_dict() if config_ref.get().exists else {}
 
-    st.caption("Configure system-wide instructions or scoped hints for AI modes.")
+    if "instructions" not in config:
+        config["instructions"] = {
+            "event": "You are helping with a catering event.",
+            "app": "You are the internal assistant for the catering app.",
+            "global": "You are a helpful AI assistant."
+        }
 
-    default_prompts = {
-        "event": "You are helping manage a catering event. Answer only using data from the current event.",
-        "app": "You are an assistant for Mountain Medicine Catering. Use only internal app data.",
-        "global": "You are a general assistant. Answer freely."
-    }
+    if "smart_prompts" not in config:
+        config["smart_prompts"] = {
+            "event": ["Generate shopping list"],
+            "app": ["List all staff roles"],
+            "global": ["Convert cups to ounces"]
+        }
 
-    for mode in ["event", "app", "global"]:
-        prompt = st.text_area(f"{mode.title()} Mode Instruction", value=default_prompts[mode])
-        if st.button(f"Save for {mode.title()} Mode"):
-            st.success(f"✅ Instruction saved for {mode.title()} Mode (demo only).")
+    with st.form("ai_config_form"):
+        st.write("### 🔧 Instructions per Mode")
+        config["instructions"]["event"] = st.text_area("Event Mode Instruction", config["instructions"].get("event", ""))
+        config["instructions"]["app"] = st.text_area("App Mode Instruction", config["instructions"].get("app", ""))
+        config["instructions"]["global"] = st.text_area("Global Mode Instruction", config["instructions"].get("global", ""))
+
+        st.write("### 💡 Smart Prompts")
+        for mode in ["event", "app", "global"]:
+            st.write(f"**{mode.capitalize()} Prompts**")
+            prompts = config["smart_prompts"].get(mode, [])
+            new_prompts = []
+            for i, p in enumerate(prompts):
+                new_val = st.text_input(f"{mode}_{i}", value=p)
+                if new_val:
+                    new_prompts.append(new_val)
+            config["smart_prompts"][mode] = new_prompts
+
+        st.write("### 🎛️ Behavior Tuning")
+        config["temperature"] = st.slider("Response Temperature", 0.0, 1.0, config.get("temperature", 0.6), 0.05)
+        config["max_tokens"] = st.number_input("Max Tokens", value=int(config.get("max_tokens", 500)), min_value=100, max_value=2000)
+
+        if st.form_submit_button("💾 Save Settings"):
+            config_ref.set(config, merge=True)
+            st.success("Assistant configuration updated.")
