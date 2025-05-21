@@ -1,16 +1,18 @@
 import streamlit as st
 from utils import session_get
 from ai_chat import ai_chat_ui
+from events import get_active_event
+from utils import format_date
 
 # ----------------------------
 # 🎨 Inject Custom CSS + JS
 # ----------------------------
 def inject_custom_css():
     try:
-        with open("public/style.css") as f:
+        with open("style.css") as f:
             st.markdown(f"<style>{f.read()}</style>", unsafe_allow_html=True)
     except FileNotFoundError:
-        st.warning("⚠️ style.css not found in /public.")
+        st.warning("⚠️ style.css not found in root directory.")
 
     st.markdown("""
     <script>
@@ -49,13 +51,13 @@ def render_floating_assistant():
     if not user:
         return
 
-    st.markdown("<div style='position: fixed; bottom: 5rem; right: 2rem; width: 400px; z-index: 999;'>", unsafe_allow_html=True)
-
-    with st.expander("💬 Assistant", expanded=False):
-        ai_chat_ui()
+    if st.session_state.get("show_assistant", False):
+        st.markdown("<div style='position: fixed; bottom: 5rem; right: 2rem; width: 400px; z-index: 999;'>", unsafe_allow_html=True)
+        with st.expander("💬 Assistant", expanded=True):
+            ai_chat_ui()
+        st.markdown("</div>", unsafe_allow_html=True)
 
     st.button("toggle", key="streamlit-assistant-toggle", on_click=toggle_assistant_visibility)
-    st.markdown("</div>", unsafe_allow_html=True)
 
 def toggle_assistant_visibility():
     show = st.session_state.get("show_assistant", False)
@@ -65,9 +67,6 @@ def toggle_assistant_visibility():
 # 📢 Event Mode Banner
 # ----------------------------
 def show_event_mode_banner():
-    from events import get_active_event
-    from utils import format_date
-
     active_event = get_active_event()
     if not active_event:
         return
@@ -85,16 +84,13 @@ def show_event_mode_banner():
     """, unsafe_allow_html=True)
 
 # ----------------------------
-# 🔒 Lock Banner
+# 🔒 Lock Notice
 # ----------------------------
 def show_locked_notice():
-    st.info(
-        "✏️ This item is locked due to Event Mode. You can suggest changes, but editing is disabled.",
-        icon="🔒"
-    )
+    st.info("✏️ This item is locked due to Event Mode. You can suggest changes, but editing is disabled.", icon="🔒")
 
 # ----------------------------
-# 🏷️ Tag Label by Event
+# 🏷️ Event Tag Label
 # ----------------------------
 def show_event_tag_label(event_id):
     from events import get_event_by_id
@@ -102,13 +98,10 @@ def show_event_tag_label(event_id):
     if not event:
         return
     name = event.get("name", "Unnamed Event")
-    st.markdown(
-        f"<div style='margin-top: -0.5rem; color: gray;'>🏷️ <i>Tagged to:</i> <b>{name}</b></div>",
-        unsafe_allow_html=True
-    )
+    st.markdown(f"<div style='margin-top: -0.5rem; color: gray;'>🏷️ <i>Tagged to:</i> <b>{name}</b></div>", unsafe_allow_html=True)
 
 # ----------------------------
-# 🧭 Top Navigation
+# 🧭 Top Navigation Tabs
 # ----------------------------
 def render_top_navbar(tabs):
     st.markdown("<div class='nav-tabs'>", unsafe_allow_html=True)
@@ -121,3 +114,19 @@ def render_top_navbar(tabs):
     )
     st.markdown("</div>", unsafe_allow_html=True)
     return selected
+
+# ----------------------------
+# 🧰 Event Toolbar (Leave/Pause/Switch)
+# ----------------------------
+def render_event_toolbar(event_id, context="active"):
+    from streamlit.runtime.scriptrunner import get_script_run_ctx
+    st.markdown("""
+    <div class="event-toolbar">
+        <span style="float: right;">
+            <a href="#" onclick="window.location.reload(); return false;">🔁 Switch</a> &nbsp;
+            <a href="#" onclick="alert('Event Paused!'); return false;">⏸ Pause</a> &nbsp;
+            <a href="#" onclick="window.location.href='/?leave_event=true'; return false;">🚪 Leave</a>
+        </span>
+    </div>
+    """, unsafe_allow_html=True)
+    st.markdown("<div style='margin-top: 2.5rem'></div>", unsafe_allow_html=True)
