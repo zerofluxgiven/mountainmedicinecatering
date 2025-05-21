@@ -1,3 +1,6 @@
+Analysis
+
+Always show details
 import streamlit as st
 from firebase_config import initialize_firebase
 initialize_firebase()
@@ -24,6 +27,7 @@ from tags import admin_tag_manager_ui
 from ai_chat import ai_chat_ui
 from pdf_export import pdf_export_ui
 from menu_editor import menu_editor_ui
+from event_planning_dashboard import event_planning_dashboard_ui
 
 # ⚙️ Config
 PUBLIC_MODE = False  # Set to True for guest access
@@ -32,6 +36,7 @@ PUBLIC_MODE = False  # Set to True for guest access
 TABS = {
     "Dashboard": "dashboard",
     "Events": "events",
+    "Event Planner": "event_planner",
     "Recipes": "recipes",
     "Upload": "files",
     "Post-Event": "post_event",
@@ -103,6 +108,12 @@ def main():
 
     elif selected_tab == "Events":
         event_ui(user)
+
+    elif selected_tab == "Event Planner":
+        if user and "editing_event_id" in st.session_state:
+            event_planning_dashboard_ui(st.session_state["editing_event_id"])
+        else:
+            st.info("Select an event to edit from the Events tab.")
 
     elif selected_tab == "Recipes":
         menu_editor_ui(user)
