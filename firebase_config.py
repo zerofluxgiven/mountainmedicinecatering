@@ -1,22 +1,21 @@
-import streamlit as st
 import firebase_admin
 from firebase_admin import credentials
-
-# ----------------------------
-# 🔥 Firebase Admin Setup
-# ----------------------------
+import json
+import streamlit as st
 
 def initialize_firebase():
     if firebase_admin._apps:
-        return  # Already initialized
+        return  # Firebase already initialized
 
     try:
-        config = st.secrets["firebase_admin"]
+        with open("secrets/firebase_service_account.json") as f:
+            config = json.load(f)
+
         cred = credentials.Certificate({
             "type": config["type"],
             "project_id": config["project_id"],
             "private_key_id": config["private_key_id"],
-            "private_key": config["private_key"].replace("\\n", "\n"),
+            "private_key": config["private_key"].replace('\\n', '\n'),
             "client_email": config["client_email"],
             "client_id": config["client_id"],
             "auth_uri": config["auth_uri"],
@@ -25,9 +24,9 @@ def initialize_firebase():
             "client_x509_cert_url": config["client_x509_cert_url"],
             "universe_domain": config.get("universe_domain", "googleapis.com")
         })
+
         firebase_admin.initialize_app(cred)
         print("✅ Firebase initialized.")
-
     except Exception as e:
-        st.error("❌ Firebase initialization failed. Check your secret config.")
+        st.error("❌ Firebase initialization failed. Check your credentials.")
         raise e
