@@ -1,52 +1,50 @@
 
 import streamlit as st
 from firebase_admin import firestore
-from auth import get_user_id
+from auth import require_role
 
 db = firestore.client()
 COLLECTION = "users"
 
 # ----------------------------
-# 🆔 Get User Role
+# 🔍 Fetch Roles
 # ----------------------------
+def get_all_users():
+    docs = db.collection(COLLECTION).stream()
+    return [doc.to_dict() | {"id": doc.id} for doc in docs]
+
 def get_user_role(user_id):
     doc = db.collection(COLLECTION).document(user_id).get()
     if doc.exists:
-        return doc.to_dict().get("role", "guest")
-    return "guest"
+        return doc.to_dict().get("role", "viewer")
+    return "viewer"
 
 # ----------------------------
-# 🔐 Role Checks
+# 🔄 Update Role
 # ----------------------------
-def require_role(user, required_role):
-    role_hierarchy = ["guest", "user", "manager", "admin"]
-    user_role = user.get("role", "guest")
-    return role_hierarchy.index(user_role) >= role_hierarchy.index(required_role)
-
-def is_admin(user):
-    return user.get("role") == "admin"
-
-def is_manager(user):
-    return user.get("role") == "manager"
+def update_user_role(user_id, role):
+    db.collection(COLLECTION).document(user_id).update({"role": role})
+    st.success(f"✅ Role updated to {role}")
 
 # ----------------------------
-# 🧑‍💼 Admin UI
+# ⚙️ Admin UI
 # ----------------------------
 def role_admin_ui():
-    st.subheader("🔐 User Roles Management")
+    st.subheader("👥 User Roles Management")
 
-    users = db.collection(COLLECTION).order_by("name").stream()
-    for doc in users:
-        user_data = doc.to_dict()
-        user_id = doc.id
-        current_role = user_data.get("role", "guest")
-        name = user_data.get("name", "Unnamed")
+    if not require_role(session_user := st.session_state.get("user"), "admin"):
+        st.warning("Only admins can view or change user roles.")
+        return
 
-        col1, col2 = st.columns([3, 2])
-        col1.write(f"**{name}** ({user_id})")
-        new_role = col2.selectbox("Role", ["guest", "user", "manager", "admin"], index=["guest", "user", "manager", "admin"].index(current_role), key=f"role_{user_id}")
-
-        if new_role != current_role:
-            if st.button("Update", key=f"update_{user_id}"):
-                db.collection(COLLECTION).document(user_id).update({"role": new_role})
-                st.success(f"Updated {name}'s role to {new_role}")
+    users = get_all_users()
+    for user in users:
+        with st.expander(f"{user.get('name', 'Unnamed User')} ({user['email']})"):
+            current_role = user.get("role", "viewer")
+            new_role = st.selectbox(
+                "Role",
+                ["admin", "manager", "viewer"],
+                index=["admin", "manager", "viewer"].index(current_role),
+                key=f"role_{user['id']}"
+            )
+            if new_role != current_role and st.button("Save", key=f"save_{user['id']}"):
+                update_user_role(user["id"], new_role)
