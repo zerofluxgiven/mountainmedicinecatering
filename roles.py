@@ -1,16 +1,34 @@
+import streamlit as st
+from firebase_admin import firestore
+from auth import require_role
+
+db = firestore.client()
+
 # ----------------------------
-# 🛡 Role Helpers
+# 🔐 Admin Role Manager UI
 # ----------------------------
-def get_user_role(user):
-    return user.get("role", "user") if user else "guest"
+def role_admin_ui():
+    st.subheader("🛡 User Role Management")
 
-def is_admin(user):
-    return get_user_role(user) == "admin"
+    users = db.collection("users").stream()
+    user_list = [doc.to_dict() | {"id": doc.id} for doc in users]
 
-def is_manager(user):
-    return get_user_role(user) in ["admin", "manager"]
+    for user in user_list:
+        col1, col2 = st.columns([3, 2])
+        with col1:
+            st.markdown(f"**{user.get('name', 'Unknown')}**")
+            st.caption(user.get("email", ""))
+        with col2:
+            current_role = user.get("role", "user")
+            new_role = st.selectbox(
+                "Role",
+                options=["user", "manager", "admin"],
+                index=["user", "manager", "admin"].index(current_role),
+                key=f"role_select_{user['id']}"
+            )
 
-def require_role(user, required):
-    role_hierarchy = ["guest", "user", "manager", "admin"]
-    user_role = get_user_role(user)
-    return role_hierarchy.index(user_role) >= role_hierarchy.index(required)
+            if new_role != current_role:
+                if st.button("💾 Update", key=f"update_{user['id']}"):
+                    db.collection("users").document(user["id"]).update({"role": new_role})
+                    st.success(f"Updated {user['name']} to {new_role}")
+                    st.experimental_rerun()
