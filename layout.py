@@ -12,7 +12,7 @@ def inject_custom_css():
     except FileNotFoundError:
         st.warning("⚠️ style.css not found in /public.")
 
-    # Inject floating assistant button via JS
+    # Inject floating assistant JS button
     st.markdown("""
     <script>
     const fab = window.parent.document.querySelector('#ai-fab');
@@ -55,13 +55,13 @@ def render_floating_assistant():
     with st.expander("💬 Assistant", expanded=False):
         ai_chat_ui()
 
-    # Hidden Streamlit button toggled by JS
+    # Hidden button for JS toggler
     st.button("toggle", key="streamlit-assistant-toggle", on_click=toggle_assistant_visibility)
     st.markdown("</div>", unsafe_allow_html=True)
 
 def toggle_assistant_visibility():
-    current = st.session_state.get("show_assistant", False)
-    st.session_state["show_assistant"] = not current
+    show = st.session_state.get("show_assistant", False)
+    st.session_state["show_assistant"] = not show
 
 # ----------------------------
 # 📢 Event Mode Banner
@@ -87,7 +87,30 @@ def show_event_mode_banner():
     """, unsafe_allow_html=True)
 
 # ----------------------------
-# 🧭 Top Navigation Bar
+# 🔒 Lock Notice Banner
+# ----------------------------
+def show_locked_notice():
+    st.info(
+        "✏️ This item is locked due to Event Mode. You can suggest changes, but editing is disabled.",
+        icon="🔒"
+    )
+
+# ----------------------------
+# 🏷️ Event Tag Label
+# ----------------------------
+def show_event_tag_label(event_id):
+    from events import get_event_by_id
+    event = get_event_by_id(event_id)
+    if not event:
+        return
+    name = event.get("name", "Unnamed Event")
+    st.markdown(
+        f"<div style='margin-top: -0.5rem; color: gray;'>🏷️ <i>Tagged to:</i> <b>{name}</b></div>",
+        unsafe_allow_html=True
+    )
+
+# ----------------------------
+# 🧭 Top Navigation Tabs
 # ----------------------------
 def render_top_navbar(tabs):
     st.markdown("<div class='nav-tabs'>", unsafe_allow_html=True)
