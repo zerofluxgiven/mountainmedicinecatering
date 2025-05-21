@@ -13,7 +13,7 @@ def inject_custom_css():
     except FileNotFoundError:
         st.warning("⚠️ style.css not found in /public.")
 
-    st.markdown("""
+    js_code = """
     <script>
     const fab = window.parent.document.querySelector('#ai-fab');
     if (!fab) {
@@ -40,7 +40,8 @@ def inject_custom_css():
         document.body.appendChild(btn);
     }
     </script>
-    """, unsafe_allow_html=True)
+    """
+    st.markdown(js_code, unsafe_allow_html=True)
 
 # ----------------------------
 # 💬 Floating Assistant
