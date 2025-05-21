@@ -53,18 +53,11 @@ def render_floating_assistant():
     if not user:
         return
 
-    with st.container():
-        show = st.session_state.get("show_assistant", False)
-        with st.expander("💬 Assistant", expanded=show):
-            ai_chat_ui()
-
-        # Optional toggle to control state manually
-        if "toggle_assistant" not in st.session_state:
-            st.session_state.toggle_assistant = False
-
-        if st.session_state.toggle_assistant:
-            st.session_state.show_assistant = not st.session_state.get("show_assistant", False)
-            st.session_state.toggle_assistant = False
+    st.markdown("<div style='position: fixed; bottom: 4rem; right: 2rem; width: 350px; z-index: 999;'>", unsafe_allow_html=True)
+    show = st.session_state.get("show_assistant", False)
+    with st.expander("💬 Assistant", expanded=show):
+        ai_chat_ui()
+    st.markdown("</div>", unsafe_allow_html=True)
 
 # ----------------------------
 # 📢 Event Mode Banner Wrapper
