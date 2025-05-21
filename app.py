@@ -1,6 +1,3 @@
-Analysis
-
-Always show details
 import streamlit as st
 from firebase_config import initialize_firebase
 initialize_firebase()
@@ -20,6 +17,7 @@ from notifications import notifications_sidebar
 from events import event_ui, get_active_event
 from post_event import post_event_ui
 from files import file_manager_ui
+from receipts import receipt_upload_ui
 from event_modifications import event_modifications_ui
 from audit import audit_log_ui
 from roles import role_admin_ui
@@ -39,6 +37,7 @@ TABS = {
     "Event Planner": "event_planner",
     "Recipes": "recipes",
     "Upload": "files",
+    "Receipts": "receipts",
     "Post-Event": "post_event",
     "Suggestions": "suggestions",
     "PDF Export": "pdf_export",
@@ -120,6 +119,9 @@ def main():
 
     elif selected_tab == "Upload":
         file_manager_ui(user)
+
+    elif selected_tab == "Receipts":
+        receipt_upload_ui(user)
 
     elif selected_tab == "Post-Event":
         post_event_ui(user)
