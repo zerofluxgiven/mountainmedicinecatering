@@ -1,72 +1,60 @@
 import streamlit as st
 from firebase_admin import firestore
 from auth import require_role
-from events import get_all_events
 from utils import format_date
-from datetime import datetime
 
 db = firestore.client()
-COLLECTION = "event_feedback"
+SUGGESTIONS = "suggestions"
 
-# -------------------------------
-# 🔍 Feedback Retrieval
-# -------------------------------
+# ----------------------------
+# 📥 Fetch Suggestions
+# ----------------------------
+def get_pending_suggestions():
+    docs = db.collection(SUGGESTIONS).where("status", "==", "pending").stream()
+    return [doc.to_dict() | {"id": doc.id} for doc in docs]
 
-def get_event_feedback(event_id):
-    doc = db.collection(COLLECTION).document(event_id).get()
-    return doc.to_dict() if doc.exists else {}
+def approve_suggestion(suggestion):
+    ref = db.collection(SUGGESTIONS).document(suggestion["id"])
+    ref.update({"status": "approved"})
 
-def save_event_feedback(event_id, feedback):
-    db.collection(COLLECTION).document(event_id).set(feedback, merge=True)
-    st.success("Feedback saved.")
+    # Apply to original doc
+    doc_ref = db.collection(suggestion["collection"]).document(suggestion["document_id"])
+    doc_ref.update({suggestion["field"]: suggestion["new_value"]})
 
-# -------------------------------
-# 🧾 Feedback Form
-# -------------------------------
+def reject_suggestion(suggestion):
+    ref = db.collection(SUGGESTIONS).document(suggestion["id"])
+    ref.update({"status": "rejected"})
 
-def feedback_form(event):
-    st.markdown(f"### ✏️ Post-Event Review: **{event['name']}**")
-    st.write(f"📍 {event['location']} on {format_date(event['date'])}")
-    st.write(f"👥 Guests: {event['guest_count']}")
-
-    existing = get_event_feedback(event["id"])
-
-    with st.form(f"feedback_{event['id']}"):
-        menu_notes = st.text_area("🍽️ Popular Menu Items", value=existing.get("menu_notes", ""))
-        leftovers = st.text_area("📦 Leftovers / Overages", value=existing.get("leftovers", ""))
-        timing = st.text_area("⏱️ Timing Accuracy (what ran late or early?)", value=existing.get("timing", ""))
-        forgotten = st.text_area("📝 Forgotten Items or Misses", value=existing.get("forgotten", ""))
-        improvements = st.text_area("💡 Improvements for Future Events", value=existing.get("improvements", ""))
-        submitted = st.form_submit_button("💾 Save Feedback")
-
-        if submitted:
-            feedback = {
-                "menu_notes": menu_notes,
-                "leftovers": leftovers,
-                "timing": timing,
-                "forgotten": forgotten,
-                "improvements": improvements,
-                "submitted_at": datetime.now(),
-            }
-            save_event_feedback(event["id"], feedback)
-
-# -------------------------------
-# 🖥️ Main UI
-# -------------------------------
-
-def post_event_ui(user):
-    st.subheader("📋 Post-Event Feedback")
+# ----------------------------
+# 🔍 Review UI
+# ----------------------------
+def event_modifications_ui(user):
+    st.subheader("✏️ Suggested Changes")
 
     if not require_role(user, "manager"):
-        st.warning("You must be a manager or admin to submit feedback.")
+        st.warning("You need manager or admin access to approve suggestions.")
         return
 
-    completed_events = [e for e in get_all_events() if e["status"] == "complete"]
-    if not completed_events:
-        st.info("No completed events found.")
+    suggestions = get_pending_suggestions()
+    if not suggestions:
+        st.info("No pending suggestions.")
         return
 
-    selected = st.selectbox("Select a Completed Event", completed_events, format_func=lambda e: e["name"])
+    for s in suggestions:
+        with st.expander(f"{s['field'].capitalize()} for {s['document_id']}"):
+            st.markdown(f"**Suggested by**: {s['user']['name']}")
+            st.markdown(f"**Old:** `{s['old_value']}`")
+            st.markdown(f"**New:** `{s['new_value']}`")
+            st.markdown(f"🕓 Submitted: {format_date(s['created_at'])}")
 
-    if selected:
-        feedback_form(selected)
+            col1, col2 = st.columns(2)
+            with col1:
+                if st.button("✅ Approve", key=f"approve_{s['id']}"):
+                    approve_suggestion(s)
+                    st.success("Approved.")
+                    st.experimental_rerun()
+            with col2:
+                if st.button("❌ Reject", key=f"reject_{s['id']}"):
+                    reject_suggestion(s)
+                    st.warning("Rejected.")
+                    st.experimental_rerun()
