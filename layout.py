@@ -14,6 +14,27 @@ def inject_custom_css():
     except FileNotFoundError:
         st.warning("⚠️ style.css not found in /public.")
 
+st.markdown("""
+    <script>
+    document.body.style.opacity = 0;
+    window.addEventListener("load", () => {
+        document.body.style.transition = "opacity 300ms";
+        document.body.style.opacity = 1;
+    });
+
+    const radioButtons = document.querySelectorAll('label[data-baseweb="radio"]');
+    radioButtons.forEach((btn, i) => {
+        btn.onclick = () => localStorage.setItem("selectedTab", i);
+    });
+    const saved = localStorage.getItem("selectedTab");
+    if (saved !== null) {
+        setTimeout(() => {
+            radioButtons[saved]?.click();
+        }, 200);
+    }
+    </script>
+    """, unsafe_allow_html=True)
+
 # ----------------------------
 # 📢 Event Mode Banner
 # ----------------------------
