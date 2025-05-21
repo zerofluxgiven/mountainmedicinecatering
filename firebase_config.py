@@ -4,10 +4,10 @@ import streamlit as st
 
 def initialize_firebase():
     if firebase_admin._apps:
-        return  # Already initialized
+        return  # Firebase already initialized
 
     try:
-        config = st.secrets["firebase"]
+        config = st.secrets["firebase_admin"]  # ✅ Use your correct secret block name
         cred = credentials.Certificate({
             "type": config["type"],
             "project_id": config["project_id"],
@@ -18,11 +18,12 @@ def initialize_firebase():
             "auth_uri": config["auth_uri"],
             "token_uri": config["token_uri"],
             "auth_provider_x509_cert_url": config["auth_provider_x509_cert_url"],
-            "client_x509_cert_url": config["client_x509_cert_url"]
+            "client_x509_cert_url": config["client_x509_cert_url"],
+            "universe_domain": config.get("universe_domain", "googleapis.com")
         })
 
         firebase_admin.initialize_app(cred)
         print("✅ Firebase initialized.")
     except Exception as e:
-        st.error("❌ Firebase initialization failed. Check your `secrets.toml` file.")
+        st.error("❌ Firebase initialization failed. Check your `secrets.toml` and service account.")
         raise e
