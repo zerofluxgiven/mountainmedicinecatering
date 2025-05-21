@@ -1,10 +1,16 @@
 import streamlit as st
+from firebase_admin import firestore
 
-# ----------------------------
-# 🏔️ Public Landing Page
-# ----------------------------
 def show():
     st.set_page_config(page_title="Mountain Medicine", layout="centered")
+
+    db = firestore.client()
+
+    # Dummy stats — replace with Firestore queries when collections are finalized
+    meals_cooked = 3240
+    recipes_shared = 182
+    retreats_catered = 29
+    guests_served = 1875
 
     # Top-right login button
     st.markdown("""
@@ -13,7 +19,7 @@ def show():
         </div>
     """, unsafe_allow_html=True)
 
-    # Centered logo/title/tagline
+    # Centered logo + title + tagline
     st.markdown("""
         <div style="text-align: center; margin-top: 4rem;">
             <div style="width: 100px; height: 100px; background-color: #ccc; border-radius: 50%; margin: 0 auto 1rem;">
@@ -26,18 +32,12 @@ def show():
         </div>
     """, unsafe_allow_html=True)
 
-    # Fun stats (placeholder)
     st.markdown("### 🍲 Impact Snapshot")
     col1, col2, col3, col4 = st.columns(4)
-    col1.metric("Meals Cooked", "3,240")
-    col2.metric("Recipes Shared", "182")
-    col3.metric("Retreats Catered", "29")
-    col4.metric("Guests Served", "1,875")
+    col1.metric("Meals Cooked", meals_cooked)
+    col2.metric("Recipes", recipes_shared)
+    col3.metric("Retreats", retreats_catered)
+    col4.metric("Guests Served", guests_served)
 
     st.markdown("---")
-
     st.info("Want to participate or help cook? Log in to view events, menus, and more.")
-
-# Optional for streamlit run command
-if __name__ == "__main__":
-    show()
