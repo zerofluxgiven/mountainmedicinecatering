@@ -15,6 +15,9 @@ firestore_client = firestore.client()
 # 📲 Google Sign-In Embed
 # ----------------------------
 def google_login_component():
+    if "user" in st.session_state:
+        return  # Already signed in
+
     st.markdown("### 🔐 Sign in with Google")
 
     keep_signed_in = st.checkbox("Keep me signed in", value=True, key="persist_checkbox")
