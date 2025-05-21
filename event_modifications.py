@@ -1,60 +1,97 @@
 import streamlit as st
 from firebase_admin import firestore
-from auth import require_role
-from utils import format_date
+from auth import require_role, get_user_info
+from utils import format_timestamp
+from notifications import send_notification
+from datetime import datetime
 
+# Firestore init
 db = firestore.client()
-SUGGESTIONS = "suggestions"
 
 # ----------------------------
-# 📥 Fetch Suggestions
+# 🔧 Suggestion Moderation UI
 # ----------------------------
-def get_pending_suggestions():
-    docs = db.collection(SUGGESTIONS).where("status", "==", "pending").stream()
-    return [doc.to_dict() | {"id": doc.id} for doc in docs]
-
-def approve_suggestion(suggestion):
-    ref = db.collection(SUGGESTIONS).document(suggestion["id"])
-    ref.update({"status": "approved"})
-
-    # Apply to original doc
-    doc_ref = db.collection(suggestion["collection"]).document(suggestion["document_id"])
-    doc_ref.update({suggestion["field"]: suggestion["new_value"]})
-
-def reject_suggestion(suggestion):
-    ref = db.collection(SUGGESTIONS).document(suggestion["id"])
-    ref.update({"status": "rejected"})
-
-# ----------------------------
-# 🔍 Review UI
-# ----------------------------
+@require_role("manager")
 def event_modifications_ui(user):
-    st.subheader("✏️ Suggested Changes")
+    st.title("📝 Review Suggestions")
+    st.caption("Approve or reject pending edits submitted by users or the AI assistant.")
 
-    if not require_role(user, "manager"):
-        st.warning("You need manager or admin access to approve suggestions.")
-        return
+    suggestions_ref = db.collection("suggestions")
+    query = suggestions_ref.where("status", "==", "pending")
 
-    suggestions = get_pending_suggestions()
+    # Optional: Filter to current event if in Event Mode
+    active_event_id = st.session_state.get("active_event")
+    if active_event_id:
+        query = query.where("event_id", "==", active_event_id)
+        st.info(f"Filtering by active event: `{active_event_id}`")
+
+    results = query.stream()
+    suggestions = [s.to_dict() for s in results]
+
     if not suggestions:
-        st.info("No pending suggestions.")
+        st.success("✅ No pending suggestions to review.")
         return
 
     for s in suggestions:
-        with st.expander(f"{s['field'].capitalize()} for {s['document_id']}"):
-            st.markdown(f"**Suggested by**: {s['user']['name']}")
-            st.markdown(f"**Old:** `{s['old_value']}`")
-            st.markdown(f"**New:** `{s['new_value']}`")
-            st.markdown(f"🕓 Submitted: {format_date(s['created_at'])}")
+        with st.expander(f"🗂️ {s.get('type', 'Unknown Type')} | Field: {s.get('field', 'Unknown')}"):
+            st.markdown(f"**Submitted by:** {s.get('created_by', 'unknown')} | **Time:** {format_timestamp(s.get('created_at'))}")
+            st.markdown(f"**Target ID:** `{s.get('target_id')}`")
+            st.markdown(f"**Original Value:**\n```
+{s.get('original_value')}```")
 
-            col1, col2 = st.columns(2)
+            new_val = st.text_area("Suggested Value:", value=s.get("suggested_value"), key=s['id'])
+            col1, col2 = st.columns([1, 1])
+
             with col1:
                 if st.button("✅ Approve", key=f"approve_{s['id']}"):
-                    approve_suggestion(s)
-                    st.success("Approved.")
-                    st.experimental_rerun()
+                    _apply_suggestion(s, new_val, user)
+                    st.success("Approved and applied.")
+
             with col2:
                 if st.button("❌ Reject", key=f"reject_{s['id']}"):
-                    reject_suggestion(s)
+                    _reject_suggestion(s, user)
                     st.warning("Rejected.")
-                    st.experimental_rerun()
+
+# ----------------------------
+# ✅ Apply Suggestion Logic
+# ----------------------------
+def _apply_suggestion(s, new_value, reviewer):
+    target_type = s.get("type")
+    target_id = s.get("target_id")
+    field = s.get("field")
+
+    # Lookup document based on type
+    target_ref = None
+    if target_type == "event_field":
+        target_ref = db.collection("events").document(target_id)
+    elif target_type == "menu_item":
+        target_ref = db.collection("menus").document(target_id)
+    elif target_type == "file_tag":
+        target_ref = db.collection("files").document(target_id)
+    elif target_type == "recipe_note":
+        target_ref = db.collection("recipes").document(target_id)
+    # More types can be added here
+
+    if target_ref:
+        target_ref.update({field: new_value})
+
+    # Update suggestion status
+    db.collection("suggestions").document(s['id']).update({
+        "status": "approved",
+        "reviewed_by": reviewer["id"],
+        "reviewed_at": datetime.utcnow()
+    })
+
+    send_notification(f"Suggestion approved and applied to {target_type}: {target_id}", role="admin")
+
+# ----------------------------
+# ❌ Reject Suggestion Logic
+# ----------------------------
+def _reject_suggestion(s, reviewer):
+    db.collection("suggestions").document(s['id']).update({
+        "status": "rejected",
+        "reviewed_by": reviewer["id"],
+        "reviewed_at": datetime.utcnow()
+    })
+
+    send_notification(f"Suggestion rejected for {s.get('type')} {s.get('target_id')}", role="admin")
