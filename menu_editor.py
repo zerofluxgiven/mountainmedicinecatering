@@ -1,115 +1,96 @@
 import streamlit as st
 from firebase_admin import firestore
-from auth import require_role
-from tags import get_suggested_tag, increment_tag_usage
-from suggestions import suggestion_input, ai_submit_suggestion
-from event_mode import is_locked, get_scoped_event_id
-from layout import show_locked_notice, show_event_tag_label
-from utils import generate_id
+from auth import require_login, get_user_role
+from utils import format_date, suggest_edit_box
+from datetime import datetime
 
+# Firestore init
 db = firestore.client()
-COLLECTION = "menu_items"
 
 # ----------------------------
-# 📦 Data Access
+# 🍽️ Menu Editor UI
 # ----------------------------
-def get_menu_items(event_id=None):
-    ref = db.collection(COLLECTION)
-    if event_id:
-        ref = ref.where("event_id", "==", event_id)
-    docs = ref.order_by("name").stream()
-    return [doc.to_dict() | {"id": doc.id} for doc in docs]
-
-def get_menu_item(item_id):
-    doc = db.collection(COLLECTION).document(item_id).get()
-    return doc.to_dict() | {"id": doc.id} if doc.exists else None
-
-def add_menu_item(name, tags, event_id, uploaded_by):
-    item_id = generate_id("menu")
-    db.collection(COLLECTION).document(item_id).set({
-        "id": item_id,
-        "name": name,
-        "tags": tags,
-        "event_id": event_id,
-        "leftovers": "",
-        "notes": "",
-        "created_at": firestore.SERVER_TIMESTAMP,
-        "uploaded_by": uploaded_by,
-    })
-    for tag in tags:
-        increment_tag_usage(tag)
-    st.success("Item added.")
-
-# ----------------------------
-# ✏️ Editor
-# ----------------------------
-def menu_item_editor(item, user):
-    st.markdown("### 🍽️ Menu Item")
-    show_event_tag_label(item["event_id"])
-
-    locked = is_locked(item["event_id"])
-    if locked:
-        show_locked_notice()
-
-    name = suggestion_input(
-        "Name", item["name"], "menu_item", item["id"], user
-    ) if locked else st.text_input("Name", item["name"])
-
-    tags_str = ", ".join(item.get("tags", []))
-    tags_input = suggestion_input(
-        "Tags (comma-separated)", tags_str, "menu_item", item["id"], user
-    ) if locked else st.text_input("Tags (comma-separated)", tags_str)
-
-    leftovers = suggestion_input(
-        "Leftovers / Overages", item.get("leftovers", ""), "menu_item", item["id"], user
-    ) if locked else st.text_area("Leftovers / Overages", item.get("leftovers", ""))
-
-    notes = suggestion_input(
-        "Staff Notes", item.get("notes", ""), "menu_item", item["id"], user
-    ) if locked else st.text_area("Staff Notes", item.get("notes", ""))
-
-    if not locked and st.button("💾 Save Changes", key=f"save_{item['id']}"):
-        updated_tags = [get_suggested_tag(t.strip()) for t in tags_input.split(",") if t.strip()]
-        db.collection(COLLECTION).document(item["id"]).update({
-            "name": name,
-            "tags": updated_tags,
-            "leftovers": leftovers,
-            "notes": notes,
-            "edited_by": "user",
-        })
-        for tag in updated_tags:
-            increment_tag_usage(tag)
-        st.success("Changes saved.")
-        st.experimental_rerun()
-
-# ----------------------------
-# 📋 UI Entry
-# ----------------------------
+@require_login
 def menu_editor_ui(user):
-    st.subheader("🍽️ Menu Editor")
+    st.title("🍽️ Menu Editor")
 
-    scoped_event_id = get_scoped_event_id()
-    menu_items = get_menu_items(event_id=scoped_event_id)
+    role = get_user_role(user)
+    active_event = st.session_state.get("active_event")
 
-    st.write("### Current Menu Items")
-    for item in menu_items:
-        with st.expander(f"{item['name']}"):
-            menu_item_editor(item, user)
+    query = db.collection("menus")
+    if active_event:
+        query = query.where("event_id", "==", active_event)
+        st.info(f"Viewing menu for event: `{active_event}`")
+    else:
+        st.warning("No active event selected. Showing all menus.")
 
-    st.write("### ➕ Add New Item")
-    if not require_role(user, "manager"):
-        st.warning("You need manager access to add items.")
+    menus = [doc.to_dict() for doc in query.stream()]
+
+    if not menus:
+        st.info("No menu items found.")
         return
 
-    if not scoped_event_id:
-        st.info("No active event selected.")
-        return
+    for m in menus:
+        with st.expander(f"{m.get('name', 'Unnamed')} ({m.get('category', 'No Category')})"):
+            locked = _is_locked()
 
-    with st.form("add_menu_item"):
-        name = st.text_input("New Item Name")
-        tags = st.text_input("Tags (comma-separated)")
-        submitted = st.form_submit_button("Add")
-        if submitted and name:
-            tag_list = [get_suggested_tag(t.strip()) for t in tags.split(",") if t.strip()]
-            add_menu_item(name, tag_list, scoped_event_id, uploaded_by=user["name"])
-            st.experimental_rerun()
+            st.markdown(f"**Description:**")
+            suggest_edit_box(
+                user=user,
+                doc_type="menu_item",
+                doc_id=m["id"],
+                field="description",
+                current_value=m.get("description", ""),
+                locked=locked
+            )
+
+            st.markdown(f"**Ingredients:**")
+            suggest_edit_box(
+                user=user,
+                doc_type="menu_item",
+                doc_id=m["id"],
+                field="ingredients",
+                current_value=m.get("ingredients", ""),
+                locked=locked
+            )
+
+            st.markdown(f"**Tags:**")
+            suggest_edit_box(
+                user=user,
+                doc_type="menu_item",
+                doc_id=m["id"],
+                field="tags",
+                current_value=", ".join(m.get("tags", [])),
+                locked=locked
+            )
+
+            if m.get("event_id") and _event_is_complete(m.get("event_id")):
+                _render_feedback(m)
+
+# ----------------------------
+# 🔒 Lock Logic
+# ----------------------------
+def _is_locked():
+    event_id = st.session_state.get("active_event")
+    if not event_id:
+        return False
+    doc = db.collection("events").document(event_id).get().to_dict()
+    return doc and doc.get("status") != "planning"
+
+# ----------------------------
+# ✅ Completed Event Feedback
+# ----------------------------
+def _render_feedback(menu):
+    st.markdown("---")
+    st.subheader("📊 Post-Event Feedback")
+
+    feedback = menu.get("feedback", {})
+    popularity = feedback.get("popularity")
+    comments = feedback.get("comments")
+
+    if popularity:
+        st.markdown(f"**Popularity Score:** {popularity}/5")
+    if comments:
+        st.markdown(f"**Comments:** {comments}")
+    else:
+        st.markdown("_No feedback submitted._")
