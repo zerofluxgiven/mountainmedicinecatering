@@ -36,7 +36,6 @@ def event_planning_dashboard_ui(event_id):
     render_event_toolbar(event_id, context="editing")
 
     st.markdown("# 📝 Event Planning Dashboard")
-    st.markdown("<div style='margin-top: 5rem'></div>", unsafe_allow_html=True)
 
     with st.form("event_form"):
         name = st.text_input("Event Name", value=event.get("name", ""))
@@ -64,7 +63,7 @@ def event_planning_dashboard_ui(event_id):
 
         st.markdown("## 🤖 Assistant Suggestions")
         st.info("Parsed files will generate suggested content updates. Preview and confirm below:")
-        # Placeholder: Show assistant-parsed data preview here
+        # TODO: Display assistant-parsed suggestions and confirmation toggles here
 
         if st.form_submit_button("💾 Save Changes"):
             data = {
