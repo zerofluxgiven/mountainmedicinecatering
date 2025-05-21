@@ -1,60 +1,57 @@
 import streamlit as st
 from firebase_admin import firestore
 from auth import require_role
-from utils import format_date
+from event_mode import get_scoped_event_id
 
 db = firestore.client()
-SUGGESTIONS = "suggestions"
 
 # ----------------------------
-# 📥 Fetch Suggestions
+# 🧾 Submit Post-Event Notes
 # ----------------------------
-def get_pending_suggestions():
-    docs = db.collection(SUGGESTIONS).where("status", "==", "pending").stream()
-    return [doc.to_dict() | {"id": doc.id} for doc in docs]
-
-def approve_suggestion(suggestion):
-    ref = db.collection(SUGGESTIONS).document(suggestion["id"])
-    ref.update({"status": "approved"})
-
-    # Apply to original doc
-    doc_ref = db.collection(suggestion["collection"]).document(suggestion["document_id"])
-    doc_ref.update({suggestion["field"]: suggestion["new_value"]})
-
-def reject_suggestion(suggestion):
-    ref = db.collection(SUGGESTIONS).document(suggestion["id"])
-    ref.update({"status": "rejected"})
+def submit_post_event_feedback(event_id, feedback):
+    db.collection("events").document(event_id).update({
+        "post_event_feedback": feedback
+    })
+    st.success("✅ Post-event feedback saved.")
 
 # ----------------------------
-# 🔍 Review UI
+# 📝 UI for Post-Event Summary
 # ----------------------------
-def event_modifications_ui(user):
-    st.subheader("✏️ Suggested Changes")
+def post_event_ui(user):
+    st.subheader("📦 Post-Event Interview")
 
     if not require_role(user, "manager"):
-        st.warning("You need manager or admin access to approve suggestions.")
+        st.warning("Manager access required to fill out post-event interviews.")
         return
 
-    suggestions = get_pending_suggestions()
-    if not suggestions:
-        st.info("No pending suggestions.")
+    event_id = get_scoped_event_id()
+    if not event_id:
+        st.info("No active event selected.")
         return
 
-    for s in suggestions:
-        with st.expander(f"{s['field'].capitalize()} for {s['document_id']}"):
-            st.markdown(f"**Suggested by**: {s['user']['name']}")
-            st.markdown(f"**Old:** `{s['old_value']}`")
-            st.markdown(f"**New:** `{s['new_value']}`")
-            st.markdown(f"🕓 Submitted: {format_date(s['created_at'])}")
+    doc = db.collection("events").document(event_id).get()
+    if not doc.exists:
+        st.error("Event not found.")
+        return
 
-            col1, col2 = st.columns(2)
-            with col1:
-                if st.button("✅ Approve", key=f"approve_{s['id']}"):
-                    approve_suggestion(s)
-                    st.success("Approved.")
-                    st.experimental_rerun()
-            with col2:
-                if st.button("❌ Reject", key=f"reject_{s['id']}"):
-                    reject_suggestion(s)
-                    st.warning("Rejected.")
-                    st.experimental_rerun()
+    event = doc.to_dict()
+    st.markdown(f"### {event.get('name', 'Unnamed Event')} — Feedback Form")
+
+    existing = event.get("post_event_feedback", {})
+
+    with st.form("post_event_feedback"):
+        popularity = st.text_area("🍽️ Popular Menu Items", value=existing.get("popularity", ""))
+        leftovers = st.text_area("📦 Leftovers or Overages", value=existing.get("leftovers", ""))
+        issues = st.text_area("🚫 Problems / Issues", value=existing.get("issues", ""))
+        improvements = st.text_area("💡 Future Improvements", value=existing.get("improvements", ""))
+        missing = st.text_area("❗ Forgotten / Missing Items", value=existing.get("missing", ""))
+        submitted = st.form_submit_button("💾 Save Feedback")
+
+        if submitted:
+            submit_post_event_feedback(event_id, {
+                "popularity": popularity,
+                "leftovers": leftovers,
+                "issues": issues,
+                "improvements": improvements,
+                "missing": missing,
+            })
