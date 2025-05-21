@@ -10,7 +10,6 @@ COLLECTION = "suggestions"
 # ----------------------------
 # 📥 Create Suggestion
 # ----------------------------
-
 def create_suggestion(document_type, document_id, field, current_value, suggested_value, user):
     suggestion_id = generate_id("sugg")
     db.collection(COLLECTION).document(suggestion_id).set({
@@ -31,7 +30,6 @@ def create_suggestion(document_type, document_id, field, current_value, suggeste
 # ----------------------------
 # 📝 Input Component
 # ----------------------------
-
 def suggestion_input(field_name, current_value, document_type, document_id, user):
     st.write(f"🔒 *{field_name} is locked (Event Mode)*")
     suggestion = st.text_input(f"💡 Suggest new {field_name}", value=current_value, key=f"suggest_{field_name}")
@@ -42,7 +40,6 @@ def suggestion_input(field_name, current_value, document_type, document_id, user
 # ----------------------------
 # ✅ Approvals + Rejections
 # ----------------------------
-
 def approve_suggestion(suggestion_id):
     db.collection(COLLECTION).document(suggestion_id).update({
         "status": "approved",
@@ -60,7 +57,6 @@ def reject_suggestion(suggestion_id):
 # ----------------------------
 # 🔎 Fetching + Filtering
 # ----------------------------
-
 def get_pending_suggestions():
     docs = db.collection(COLLECTION).where("status", "==", "pending").order_by("created_at", direction=firestore.Query.DESCENDING).stream()
     return [doc.to_dict() for doc in docs]
