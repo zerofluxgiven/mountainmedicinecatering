@@ -33,6 +33,7 @@ def event_planning_dashboard_ui(event_id):
         st.error("Event not found")
         return
 
+    st.markdown("<div style='margin-top: 3.5rem'></div>", unsafe_allow_html=True)  # Spacer for sticky nav
     render_event_toolbar(event_id, context="editing")
 
     st.markdown("# 📝 Event Planning Dashboard")
