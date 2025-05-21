@@ -27,13 +27,15 @@ def event_planning_dashboard_ui(event_id):
         st.warning("Login required")
         return
 
-    st.markdown("# 📝 Event Planning Dashboard")
     event = get_event_data(event_id)
     if not event:
         st.error("Event not found")
         return
 
-    st.markdown("""
+    st.markdown("# 📝 Event Planning Dashboard")
+
+    name = event.get("name", "Unnamed Event")
+    st.markdown(f"""
         <div style='position:fixed; top:0; right:0; background:#6C4AB6; color:white; padding:0.5rem 1rem; border-bottom-left-radius:8px; z-index:1000;'>
             <b>Editing:</b> {name} &nbsp;&nbsp;
             <a href='?mode=leave' style='color:white; text-decoration:underline;'>🚪 Leave</a> &nbsp;&nbsp;
@@ -41,6 +43,8 @@ def event_planning_dashboard_ui(event_id):
             <a href='?mode=switch' style='color:white; text-decoration:underline;'>🔁 Switch</a>
         </div>
     """, unsafe_allow_html=True)
+
+    st.markdown("<div style='margin-top: 5rem'></div>", unsafe_allow_html=True)
 
     with st.form("event_form"):
         name = st.text_input("Event Name", value=event.get("name", ""))
