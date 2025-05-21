@@ -4,8 +4,11 @@ from utils import session_get
 from event_mode import get_event_context
 from firebase_admin import firestore
 
-# Initialize OpenAI
-openai.api_key = st.secrets["OPENAI_API_KEY"]
+# ✅ Fixed key access for OpenAI secret
+openai.api_key = st.secrets["openai"]["api_key"]
+
+db = firestore.client()
+
 db = firestore.client()
 
 # ----------------------------
