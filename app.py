@@ -2,7 +2,7 @@ import streamlit as st
 from firebase_config import initialize_firebase
 initialize_firebase()
 
-# 🔐 Auth & Roles
+# 🔐 Auth & Permissions
 from auth import load_user_session, require_role
 from utils import format_date
 from layout import (
@@ -13,7 +13,7 @@ from layout import (
 )
 from notifications import notifications_sidebar
 
-# 🌟 Core Feature Modules
+# 🌟 App Modules
 from events import event_ui, get_active_event
 from post_event import post_event_ui
 from files import file_manager_ui
@@ -25,8 +25,8 @@ from ai_chat import ai_chat_ui
 from pdf_export import pdf_export_ui
 from menu_editor import menu_editor_ui
 
-# 🧪 Feature Flag
-PUBLIC_MODE = False  # Set to True to simulate guest view
+# ⚙️ Config
+PUBLIC_MODE = False  # Set to True for guest access
 
 # 📂 Tab Routing
 TABS = {
@@ -43,49 +43,45 @@ TABS = {
     "Assistant": "assistant"
 }
 
-
+# ----------------------------
+# 🚀 Main App
+# ----------------------------
 def main():
     st.set_page_config(page_title="Mountain Medicine Catering", layout="wide")
 
+    # 💅 Style & JS
     inject_custom_css()
+    render_floating_assistant()
+
+    # 🔐 Auth
     user = load_user_session()
 
+    # 🪧 Public mode
     if PUBLIC_MODE and not user:
-       from landing import show as show_landing
-       show_landing()
-       return
+        from landing import show as show_landing
+        show_landing()
+        return
 
-
-    # 🧭 Public mode — redirect to landing page
-    if PUBLIC_MODE and not user:
-        st.switch_page("landing.py")
-
-    render_floating_assistant() if user else None
-    show_event_mode_banner()
-
-    # 🧭 Top title
+    # 🧭 Logged-in navigation
     st.markdown("## 🌄 Mountain Medicine Catering")
 
-    # 🔔 Sidebar status
     if user:
         st.sidebar.write(f"👤 Logged in as **{user.get('name', 'User')}**")
         notifications_sidebar(user)
     else:
         st.sidebar.write("👀 Viewing as guest")
 
-    # 🚀 Top Navbar Navigation
-    nav_tabs = list(TABS.keys())
+    show_event_mode_banner()
+    selected_tab = render_top_navbar(list(TABS.keys()))
 
-    # Hide restricted tabs in public mode
-    if PUBLIC_MODE and not user:
-        nav_tabs = [tab for tab in nav_tabs if tab not in ("Dashboard", "Assistant")]
-
-    selected_tab = render_top_navbar(nav_tabs)
-
-    # --------------------
-    # Page Routing
-    # --------------------
+    # -----------------------------------
+    # 🔀 Tab Routing Logic
+    # -----------------------------------
     if selected_tab == "Dashboard":
+        if PUBLIC_MODE:
+            st.warning("Dashboard is private.")
+            return
+
         event = get_active_event()
         if event:
             st.success(f"📅 Active Event: **{event.get('name', 'Unnamed')}**")
@@ -104,7 +100,6 @@ def main():
             st.checkbox("Checked inventory and supplies")
         else:
             st.info("No active event is currently set.")
-            st.markdown("You can activate an event in the **Events** tab.")
 
     elif selected_tab == "Events":
         event_ui(user)
@@ -144,7 +139,6 @@ def main():
             ai_chat_ui()
         else:
             st.warning("🔒 Login required to use the assistant.")
-
 
 if __name__ == "__main__":
     main()
