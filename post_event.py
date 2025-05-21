@@ -1,3 +1,4 @@
+
 import streamlit as st
 from firebase_admin import firestore
 from auth import require_role
@@ -5,18 +6,12 @@ from event_mode import get_scoped_event_id
 
 db = firestore.client()
 
-# ----------------------------
-# 🧾 Submit Post-Event Notes
-# ----------------------------
 def submit_post_event_feedback(event_id, feedback):
     db.collection("events").document(event_id).update({
         "post_event_feedback": feedback
     })
     st.success("✅ Post-event feedback saved.")
 
-# ----------------------------
-# 📝 UI for Post-Event Summary
-# ----------------------------
 def post_event_ui(user):
     st.subheader("📦 Post-Event Interview")
 
@@ -36,7 +31,6 @@ def post_event_ui(user):
 
     event = doc.to_dict()
     st.markdown(f"### {event.get('name', 'Unnamed Event')} — Feedback Form")
-
     existing = event.get("post_event_feedback", {})
 
     with st.form("post_event_feedback"):
