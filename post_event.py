@@ -1,51 +1,67 @@
-
 import streamlit as st
 from firebase_admin import firestore
 from auth import require_role
-from event_mode import get_scoped_event_id
+from utils import format_date
+from datetime import datetime
 
+# Firestore init
 db = firestore.client()
 
-def submit_post_event_feedback(event_id, feedback):
-    db.collection("events").document(event_id).update({
-        "post_event_feedback": feedback
-    })
-    st.success("✅ Post-event feedback saved.")
-
+# ----------------------------
+# 📋 Post-Event Interview
+# ----------------------------
+@require_role("manager")
 def post_event_ui(user):
-    st.subheader("📦 Post-Event Interview")
+    st.title("📋 Post-Event Interview")
 
-    if not require_role(user, "manager"):
-        st.warning("Manager access required to fill out post-event interviews.")
+    active_event = st.session_state.get("active_event")
+    if not active_event:
+        st.warning("No active event selected.")
         return
 
-    event_id = get_scoped_event_id()
-    if not event_id:
-        st.info("No active event selected.")
+    event_ref = db.collection("events").document(active_event)
+    event_doc = event_ref.get().to_dict()
+
+    if not event_doc or event_doc.get("status") != "complete":
+        st.warning("Post-event feedback is only available for completed events.")
         return
 
-    doc = db.collection("events").document(event_id).get()
-    if not doc.exists:
-        st.error("Event not found.")
-        return
+    st.subheader(f"Event: {event_doc.get('name')} ({format_date(event_doc.get('date'))})")
 
-    event = doc.to_dict()
-    st.markdown(f"### {event.get('name', 'Unnamed Event')} — Feedback Form")
-    existing = event.get("post_event_feedback", {})
+    # Popularity ratings for each menu item
+    st.markdown("### 🍽️ Menu Popularity")
+    menus = db.collection("menus").where("event_id", "==", active_event).stream()
+    menu_popularity = {}
+    for menu in menus:
+        m = menu.to_dict()
+        rating = st.slider(f"{m.get('name', 'Unnamed Item')}", 1, 5, 3)
+        menu_popularity[m["id"]] = rating
 
-    with st.form("post_event_feedback"):
-        popularity = st.text_area("🍽️ Popular Menu Items", value=existing.get("popularity", ""))
-        leftovers = st.text_area("📦 Leftovers or Overages", value=existing.get("leftovers", ""))
-        issues = st.text_area("🚫 Problems / Issues", value=existing.get("issues", ""))
-        improvements = st.text_area("💡 Future Improvements", value=existing.get("improvements", ""))
-        missing = st.text_area("❗ Forgotten / Missing Items", value=existing.get("missing", ""))
-        submitted = st.form_submit_button("💾 Save Feedback")
+    st.markdown("### 🥡 Leftovers or Overages")
+    leftovers_notes = st.text_area("Leftovers, extra food, or waste:")
 
-        if submitted:
-            submit_post_event_feedback(event_id, {
-                "popularity": popularity,
-                "leftovers": leftovers,
-                "issues": issues,
+    st.markdown("### ⏱️ Timing Issues")
+    timing_issues = st.text_area("Notes about prep/service timing:")
+
+    st.markdown("### 🛠️ Issues + Improvements")
+    improvements = st.text_area("Problems encountered + ideas for next time:")
+
+    st.markdown("### 🧾 Forgotten / Missing Items")
+    forgotten_items = st.text_area("Things that were forgotten or should be added:")
+
+    if st.button("✅ Save Summary & Generate PDF"):
+        event_ref.update({
+            "post_event_summary": {
+                "menu_popularity": menu_popularity,
+                "leftovers_notes": leftovers_notes,
+                "timing_issues": timing_issues,
                 "improvements": improvements,
-                "missing": missing,
-            })
+                "forgotten_items": forgotten_items,
+                "completed_by": user["id"],
+                "completed_at": datetime.utcnow(),
+            }
+        })
+        st.success("Post-event summary saved. Generating PDF...")
+        from pdf_export import generate_event_summary_pdf
+        generate_event_summary_pdf(active_event)
+        st.info("📄 PDF summary generated and ready for download.")
