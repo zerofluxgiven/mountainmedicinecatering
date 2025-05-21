@@ -12,7 +12,7 @@ def inject_custom_css():
     except FileNotFoundError:
         st.warning("⚠️ style.css not found in /public.")
 
-    # Inject JavaScript for toggle button and assistant state
+    # Inject floating assistant button via JS
     st.markdown("""
     <script>
     const fab = window.parent.document.querySelector('#ai-fab');
@@ -43,7 +43,7 @@ def inject_custom_css():
     """, unsafe_allow_html=True)
 
 # ----------------------------
-# 🧠 Assistant Floating Panel
+# 💬 Assistant Floating Panel
 # ----------------------------
 def render_floating_assistant():
     user = session_get("user")
@@ -55,16 +55,16 @@ def render_floating_assistant():
     with st.expander("💬 Assistant", expanded=False):
         ai_chat_ui()
 
-    # Hidden button for JS to trigger
+    # Hidden Streamlit button toggled by JS
     st.button("toggle", key="streamlit-assistant-toggle", on_click=toggle_assistant_visibility)
     st.markdown("</div>", unsafe_allow_html=True)
 
 def toggle_assistant_visibility():
-    show = st.session_state.get("show_assistant", False)
-    st.session_state["show_assistant"] = not show
+    current = st.session_state.get("show_assistant", False)
+    st.session_state["show_assistant"] = not current
 
 # ----------------------------
-# 📢 Event Mode Banner Wrapper
+# 📢 Event Mode Banner
 # ----------------------------
 def show_event_mode_banner():
     from events import get_active_event
@@ -85,3 +85,18 @@ def show_event_mode_banner():
         <br>✏️ Only content tagged to this event is editable.
     </div>
     """, unsafe_allow_html=True)
+
+# ----------------------------
+# 🧭 Top Navigation Bar
+# ----------------------------
+def render_top_navbar(tabs):
+    st.markdown("<div class='nav-tabs'>", unsafe_allow_html=True)
+    selected = st.radio(
+        "Navigation",
+        tabs,
+        key="top_nav",
+        horizontal=True,
+        label_visibility="collapsed"
+    )
+    st.markdown("</div>", unsafe_allow_html=True)
+    return selected
