@@ -50,6 +50,12 @@ def main():
     inject_custom_css()
     user = load_user_session()
 
+    if PUBLIC_MODE and not user:
+       from landing import show as show_landing
+       show_landing()
+       return
+
+
     # 🧭 Public mode — redirect to landing page
     if PUBLIC_MODE and not user:
         st.switch_page("landing.py")
