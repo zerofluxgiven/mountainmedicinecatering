@@ -17,8 +17,38 @@ from audit import audit_log_ui
 from pdf_export import pdf_export_ui
 from post_event import post_event_ui
 from ai_chat import ai_chat_ui
+import streamlit as st
+import streamlit as st
+from ai_chat import ai_chat_ui
+from layout import inject_custom_css, render_floating_assistant, show_event_mode_banner
+
+# Inject custom CSS and JavaScript
+inject_custom_css()
+
+# Render floating assistant button
+render_floating_assistant()
+
+# Show event mode banner if applicable
+show_event_mode_banner()
+
+# Define available pages
+PAGES = {
+    "Dashboard": "pages.dashboard",
+    "Events": "pages.events",
+    "Assistant": "pages.assistant"
+}
+
+# Sidebar navigation
+st.sidebar.title("Navigation")
+selection = st.sidebar.radio("Go to", list(PAGES.keys()))
+
+# Load the selected page
+page_module = __import__(PAGES[selection], fromlist=["show"])
+page_module.show()
+
 
 # 🎨 Layout Helpers
+
 from layout import show_event_mode_banner, inject_custom_css
 from utils import format_date
 
