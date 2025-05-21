@@ -4,6 +4,7 @@ from utils import session_get
 from menu_editor import render_menu_editor
 from files import upload_ui
 from datetime import datetime
+from layout import render_event_toolbar
 
 # ----------------------------
 # 🧾 Load Event Data
@@ -32,18 +33,9 @@ def event_planning_dashboard_ui(event_id):
         st.error("Event not found")
         return
 
+    render_event_toolbar(event_id, context="editing")
+
     st.markdown("# 📝 Event Planning Dashboard")
-
-    name = event.get("name", "Unnamed Event")
-    st.markdown(f"""
-        <div style='position:fixed; top:0; right:0; background:#6C4AB6; color:white; padding:0.5rem 1rem; border-bottom-left-radius:8px; z-index:1000;'>
-            <b>Editing:</b> {name} &nbsp;&nbsp;
-            <a href='?mode=leave' style='color:white; text-decoration:underline;'>🚪 Leave</a> &nbsp;&nbsp;
-            <a href='?mode=pause' style='color:white; text-decoration:underline;'>⏸️ Pause</a> &nbsp;&nbsp;
-            <a href='?mode=switch' style='color:white; text-decoration:underline;'>🔁 Switch</a>
-        </div>
-    """, unsafe_allow_html=True)
-
     st.markdown("<div style='margin-top: 5rem'></div>", unsafe_allow_html=True)
 
     with st.form("event_form"):
