@@ -1,87 +1,160 @@
 import streamlit as st
-import streamlit.components.v1 as components
-import firebase_admin
-from firebase_admin import auth as firebase_auth, firestore
-import json
+from firebase_config import initialize_firebase
+initialize_firebase()
 
-# Initialize Firebase Admin if not already initialized
-if not firebase_admin._apps:
-    firebase_admin.initialize_app()
+# 🔐 Auth & Permissions
+from auth import load_user_session, require_role
+from utils import format_date
+from layout import (
+    inject_custom_css,
+    render_top_navbar,
+    render_floating_assistant
+)
+from notifications import notifications_sidebar
 
-# Firestore client
-firestore_client = firestore.client()
+# 🌟 App Modules
+from events import event_ui, get_active_event
+from post_event import post_event_ui
+from files import file_manager_ui
+from receipts import receipt_upload_ui
+from event_modifications import event_modifications_ui
+from bulk_suggestions import bulk_suggestions_ui
+from audit import audit_log_ui
+from roles import role_admin_ui
+from tags import admin_tag_manager_ui
+from ai_chat import ai_chat_ui
+from pdf_export import pdf_export_ui
+from menu_editor import menu_editor_ui
+from event_planning_dashboard import event_planning_dashboard_ui
+
+# ⚙️ Config
+PUBLIC_MODE = False  # Set to True for guest access
+
+# 📂 Tab Routing
+TABS = {
+    "Dashboard": "dashboard",
+    "Events": "events",
+    "Event Planner": "event_planner",
+    "Recipes": "recipes",
+    "Upload": "files",
+    "Receipts": "receipts",
+    "Post-Event": "post_event",
+    "Suggestions": "suggestions",
+    "Bulk Suggestions": "bulk_suggestions",
+    "PDF Export": "pdf_export",
+    "Audit Logs": "audit_logs",
+    "Explore Tags": "tags",
+    "Admin Panel": "admin",
+    "Assistant": "assistant"
+}
 
 # ----------------------------
-# 📲 Google Sign-In Embed
+# 🚀 Main App
 # ----------------------------
-def google_login_component():
-    if "user" in st.session_state:
-        return  # Already signed in
+def main():
+    st.set_page_config(page_title="Mountain Medicine Catering", layout="wide")
 
-    st.markdown("### 🔐 Sign in with Google")
+    # 💅 Style & JS
+    inject_custom_css()
+    render_floating_assistant()
 
-    keep_signed_in = st.checkbox("Keep me signed in", value=True, key="persist_checkbox")
-    persistence = "LOCAL" if keep_signed_in else "SESSION"
+    # 🔐 Auth
+    user = load_user_session()
 
-    components.html(f"""
-    <!DOCTYPE html>
-    <html>
-    <head>
-        <script src=\"https://www.gstatic.com/firebasejs/9.6.1/firebase-app.js\"></script>
-        <script src=\"https://www.gstatic.com/firebasejs/9.6.1/firebase-auth.js\"></script>
-        <script>
-          const firebaseConfig = {{
-            apiKey: \"YOUR_API_KEY\",
-            authDomain: \"YOUR_PROJECT_ID.firebaseapp.com\",
-            projectId: \"YOUR_PROJECT_ID\",
-            storageBucket: \"YOUR_PROJECT_ID.appspot.com\",
-            messagingSenderId: \"YOUR_SENDER_ID\",
-            appId: \"YOUR_APP_ID\"
-          }};
+    # 🪧 Public mode
+    if PUBLIC_MODE and not user:
+        from landing import show as show_landing
+        show_landing()
+        return
 
-          firebase.initializeApp(firebaseConfig);
+    # 🧭 Logged-in navigation
+    st.markdown("## 🌄 Mountain Medicine Catering")
 
-          function signInWithGoogle() {{
-            const provider = new firebase.auth.GoogleAuthProvider();
-            const persistence = '{persistence}';
-            firebase.auth().setPersistence(firebase.auth.Auth.Persistence[persistence])
-              .then(() => firebase.auth().signInWithPopup(provider))
-              .then((result) => {{
-                const token = result.credential.idToken;
-                const user = result.user;
-                const payload = JSON.stringify({{ token, email: user.email, name: user.displayName }});
-                const streamlit = window.parent.Streamlit;
-                streamlit.setComponentValue(payload);
-              }})
-              .catch((error) => {{
-                console.error(\"Google Sign-In Error:\", error);
-              }});
-          }}
-        </script>
-    </head>
-    <body>
-        <button onclick=\"signInWithGoogle()\" style=\"padding:10px 20px;font-size:16px;\">Sign in with Google</button>
-    </body>
-    </html>
-    """, height=160)
+    if user:
+        st.sidebar.write(f"👤 Logged in as **{user.get('name', 'User')}**")
+        notifications_sidebar(user)
+    else:
+        st.sidebar.write("👀 Viewing as guest")
 
-    # Handle returned token from frontend
-    token_response = st.experimental_get_query_params().get("google_token")
-    if token_response:
-        try:
-            data = json.loads(token_response[0])
-            user_info = firebase_auth.verify_id_token(data["token"])
-            user_id = user_info["uid"]
+    selected_tab = render_top_navbar(list(TABS.keys()))
 
-            # Store or update user record
-            user_data = {
-                "id": user_id,
-                "email": data["email"],
-                "name": data["name"],
-            }
-            firestore_client.collection("users").document(user_id).set(user_data, merge=True)
-            st.session_state["user"] = user_data
-            st.success("✅ Logged in via Google.")
-            st.experimental_rerun()
-        except Exception as e:
-            st.error(f"Failed to verify token: {e}")
+    # -----------------------------------
+    # 🔀 Tab Routing Logic
+    # -----------------------------------
+    if selected_tab == "Dashboard":
+        if PUBLIC_MODE:
+            st.warning("Dashboard is private.")
+            return
+
+        event = get_active_event()
+        if event:
+            st.success(f"📅 Active Event: **{event.get('name', 'Unnamed')}**")
+            st.markdown(f"📍 Location: *{event.get('location', 'Unknown')}*")
+            st.markdown(f"🗓️ Date: *{format_date(event.get('date'))}*")
+
+            st.markdown("### Quick Status")
+            col1, col2, col3 = st.columns(3)
+            col1.metric("👥 Guests", event.get("guest_count", "-"))
+            col2.metric("🧑‍🍳 Staff", event.get("staff_count", "-"))
+            col3.metric("🍽️ Menu Items", len(event.get("menu", [])))
+
+            st.markdown("### ✅ Today's Checklist")
+            st.checkbox("Prep station setup complete")
+            st.checkbox("Reviewed schedule with staff")
+            st.checkbox("Checked inventory and supplies")
+        else:
+            st.info("No active event is currently set.")
+
+    elif selected_tab == "Events":
+        event_ui(user)
+
+    elif selected_tab == "Event Planner":
+        if user and "editing_event_id" in st.session_state:
+            event_planning_dashboard_ui(st.session_state["editing_event_id"])
+        else:
+            st.info("Select an event to edit from the Events tab.")
+
+    elif selected_tab == "Recipes":
+        menu_editor_ui(user)
+
+    elif selected_tab == "Upload":
+        file_manager_ui(user)
+
+    elif selected_tab == "Receipts":
+        receipt_upload_ui(user)
+
+    elif selected_tab == "Post-Event":
+        post_event_ui(user)
+
+    elif selected_tab == "Suggestions":
+        event_modifications_ui(user)
+
+    elif selected_tab == "Bulk Suggestions":
+        bulk_suggestions_ui()
+
+    elif selected_tab == "PDF Export":
+        pdf_export_ui(user)
+
+    elif selected_tab == "Audit Logs":
+        audit_log_ui(user)
+
+    elif selected_tab == "Explore Tags":
+        if user:
+            admin_tag_manager_ui()
+        else:
+            st.info("🔒 Login required to manage tags.")
+
+    elif selected_tab == "Admin Panel":
+        if require_role(user, "admin"):
+            role_admin_ui()
+        else:
+            st.warning("⚠️ Admin access required.")
+
+    elif selected_tab == "Assistant":
+        if user:
+            ai_chat_ui()
+        else:
+            st.warning("🔒 Login required to use the assistant.")
+
+if __name__ == "__main__":
+    main()
