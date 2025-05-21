@@ -19,6 +19,7 @@ from post_event import post_event_ui
 from files import file_manager_ui
 from receipts import receipt_upload_ui
 from event_modifications import event_modifications_ui
+from bulk_suggestions import bulk_suggestions_ui
 from audit import audit_log_ui
 from roles import role_admin_ui
 from tags import admin_tag_manager_ui
@@ -40,6 +41,7 @@ TABS = {
     "Receipts": "receipts",
     "Post-Event": "post_event",
     "Suggestions": "suggestions",
+    "Bulk Suggestions": "bulk_suggestions",
     "PDF Export": "pdf_export",
     "Audit Logs": "audit_logs",
     "Explore Tags": "tags",
@@ -128,6 +130,9 @@ def main():
 
     elif selected_tab == "Suggestions":
         event_modifications_ui(user)
+
+    elif selected_tab == "Bulk Suggestions":
+        bulk_suggestions_ui()
 
     elif selected_tab == "PDF Export":
         pdf_export_ui(user)
