@@ -45,11 +45,12 @@ def event_ui(user):
             cols = st.columns([1, 1, 6])
             if cols[0].button("⚡ Activate", key=f"act_{event['id']}"):
                 activate_event(event["id"])
-                st.experimental_rerun()
+                st.rerun()
 
             if cols[1].button("✏️ Edit/Plan", key=f"edit_{event['id']}"):
                 st.session_state["editing_event_id"] = event["id"]
-                st.switch_page("pages/event_planning_dashboard.py")
+                st.session_state["top_nav"] = "Event Planner"
+                st.rerun()
 
     show_event_mode_banner()
     if active_event_id:
