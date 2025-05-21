@@ -1,6 +1,6 @@
 import streamlit as st
 import openai
-from auth import require_login, get_user_role
+from auth import get_user_role
 from utils import format_date, generate_id
 from firebase_admin import firestore
 from datetime import datetime
