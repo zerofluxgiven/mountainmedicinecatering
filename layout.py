@@ -12,7 +12,7 @@ def inject_custom_css():
     except FileNotFoundError:
         st.warning("⚠️ style.css not found in /public.")
 
-    # JavaScript for floating assistant
+    # Inject JavaScript for toggle button and assistant state
     st.markdown("""
     <script>
     const fab = window.parent.document.querySelector('#ai-fab');
@@ -33,15 +33,12 @@ def inject_custom_css():
         btn.style.boxShadow = '0 4px 14px rgba(0,0,0,0.15)';
         btn.style.cursor = 'pointer';
         btn.style.zIndex = 1000;
-        btn.onclick = () => window.parent.postMessage({ type: 'toggle-assistant' }, '*');
+        btn.onclick = function() {
+            const el = window.parent.document.getElementById('streamlit-assistant-toggle');
+            if (el) el.click();
+        };
         document.body.appendChild(btn);
     }
-    window.addEventListener('message', (event) => {
-        if (event.data.type === 'assistant-mounted') {
-            const modal = window.parent.document.querySelector('#assistant-modal');
-            if (modal) modal.style.display = 'block';
-        }
-    });
     </script>
     """, unsafe_allow_html=True)
 
@@ -53,11 +50,18 @@ def render_floating_assistant():
     if not user:
         return
 
-    st.markdown("<div style='position: fixed; bottom: 4rem; right: 2rem; width: 350px; z-index: 999;'>", unsafe_allow_html=True)
-    show = st.session_state.get("show_assistant", False)
-    with st.expander("💬 Assistant", expanded=show):
+    st.markdown("<div style='position: fixed; bottom: 5rem; right: 2rem; width: 400px; z-index: 999;'>", unsafe_allow_html=True)
+
+    with st.expander("💬 Assistant", expanded=False):
         ai_chat_ui()
+
+    # Hidden button for JS to trigger
+    st.button("toggle", key="streamlit-assistant-toggle", on_click=toggle_assistant_visibility)
     st.markdown("</div>", unsafe_allow_html=True)
+
+def toggle_assistant_visibility():
+    show = st.session_state.get("show_assistant", False)
+    st.session_state["show_assistant"] = not show
 
 # ----------------------------
 # 📢 Event Mode Banner Wrapper
