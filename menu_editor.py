@@ -13,7 +13,6 @@ COLLECTION = "menu_items"
 # ----------------------------
 # 📦 Data Access
 # ----------------------------
-
 def get_menu_items(event_id=None):
     ref = db.collection(COLLECTION)
     if event_id:
@@ -44,7 +43,6 @@ def add_menu_item(name, tags, event_id, uploaded_by):
 # ----------------------------
 # ✏️ Editor
 # ----------------------------
-
 def menu_item_editor(item, user):
     st.markdown("### 🍽️ Menu Item")
     show_event_tag_label(item["event_id"])
@@ -86,7 +84,6 @@ def menu_item_editor(item, user):
 # ----------------------------
 # 📋 UI Entry
 # ----------------------------
-
 def menu_editor_ui(user):
     st.subheader("🍽️ Menu Editor")
 
@@ -115,4 +112,3 @@ def menu_editor_ui(user):
             tag_list = [get_suggested_tag(t.strip()) for t in tags.split(",") if t.strip()]
             add_menu_item(name, tag_list, scoped_event_id, uploaded_by=user["name"])
             st.experimental_rerun()
-
