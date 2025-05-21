@@ -1,121 +1,129 @@
 import streamlit as st
-from firebase_config import initialize_firebase
-initialize_firebase()
-
-# 🔐 Auth and permissions
-from auth import load_user_session, require_role
-
-# 📦 Core UI Modules
-from files import file_manager_ui
-from tags import admin_tag_manager_ui
-from events import event_ui, get_active_event
-from menu_editor import menu_editor_ui
-from event_modifications import event_modifications_ui
-from notifications import notifications_sidebar
-from roles import role_admin_ui
-from audit import audit_log_ui
-from pdf_export import pdf_export_ui
-from post_event import post_event_ui
-from ai_chat import ai_chat_ui
-
-# 🎨 Layout Helpers
-from layout import show_event_mode_banner, inject_custom_css
-from utils import format_date
-
-# ⚙️ Toggle this to simulate public or locked mode
-PUBLIC_MODE = False  # Set to True to disable login (view-only)
+import openai
+from utils import session_get
+from event_mode import get_event_context
+from firebase_admin import firestore
 
 # ----------------------------
-# 🚀 Main App Logic
+# 🔧 Modes and Colors
 # ----------------------------
-def main():
-    st.set_page_config(page_title="Mountain Medicine Catering", layout="wide")
-    inject_custom_css()
+MODES = {
+    "event": "Event Mode",
+    "app": "App Data Mode",
+    "global": "Freeform Global Mode"
+}
 
-    user = load_user_session()
-    if not PUBLIC_MODE and not user:
-        st.warning("Please log in to continue.")
+COLOR_MAP = {
+    "event": "#eae3f9",
+    "app": "#f0f0f0",
+    "global": "#fffcee"
+}
+
+# Firestore config ref
+CONFIG_COLLECTION = "system"
+CONFIG_DOC = "assistant_config"
+
+db = firestore.client()
+
+# ----------------------------
+# 🤖 Assistant UI
+# ----------------------------
+def ai_chat_ui():
+    user = session_get("user")
+    if not user:
+        st.info("🔒 Log in to use the assistant.")
         return
 
-    st.title("🌄 Mountain Medicine Catering")
+    st.subheader("🤖 Assistant")
 
-    if user:
-        st.sidebar.write(f"👤 Logged in as **{user.get('name', 'User')}**")
-        notifications_sidebar(user)
-    else:
-        st.sidebar.write("👀 Viewing as guest")
+    if "chat_history" not in st.session_state:
+        st.session_state.chat_history = []
 
-    tab = st.sidebar.radio("📚 Navigation", [
-        "Dashboard",
-        "Files",
-        "Tags",
-        "Menu",
-        "Events",
-        "Post-Event",
-        "Suggestions",
-        "PDF Export",
-        "Audit Logs",
-        "Admin Panel",
-        "Assistant"
-    ])
+    mode = st.radio("Context Mode", list(MODES.keys()), format_func=lambda m: MODES[m], horizontal=True, key="chat_mode")
+    bg_color = COLOR_MAP.get(mode, "#f5f5f5")
 
-    show_event_mode_banner()
+    config = get_assistant_config()
+    smart_prompts = config.get("smart_prompts", {}).get(mode, [])
 
-    if tab == "Dashboard":
-        st.subheader("📊 Dashboard Overview")
-        event = get_active_event()
-        if event:
-            st.success(f"📅 Active Event: **{event.get('name', 'Unnamed')}**")
-            st.markdown(f"📍 Location: *{event.get('location', 'Unknown')}*")
-            st.markdown(f"🗓️ Date: *{format_date(event.get('date'))}*")
+    with st.container():
+        st.markdown(f"<div style='background-color:{bg_color};padding:12px;border-radius:12px;'>", unsafe_allow_html=True)
 
-            st.markdown("### Quick Status")
-            col1, col2, col3 = st.columns(3)
-            col1.metric("👥 Guests", event.get("guest_count", "-"))
-            col2.metric("🧑‍🍳 Staff", event.get("staff_count", "-"))
-            col3.metric("🍽️ Menu Items", len(event.get("menu", [])))
+        # Smart Prompt Buttons
+        st.caption("💡 Suggestions:")
+        cols = st.columns(len(smart_prompts))
+        for i, suggestion in enumerate(smart_prompts):
+            if cols[i].button(suggestion):
+                st.session_state["ai_input"] = suggestion
 
-            st.markdown("### ✅ Today's Checklist")
-            st.checkbox("Prep station setup complete")
-            st.checkbox("Reviewed schedule with staff")
-            st.checkbox("Checked inventory and supplies")
-        else:
-            st.info("No active event is currently set.")
-            st.markdown("You can view or activate an upcoming event under the **Events** tab.")
+        # Input Area
+        prompt = st.text_area("Ask a question", key="ai_input", placeholder="e.g. Generate shopping list for current event")
+        submit = st.button("Send")
 
-    elif tab == "Files":
-        file_manager_ui(user)
+        if submit and prompt:
+            with st.spinner("Thinking..."):
+                response = handle_chat(prompt, mode, config)
+                st.session_state.chat_history.append({"mode": mode, "q": prompt, "a": response})
+                st.success(response)
 
-    elif tab == "Tags":
-        if user:
-            admin_tag_manager_ui()
+        st.markdown("</div>", unsafe_allow_html=True)
 
-    elif tab == "Menu":
-        menu_editor_ui(user)
+    # Show History
+    with st.expander("🕘 Previous Questions"):
+        for entry in reversed(st.session_state.chat_history):
+            st.markdown(f"**[{MODES[entry['mode']]}]** ❓ {entry['q']}")
+            st.markdown(f"> 💬 {entry['a']}")
 
-    elif tab == "Events":
-        event_ui(user)
+# ----------------------------
+# 🧠 AI Handler
+# ----------------------------
+def handle_chat(prompt, mode, config):
+    instructions = config.get("instructions", {})
+    temperature = config.get("temperature", 0.6)
+    max_tokens = config.get("max_tokens", 500)
 
-    elif tab == "Post-Event":
-        post_event_ui(user)
+    context = instructions.get(mode, "You are a helpful assistant.")
 
-    elif tab == "Suggestions":
-        event_modifications_ui(user)
+    if mode == "event":
+        event = get_event_context()
+        if not event:
+            return "⚠️ No active event. Enter Event Mode first."
+        if is_out_of_scope(prompt):
+            return "⚠️ That question seems outside the scope of Event Mode. Switch modes below?"
 
-    elif tab == "PDF Export":
-        pdf_export_ui(user)
+        context += (
+            f"\nEvent: '{event['name']}' on {event['date']}, "
+            f"Location: {event.get('location', 'unknown')}, "
+            f"Guests: {event.get('guest_count', '?')}\n"
+            f"Menu: {', '.join(event.get('menu', [])) or 'not listed'}"
+        )
 
-    elif tab == "Audit Logs":
-        audit_log_ui(user)
+    try:
+        response = openai.ChatCompletion.create(
+            model="gpt-4",
+            temperature=temperature,
+            max_tokens=max_tokens,
+            messages=[
+                {"role": "system", "content": context},
+                {"role": "user", "content": prompt}
+            ]
+        )
+        return response.choices[0].message["content"].strip()
+    except Exception as e:
+        return f"❌ AI Error: {e}"
 
-    elif tab == "Admin Panel":
-        if require_role(user, "admin"):
-            role_admin_ui()
-        else:
-            st.warning("Admin access required.")
+# ----------------------------
+# 🔍 Scope Guard
+# ----------------------------
+def is_out_of_scope(prompt: str) -> bool:
+    keywords = ["moon", "gpt", "president", "weather", "galaxy", "math class", "history of"]
+    return any(k in prompt.lower() for k in keywords)
 
-    elif tab == "Assistant":
-        ai_chat_ui()
-
-if __name__ == "__main__":
-    main()
+# ----------------------------
+# 🔧 Firestore Loader
+# ----------------------------
+def get_assistant_config():
+    ref = db.collection(CONFIG_COLLECTION).document(CONFIG_DOC)
+    doc = ref.get()
+    if doc.exists:
+        return doc.to_dict()
+    return {}
