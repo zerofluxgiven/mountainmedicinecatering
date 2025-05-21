@@ -1,75 +1,121 @@
 import streamlit as st
-from utils import session_get
-from event_mode import get_event_context
-from openai import OpenAI
+from firebase_config import initialize_firebase
+initialize_firebase()
+
+# 🔐 Auth and permissions
+from auth import load_user_session, require_role
+
+# 📦 Core UI Modules
+from files import file_manager_ui
+from tags import admin_tag_manager_ui
+from events import event_ui, get_active_event
+from menu_editor import menu_editor_ui
+from event_modifications import event_modifications_ui
+from notifications import notifications_sidebar
+from roles import role_admin_ui
+from audit import audit_log_ui
+from pdf_export import pdf_export_ui
+from post_event import post_event_ui
+from ai_chat import ai_chat_ui
+
+# 🎨 Layout Helpers
+from layout import show_event_mode_banner, inject_custom_css
+from utils import format_date
+
+# ⚙️ Toggle this to simulate public or locked mode
+PUBLIC_MODE = False  # Set to True to disable login (view-only)
 
 # ----------------------------
-# 🧠 Chat Mode Definitions
+# 🚀 Main App Logic
 # ----------------------------
+def main():
+    st.set_page_config(page_title="Mountain Medicine Catering", layout="wide")
+    inject_custom_css()
 
-MODES = {
-    "event": "Event Mode",
-    "app": "App Data Mode",
-    "global": "Freeform Global Mode"
-}
-
-COLOR_MAP = {
-    "event": "#eae3f9",
-    "app": "#f0f0f0",
-    "global": "#fffcee"
-}
-
-# ----------------------------
-# 🤖 Chat Assistant UI
-# ----------------------------
-
-def ai_chat_ui():
-    user = session_get("user")
-    if not user:
-        st.info("🔒 Log in to use the assistant.")
+    user = load_user_session()
+    if not PUBLIC_MODE and not user:
+        st.warning("Please log in to continue.")
         return
 
-    st.subheader("🤖 Assistant")
+    st.title("🌄 Mountain Medicine Catering")
 
-    mode = st.radio("Context Mode", options=list(MODES.keys()), format_func=lambda m: MODES[m], horizontal=True)
-    bg_color = COLOR_MAP.get(mode, "#f5f5f5")
+    if user:
+        st.sidebar.write(f"👤 Logged in as **{user.get('name', 'User')}**")
+        notifications_sidebar(user)
+    else:
+        st.sidebar.write("👀 Viewing as guest")
 
-    with st.container():
-        st.markdown(f"<div style='background-color:{bg_color};padding:10px;border-radius:10px;'>", unsafe_allow_html=True)
+    tab = st.sidebar.radio("📚 Navigation", [
+        "Dashboard",
+        "Files",
+        "Tags",
+        "Menu",
+        "Events",
+        "Post-Event",
+        "Suggestions",
+        "PDF Export",
+        "Audit Logs",
+        "Admin Panel",
+        "Assistant"
+    ])
 
-        prompt = st.text_area("Ask a question", key="ai_input", placeholder="e.g. Generate shopping list for current event")
-        submit = st.button("Send")
+    show_event_mode_banner()
 
-        if submit and prompt:
-            response = handle_chat(prompt, mode)
-            st.success(response)
+    if tab == "Dashboard":
+        st.subheader("📊 Dashboard Overview")
+        event = get_active_event()
+        if event:
+            st.success(f"📅 Active Event: **{event.get('name', 'Unnamed')}**")
+            st.markdown(f"📍 Location: *{event.get('location', 'Unknown')}*")
+            st.markdown(f"🗓️ Date: *{format_date(event.get('date'))}*")
 
-        st.markdown("</div>", unsafe_allow_html=True)
+            st.markdown("### Quick Status")
+            col1, col2, col3 = st.columns(3)
+            col1.metric("👥 Guests", event.get("guest_count", "-"))
+            col2.metric("🧑‍🍳 Staff", event.get("staff_count", "-"))
+            col3.metric("🍽️ Menu Items", len(event.get("menu", [])))
 
-# ----------------------------
-# 🧠 AI Handler Function
-# ----------------------------
+            st.markdown("### ✅ Today's Checklist")
+            st.checkbox("Prep station setup complete")
+            st.checkbox("Reviewed schedule with staff")
+            st.checkbox("Checked inventory and supplies")
+        else:
+            st.info("No active event is currently set.")
+            st.markdown("You can view or activate an upcoming event under the **Events** tab.")
 
-def handle_chat(prompt, mode):
-    context = {}
+    elif tab == "Files":
+        file_manager_ui(user)
 
-    if mode == "event":
-        context = get_event_context()
-        if not context:
-            return "⚠️ You're not currently in an active event."
-        if is_out_of_scope(prompt):
-            return "This question seems outside the scope of Event Mode. Switch to another mode?"
+    elif tab == "Tags":
+        if user:
+            admin_tag_manager_ui()
 
-    elif mode == "app":
-        context = {"app_scope": "mountainmedicine"}
+    elif tab == "Menu":
+        menu_editor_ui(user)
 
-    # For now, simulate response
-    return f"🧠 Responding in **{MODES[mode]}**: *{prompt}*"
+    elif tab == "Events":
+        event_ui(user)
 
-# ----------------------------
-# 🔍 Scope Filter (stub for now)
-# ----------------------------
+    elif tab == "Post-Event":
+        post_event_ui(user)
 
-def is_out_of_scope(prompt: str) -> bool:
-    keywords = ["moon", "weather", "president", "gpt"]
-    return any(k in prompt.lower() for k in keywords)
+    elif tab == "Suggestions":
+        event_modifications_ui(user)
+
+    elif tab == "PDF Export":
+        pdf_export_ui(user)
+
+    elif tab == "Audit Logs":
+        audit_log_ui(user)
+
+    elif tab == "Admin Panel":
+        if require_role(user, "admin"):
+            role_admin_ui()
+        else:
+            st.warning("Admin access required.")
+
+    elif tab == "Assistant":
+        ai_chat_ui()
+
+if __name__ == "__main__":
+    main()
