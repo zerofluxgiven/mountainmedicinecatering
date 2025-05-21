@@ -1,0 +1,53 @@
+import streamlit as st
+from firebase_admin import firestore
+from auth import require_role
+from datetime import datetime
+from utils import format_timestamp
+from notifications import send_notification
+
+# Firestore init
+db = firestore.client()
+
+# ----------------------------
+# 👤 User Admin Panel (Admin Only)
+# ----------------------------
+@require_role("admin")
+def user_admin_ui():
+    st.title("👥 User Admin Panel")
+    st.caption("View users, update roles, and monitor activity across the app.")
+
+    users = [doc.to_dict() for doc in db.collection("users").stream()]
+    search = st.text_input("Search by name or email:")
+
+    filtered = [u for u in users if search.lower() in u.get("name", "").lower() or search.lower() in u.get("email", "").lower()] if search else users
+    if not filtered:
+        st.info("No matching users found.")
+        return
+
+    roles = ["viewer", "member", "manager", "admin"]
+
+    for user in sorted(filtered, key=lambda x: x.get("name", "")):
+        with st.expander(f"👤 {user.get('name', 'Unnamed')} ({user.get('email')})"):
+            st.markdown(f"**User ID:** `{user.get('id')}`")
+            st.markdown(f"**Joined:** {format_timestamp(user.get('created_at'))}")
+            current_role = user.get("role", "viewer")
+            new_role = st.selectbox("Role", roles, index=roles.index(current_role), key=user["id"])
+
+            if new_role != current_role:
+                if st.button(f"Update Role for {user.get('name')}", key=f"btn_{user['id']}"):
+                    db.collection("users").document(user["id"]).update({"role": new_role})
+                    db.collection("logs").add({
+                        "user_id": user["id"],
+                        "action": "role_change",
+                        "details": {"from": current_role, "to": new_role},
+                        "timestamp": datetime.utcnow(),
+                        "changed_by": st.session_state.user["id"]
+                    })
+                    send_notification(f"Role for {user.get('name')} changed to {new_role}", role="admin")
+                    st.success("Role updated.")
+
+            # Analytics (optional fields)
+            st.markdown("---")
+            st.markdown(f"**Events Participated:** {len(user.get('events_participated', []))}")
+            st.markdown(f"**Recipes Contributed:** {len(user.get('recipes', []))}")
+            st.markdown(f"**Hours Logged:** {user.get('hours_logged', 0)}")
