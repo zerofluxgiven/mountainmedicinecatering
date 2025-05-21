@@ -1,11 +1,9 @@
 import streamlit as st
-from events import get_active_event_id, get_active_event
-from suggestions import get_suggestion_count
-from utils import format_date, session_get
+from utils import session_get
 from ai_chat import ai_chat_ui
 
 # ----------------------------
-# 🎨 Custom CSS Injection
+# 🎨 Inject Custom CSS + JS
 # ----------------------------
 def inject_custom_css():
     try:
@@ -14,31 +12,67 @@ def inject_custom_css():
     except FileNotFoundError:
         st.warning("⚠️ style.css not found in /public.")
 
-st.markdown("""
+    # JavaScript for floating assistant
+    st.markdown("""
     <script>
-    document.body.style.opacity = 0;
-    window.addEventListener("load", () => {
-        document.body.style.transition = "opacity 300ms";
-        document.body.style.opacity = 1;
-    });
-
-    const radioButtons = document.querySelectorAll('label[data-baseweb="radio"]');
-    radioButtons.forEach((btn, i) => {
-        btn.onclick = () => localStorage.setItem("selectedTab", i);
-    });
-    const saved = localStorage.getItem("selectedTab");
-    if (saved !== null) {
-        setTimeout(() => {
-            radioButtons[saved]?.click();
-        }, 200);
+    const fab = window.parent.document.querySelector('#ai-fab');
+    if (!fab) {
+        const btn = document.createElement('button');
+        btn.id = 'ai-fab';
+        btn.innerHTML = '💬';
+        btn.style.position = 'fixed';
+        btn.style.bottom = '1.5rem';
+        btn.style.right = '1.5rem';
+        btn.style.background = '#6C4AB6';
+        btn.style.color = 'white';
+        btn.style.border = 'none';
+        btn.style.borderRadius = '50%';
+        btn.style.width = '3.5rem';
+        btn.style.height = '3.5rem';
+        btn.style.fontSize = '1.4rem';
+        btn.style.boxShadow = '0 4px 14px rgba(0,0,0,0.15)';
+        btn.style.cursor = 'pointer';
+        btn.style.zIndex = 1000;
+        btn.onclick = () => window.parent.postMessage({ type: 'toggle-assistant' }, '*');
+        document.body.appendChild(btn);
     }
+    window.addEventListener('message', (event) => {
+        if (event.data.type === 'assistant-mounted') {
+            const modal = window.parent.document.querySelector('#assistant-modal');
+            if (modal) modal.style.display = 'block';
+        }
+    });
     </script>
     """, unsafe_allow_html=True)
 
 # ----------------------------
-# 📢 Event Mode Banner
+# 🧠 Assistant Floating Panel
+# ----------------------------
+def render_floating_assistant():
+    user = session_get("user")
+    if not user:
+        return
+
+    with st.container():
+        show = st.session_state.get("show_assistant", False)
+        with st.expander("💬 Assistant", expanded=show):
+            ai_chat_ui()
+
+        # Optional toggle to control state manually
+        if "toggle_assistant" not in st.session_state:
+            st.session_state.toggle_assistant = False
+
+        if st.session_state.toggle_assistant:
+            st.session_state.show_assistant = not st.session_state.get("show_assistant", False)
+            st.session_state.toggle_assistant = False
+
+# ----------------------------
+# 📢 Event Mode Banner Wrapper
 # ----------------------------
 def show_event_mode_banner():
+    from events import get_active_event
+    from utils import format_date
+
     active_event = get_active_event()
     if not active_event:
         return
@@ -48,73 +82,9 @@ def show_event_mode_banner():
     location = active_event.get("location", "Unknown")
 
     st.markdown(f"""
-    <div style="background-color:#fff8e1;padding:12px;border-radius:10px;margin:12px 0;border:1px solid #ffecb3;">
-        <strong>📅 Event Mode Active:</strong> {name}<br>
-        📍 <i>{location}</i> on <b>{date}</b><br>
-        ✏️ Only content tagged to this event is editable.
+    <div class='sticky-banner'>
+        <strong>📅 Event Mode Active:</strong> {name}
+        <br>📍 <i>{location}</i> on <b>{date}</b>
+        <br>✏️ Only content tagged to this event is editable.
     </div>
     """, unsafe_allow_html=True)
-
-# ----------------------------
-# 🔒 Lock Indicator
-# ----------------------------
-def is_locked_for_editing(item_event_id: str):
-    active_event_id = get_active_event_id()
-    return active_event_id and (item_event_id != active_event_id)
-
-def show_locked_notice():
-    st.warning("🔒 This item is locked for editing due to Event Mode.")
-
-# ----------------------------
-# 🔔 Sidebar Badge
-# ----------------------------
-def show_notification_badge(user):
-    if not user:
-        return
-    count = get_suggestion_count()
-    if count > 0:
-        st.sidebar.markdown(
-            f"<div style='margin-top:10px;color:#B00020;font-weight:bold;'>🔔 {count} pending suggestion(s)</div>",
-            unsafe_allow_html=True
-        )
-
-# ----------------------------
-# 🔖 Event Tag Label
-# ----------------------------
-def show_event_tag_label(event_id):
-    active_event = get_active_event()
-    if active_event and event_id == active_event.get("id"):
-        st.markdown("🔖 *Tagged to current active event*", unsafe_allow_html=True)
-    else:
-        st.markdown("🔒 *Not part of the active event*", unsafe_allow_html=True)
-
-# ----------------------------
-# 🧱 Page Wrapper
-# ----------------------------
-def render_page(user, content_func):
-    if user:
-        show_notification_badge(user)
-    show_event_mode_banner()
-    content_func()
-    show_floating_assistant()
-
-# ----------------------------
-# 🧠 Floating Assistant (Always Visible)
-# ----------------------------
-def show_floating_assistant():
-    user = session_get("user")
-    if not user:
-        return
-
-    with st.sidebar:
-        show = st.toggle("🧠 Open Assistant Panel", key="open_floating_ai")
-
-    if st.session_state.get("open_floating_ai"):
-        with st.container():
-            st.markdown("""
-                <div style="position:fixed; bottom:2rem; right:2rem; background:white; border:1px solid #ccc; 
-                            padding:1rem; border-radius:1rem; box-shadow:0 2px 12px rgba(0,0,0,0.1); z-index:1000; 
-                            width:min(400px, 90%); max-height:80vh; overflow-y:auto;">
-            """, unsafe_allow_html=True)
-            ai_chat_ui()
-            st.markdown("</div>", unsafe_allow_html=True)
