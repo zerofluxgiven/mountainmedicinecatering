@@ -8,51 +8,43 @@ from auth import load_user_session, require_role
 # 📦 Core UI Modules
 from files import file_manager_ui
 from tags import admin_tag_manager_ui
-from events import event_ui, get_active_event  # ✅ include here
+from events import event_ui, get_active_event
 from menu_editor import menu_editor_ui
-# from suggestions import suggestions_ui
 from event_modifications import event_modifications_ui
 from notifications import notifications_sidebar
 from roles import role_admin_ui
 from audit import audit_log_ui
 from pdf_export import pdf_export_ui
 from post_event import post_event_ui
+from ai_chat import ai_chat_ui
 
 # 🎨 Layout Helpers
-from layout import show_event_mode_banner, inject_custom_css  # ✅ add inject_custom_css
-from utils import format_date  # ✅ import once, here
+from layout import show_event_mode_banner, inject_custom_css
+from utils import format_date
 
 # ⚙️ Toggle this to simulate public or locked mode
 PUBLIC_MODE = False  # Set to True to disable login (view-only)
 
-
 # ----------------------------
 # 🚀 Main App Logic
 # ----------------------------
-
 def main():
     st.set_page_config(page_title="Mountain Medicine Catering", layout="wide")
-    inject_custom_css()  # ✅ this line loads style.css
+    inject_custom_css()
 
-
-    # Load current user session
     user = load_user_session()
-
-    # Require login unless PUBLIC_MODE is True
     if not PUBLIC_MODE and not user:
         st.warning("Please log in to continue.")
         return
 
     st.title("🌄 Mountain Medicine Catering")
 
-    # Left Sidebar
     if user:
         st.sidebar.write(f"👤 Logged in as **{user.get('name', 'User')}**")
         notifications_sidebar(user)
     else:
         st.sidebar.write("👀 Viewing as guest")
 
-    # Sidebar Navigation
     tab = st.sidebar.radio("📚 Navigation", [
         "Dashboard",
         "Files",
@@ -63,16 +55,14 @@ def main():
         "Suggestions",
         "PDF Export",
         "Audit Logs",
-        "Admin Panel"
+        "Admin Panel",
+        "Assistant"
     ])
 
-    # Show Event Mode banner globally
     show_event_mode_banner()
 
-    # Route Tabs
     if tab == "Dashboard":
         st.subheader("📊 Dashboard Overview")
-
         event = get_active_event()
         if event:
             st.success(f"📅 Active Event: **{event.get('name', 'Unnamed')}**")
@@ -89,7 +79,6 @@ def main():
             st.checkbox("Prep station setup complete")
             st.checkbox("Reviewed schedule with staff")
             st.checkbox("Checked inventory and supplies")
-
         else:
             st.info("No active event is currently set.")
             st.markdown("You can view or activate an upcoming event under the **Events** tab.")
@@ -124,6 +113,9 @@ def main():
             role_admin_ui()
         else:
             st.warning("Admin access required.")
+
+    elif tab == "Assistant":
+        ai_chat_ui()
 
 if __name__ == "__main__":
     main()
