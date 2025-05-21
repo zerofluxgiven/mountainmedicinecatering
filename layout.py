@@ -1,18 +1,17 @@
 import streamlit as st
-from utils import session_get
+from utils import session_get, format_date
 from ai_chat import ai_chat_ui
-from events import get_active_event
-from utils import format_date
+from events import get_active_event, get_event_by_id
 
 # ----------------------------
 # 🎨 Inject Custom CSS + JS
 # ----------------------------
 def inject_custom_css():
     try:
-        with open("style.css") as f:
+        with open("public/style.css") as f:
             st.markdown(f"<style>{f.read()}</style>", unsafe_allow_html=True)
     except FileNotFoundError:
-        st.warning("⚠️ style.css not found in root directory.")
+        st.warning("⚠️ style.css not found in /public.")
 
     st.markdown("""
     <script>
@@ -93,7 +92,6 @@ def show_locked_notice():
 # 🏷️ Event Tag Label
 # ----------------------------
 def show_event_tag_label(event_id):
-    from events import get_event_by_id
     event = get_event_by_id(event_id)
     if not event:
         return
@@ -119,7 +117,6 @@ def render_top_navbar(tabs):
 # 🧰 Event Toolbar (Leave/Pause/Switch)
 # ----------------------------
 def render_event_toolbar(event_id, context="active"):
-    from streamlit.runtime.scriptrunner import get_script_run_ctx
     st.markdown("""
     <div class="event-toolbar">
         <span style="float: right;">
