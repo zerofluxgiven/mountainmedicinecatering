@@ -1,30 +1,26 @@
 import streamlit as st
-from firebase_admin import firestore
 from auth import require_role
-
-db = firestore.client()
+from admin_utilities import admin_utilities_ui
+from tag_merging import tag_merging_ui
+from user_admin import user_admin_ui
 
 # ----------------------------
-# 🔐 Role Assignment UI
+# 🔐 Admin Panel UI
 # ----------------------------
-def role_admin_ui():
-    st.subheader("🛡 User Role Management")
+@require_role("admin")
+def admin_panel_ui():
+    st.title("🔐 Admin Panel")
+    st.caption("Manage users, tags, logs, and system-wide settings.")
 
-    users = db.collection("users").stream()
-    user_list = [doc.to_dict() | {"id": doc.id} for doc in users]
+    tab = st.selectbox("Choose a section:", [
+        "🛠️ Utilities",
+        "🏷️ Tag Merging",
+        "👥 User Management"
+    ])
 
-    for user in user_list:
-        col1, col2 = st.columns([2, 1])
-        with col1:
-            st.markdown(f"**{user.get('name', 'Unknown')}** ({user.get('email', '')})")
-        with col2:
-            new_role = st.selectbox(
-                "Role",
-                options=["user", "manager", "admin"],
-                index=["user", "manager", "admin"].index(user.get("role", "user")),
-                key=f"role_{user['id']}"
-            )
-            if st.button("💾 Save", key=f"save_{user['id']}"):
-                db.collection("users").document(user["id"]).update({"role": new_role})
-                st.success(f"{user['name']} updated to {new_role}.")
-                st.experimental_rerun()
+    if tab == "🛠️ Utilities":
+        admin_utilities_ui()
+    elif tab == "🏷️ Tag Merging":
+        tag_merging_ui()
+    elif tab == "👥 User Management":
+        user_admin_ui()
