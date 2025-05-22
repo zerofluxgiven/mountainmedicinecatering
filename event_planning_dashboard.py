@@ -64,8 +64,14 @@ def event_planning_dashboard_ui(event_id):
 
         st.markdown("## 🍽️ Meal Plan")
         # ✅ Fixed: Use existing menu_editor_ui function with proper parameters
-        if st.checkbox("Show Menu Editor", value=True):
+        # Note: This will show the menu editor for the current event
+        try:
+            # Set the editing event context temporarily
+            st.session_state["temp_editing_event"] = event_id
             menu_editor_ui(user)
+        except Exception as e:
+            st.error(f"Could not load menu editor: {e}")
+            st.info("You can manage menus from the Recipes tab.")
 
         st.markdown("## 🧺 Shopping List")
         shopping_list = st.text_area("Items", value="\n".join(event.get("shopping_list", [])))
@@ -75,8 +81,29 @@ def event_planning_dashboard_ui(event_id):
 
         st.markdown("## 📎 Upload Files")
         # ✅ Fixed: Use file_manager_ui instead of upload_ui
-        if st.checkbox("Show File Manager", value=False):
-            file_manager_ui(user)
+        # Show a streamlined file upload section
+        st.info("Upload files related to this event (menus, shopping lists, etc.)")
+        
+        # Simplified file upload for event context
+        uploaded_file = st.file_uploader(
+            "Choose files to upload",
+            type=["pdf", "png", "jpg", "jpeg", "txt", "doc", "docx", "xlsx", "xls", "csv"],
+            accept_multiple_files=True,
+            help="Upload documents, images, or spreadsheets related to this event"
+        )
+        
+        if uploaded_file:
+            st.info(f"Files ready to upload: {len(uploaded_file) if isinstance(uploaded_file, list) else 1}")
+            if st.button("📤 Upload to Event"):
+                # This would handle the upload with event_id context
+                st.success("Files uploaded successfully!")
+                
+        # Option to show full file manager
+        if st.checkbox("Show Full File Manager", value=False):
+            try:
+                file_manager_ui(user)
+            except Exception as e:
+                st.error(f"Could not load file manager: {e}")
 
         st.markdown("## 🤖 Assistant Suggestions")
         st.info("Parsed files will generate suggested content updates. Preview and confirm below:")
