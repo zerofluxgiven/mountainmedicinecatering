@@ -1,16 +1,9 @@
 import streamlit as st
 
-import streamlit as st
-
 # 🔐 Auth & Permissions
 from auth import load_user_session, get_user_role
 from utils import format_date, get_active_event
-from layout import (
-    apply_theme,
-    render_top_navbar,
-    render_user_header,
-    render_global_event_controls,
-)
+from layout import apply_theme, render_top_navbar, render_user_header, render_global_event_controls
 from ui_components import show_event_mode_banner
 from landing import show as show_landing
 from notifications import notifications_sidebar
