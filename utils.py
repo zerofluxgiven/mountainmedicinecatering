@@ -1,24 +1,25 @@
+# utils.py
+
 import streamlit as st
 import uuid
 from datetime import datetime
-from typing import Any, Optional, Union
-from firestore import db
+from firestore import db  # Needed for Firestore queries
 
 # ----------------------------
 # 💾 Session Helpers
 # ----------------------------
 
-def session_get(key: str, default: Any = None) -> Any:
+def session_get(key, default=None):
     return st.session_state.get(key, default)
 
-def session_set(key: str, value: Any) -> None:
+def session_set(key, value):
     st.session_state[key] = value
 
 # ----------------------------
 # 🔑 Unique ID Generator
 # ----------------------------
 
-def generate_id(prefix: Optional[str] = None) -> str:
+def generate_id(prefix=None):
     uid = str(uuid.uuid4())[:8]
     return f"{prefix}_{uid}" if prefix else uid
 
@@ -26,13 +27,13 @@ def generate_id(prefix: Optional[str] = None) -> str:
 # 📆 Timestamp Formatter
 # ----------------------------
 
-def format_date(ts: Any) -> str:
+def format_date(ts):
     if not ts:
         return "Unknown"
     if isinstance(ts, datetime):
         return ts.strftime("%b %d, %Y %H:%M")
     try:
-        return ts.to_datetime().strftime("%b %d, %Y %H:%M")
+        return ts.to_datetime().strftime("%b %d, %Y %H:%M")  # Firestore timestamps
     except Exception:
         return str(ts)
 
@@ -40,7 +41,7 @@ def format_date(ts: Any) -> str:
 # 🧬 Safe Dict Merge
 # ----------------------------
 
-def safe_dict_merge(base: dict, update: dict) -> dict:
+def safe_dict_merge(base, update):
     """Merge update into base, skipping None values."""
     for key, val in update.items():
         if val is not None:
@@ -51,7 +52,7 @@ def safe_dict_merge(base: dict, update: dict) -> dict:
 # 🔍 Deep Get Utility
 # ----------------------------
 
-def deep_get(dictionary: dict, keys: list[str], default: Any = None) -> Any:
+def deep_get(dictionary, keys, default=None):
     """Safely get nested dict values like deep_get(data, ['a', 'b'])"""
     for key in keys:
         try:
@@ -64,24 +65,19 @@ def deep_get(dictionary: dict, keys: list[str], default: Any = None) -> Any:
 # 🧠 Active Event Utilities
 # ----------------------------
 
-def get_active_event_id() -> Optional[str]:
-    try:
-        doc = db.collection("config").document("global").get()
-        return doc.to_dict().get("active_event") if doc.exists else None
-    except Exception as e:
-        st.error(f"⚠️ Failed to fetch active event ID: {e}")
-        return None
+def get_active_event_id():
+    doc = db.collection("config").document("global").get()
+    if doc.exists:
+        return doc.to_dict().get("active_event")
+    return None
 
-def get_active_event() -> Optional[dict]:
+def get_active_event():
     event_id = get_active_event_id()
     if not event_id:
         return None
-    return get_event_by_id(event_id)
+    doc = db.collection("events").document(event_id).get()
+    return doc.to_dict() if doc.exists else None
 
-def get_event_by_id(event_id: str) -> Optional[dict]:
-    try:
-        doc = db.collection("events").document(event_id).get()
-        return doc.to_dict() if doc.exists else None
-    except Exception as e:
-        st.error(f"⚠️ Failed to fetch event '{event_id}': {e}")
-        return None
+def get_event_by_id(event_id):
+    doc = db.collection("events").document(event_id).get()
+    return doc.to_dict() if doc.exists else None
