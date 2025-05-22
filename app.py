@@ -9,9 +9,9 @@ from layout import (
     inject_custom_css,
     render_top_navbar,
     render_floating_assistant,
-    from ui_components import show_event_mode_banner
-
 )
+from ui_components import show_event_mode_banner  # ✅ Corrected
+
 from notifications import notifications_sidebar
 
 # 🌟 App Modules
@@ -28,6 +28,7 @@ from ai_chat import ai_chat_ui
 from pdf_export import pdf_export_ui
 from menu_editor import menu_editor_ui
 from event_planning_dashboard import event_planning_dashboard_ui
+
 
 # ⚙️ Config
 PUBLIC_MODE = False  # Set to True for guest access
