@@ -327,8 +327,7 @@ def show_event_statistics():
             st.markdown("#### Recent Events")
             for event in recent_events:
                 status = event.get('status', 'planning')
-                st.write(f"• **{event.get('name', 'Unnamed')}** - ", end="")
-                render_status_indicator(status)
+                st.write(f"• **{event.get('name', 'Unnamed')}** - ", end='')
                 
     except Exception as e:
         st.error(f"⚠️ Could not load statistics: {e}")
