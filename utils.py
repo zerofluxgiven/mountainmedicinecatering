@@ -2,8 +2,15 @@ import streamlit as st
 import uuid
 from datetime import datetime
 
-# Use centralized database client
-from db_client import db
+# ✅ Fixed: Avoid circular import by lazy loading db when needed
+def get_db():
+    """Get database client lazily to avoid circular imports"""
+    try:
+        from db_client import db
+        return db
+    except ImportError:
+        st.error("❌ Database client not available")
+        return None
 
 # ----------------------------
 # 💾 Session Helpers
@@ -34,7 +41,7 @@ def format_date(ts):
         return ts.strftime("%b %d, %Y %H:%M")
     try:
         return ts.to_datetime().strftime("%b %d, %Y %H:%M")  # Firestore timestamps
-    except Exception:
+    except (AttributeError, Exception):
         return str(ts)
 
 def format_timestamp(ts):
@@ -71,6 +78,10 @@ def deep_get(dictionary, keys, default=None):
 
 def get_active_event_id():
     """Get the currently active event ID from global config"""
+    db = get_db()
+    if not db:
+        return None
+        
     try:
         doc = db.collection("config").document("global").get()
         if doc.exists:
@@ -85,6 +96,11 @@ def get_active_event():
     event_id = get_active_event_id()
     if not event_id:
         return None
+        
+    db = get_db()
+    if not db:
+        return None
+        
     try:
         doc = db.collection("events").document(event_id).get()
         return doc.to_dict() if doc.exists else None
@@ -96,6 +112,11 @@ def get_event_by_id(event_id):
     """Get a specific event by ID"""
     if not event_id:
         return None
+        
+    db = get_db()
+    if not db:
+        return None
+        
     try:
         doc = db.collection("events").document(event_id).get()
         return doc.to_dict() if doc.exists else None
