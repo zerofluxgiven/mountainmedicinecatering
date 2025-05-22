@@ -24,7 +24,7 @@ def get_all_events() -> list[dict]:
 # ⚡ Smart Event Management
 # ----------------------------
 
-ddef activate_event(event_id: str) -> None:
+def activate_event(event_id: str) -> None:
     """Sets the active event globally and updates status if needed."""
     try:
         # Set global Event Mode
