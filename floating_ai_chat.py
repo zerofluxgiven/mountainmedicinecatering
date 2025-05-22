@@ -1,5 +1,6 @@
 # simple_floating_chat.py - Working floating chat with minimize functionality
 
+from datetime import datetime
 import streamlit as st
 from datetime import datetime
 
