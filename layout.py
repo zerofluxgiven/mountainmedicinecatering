@@ -91,18 +91,41 @@ def render_global_event_controls():
         active_event = get_active_event()
         event_name = active_event.get("name", "Unknown Event") if active_event else "Unknown"
         
-        col1, col2 = st.columns([3, 1])
-        with col2:
-            # Use unique key based on location and event ID to prevent duplicates
-            unique_key = f"{location_key}_exit_event_mode_{hash(str(active_event_id))}"
-            if st.button("Exit Event Mode", key=unique_key, help=f"Exit {event_name}"):
-                # Store current event as recent before deactivating
-                st.session_state["recent_event_id"] = active_event_id
+        st.warning(f"**📅 Event Mode Active:** {event_name} - Click below to exit")
+        
+        # Add a prominent exit button
+        unique_key = f"{location_key}_exit_event_mode_{hash(str(active_event_id))}"
+        if st.button("🚪 Exit Event Mode", key=unique_key, use_container_width=True, 
+                   help=f"Exit {event_name} and return to normal mode"):
+            # Store current event as recent before deactivating
+            st.session_state["recent_event_id"] = active_event_id
+            
+            # Deactivate Event Mode
+            from events import deactivate_event_mode, update_event
+            
+            # Force status update
+            if active_event and active_event.get("status") == "active":
+                update_event(active_event_id, {"status": "planning"})
                 
-                # Deactivate Event Mode
-                from events import deactivate_event_mode
-                deactivate_event_mode()
-                st.rerun()
+            deactivate_event_mode()
+            st.rerun()
+    
+    elif recent_event_id:
+        # Show Resume button
+        recent_event = get_event_by_id(recent_event_id)
+        if recent_event:
+            event_name = recent_event.get("name", "Recent Event")
+            col1, col2 = st.columns([3, 1])
+            with col2:
+                unique_key = f"{location_key}_resume_event_{hash(str(recent_event_id))}"
+                if st.button(f"Resume {event_name[:15]}...", key=unique_key, 
+                           help=f"Resume working on {event_name}"):
+                    from events import activate_event
+                    activate_event(recent_event_id)
+                    # Clear recent event since we're now active
+                    if "recent_event_id" in st.session_state:
+                        del st.session_state["recent_event_id"]
+                    st.rerun()
     
     elif recent_event_id:
         # Show Resume button
@@ -380,7 +403,7 @@ def render_top_navbar(tabs):
 def render_smart_event_button(event, user):
     """Render context-aware event button with unique keys"""
     from utils import get_active_event_id
-    from events import activate_event, deactivate_event_mode
+    from events import activate_event, deactivate_event_mode, update_event
     
     active_event_id = get_active_event_id()
     event_id = event["id"]
@@ -391,36 +414,41 @@ def render_smart_event_button(event, user):
     # Determine button text and action based on context
     if active_event_id == event_id:
         # This event is currently active
-        button_text = "Deactivate Event Mode"
+        button_text = "🚪 Deactivate Event Mode"
         button_type = "secondary"
         action = "deactivate"
     elif active_event_id and active_event_id != event_id:
         # Another event is active
-        button_text = "Switch to This Event"
+        button_text = "⚡ Switch to This Event"
         button_type = "secondary"
         action = "switch"
     else:
         # No event is active
-        button_text = "Activate Event"
+        button_text = "🔘 Activate Event Mode"
         button_type = "primary"
         action = "activate"
     
-    if st.button(button_text, key=button_key, type=button_type):
+    if st.button(button_text, key=button_key, type=button_type, use_container_width=True):
         if action == "activate":
             # Update event status to active and set Event Mode
-            from events import update_event
             update_event(event_id, {"status": "active"})
             activate_event(event_id)
             st.success(f"Event activated: {event.get('name', 'Unknown')}")
         elif action == "deactivate":
             # Store as recent and deactivate
             st.session_state["recent_event_id"] = event_id
+            # Update status before deactivating
+            update_event(event_id, {"status": "planning"})
             deactivate_event_mode()
             st.success("Event Mode deactivated")
         elif action == "switch":
             # Store current as recent and switch
             if active_event_id:
                 st.session_state["recent_event_id"] = active_event_id
+                # Update old event status
+                update_event(active_event_id, {"status": "planning"})
+            # Update new event status
+            update_event(event_id, {"status": "active"})
             activate_event(event_id)
             st.success(f"Switched to: {event.get('name', 'Unknown')}")
         
