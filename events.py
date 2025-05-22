@@ -1,3 +1,5 @@
+# events.py
+
 import streamlit as st
 from firestore import db
 from utils import session_get, get_active_event_id
@@ -6,20 +8,33 @@ from ui_components import show_event_mode_banner, render_event_toolbar
 # ----------------------------
 # 🔥 Get All Events
 # ----------------------------
-def get_all_events():
-    docs = db.collection("events").order_by("start_date").stream()
-    return [{"id": doc.id, **doc.to_dict()} for doc in docs]
+
+def get_all_events() -> list[dict]:
+    """Fetch all events from Firestore, sorted by start date."""
+    try:
+        docs = db.collection("events").order_by("start_date").stream()
+        return [{"id": doc.id, **doc.to_dict()} for doc in docs]
+    except Exception as e:
+        st.error(f"⚠️ Failed to fetch events: {e}")
+        return []
 
 # ----------------------------
 # ⚡ Set Active Event
 # ----------------------------
-def activate_event(event_id):
-    db.collection("config").document("global").set({"active_event": event_id})
+
+def activate_event(event_id: str) -> None:
+    """Sets the active event globally in the config document."""
+    try:
+        db.collection("config").document("global").set({"active_event": event_id})
+    except Exception as e:
+        st.error(f"❌ Could not activate event: {e}")
 
 # ----------------------------
 # 🎛 Events Tab UI
 # ----------------------------
-def event_ui(user):
+
+def event_ui(user: dict | None) -> None:
+    """Main Events tab UI showing list of events and actions."""
     st.markdown("## 📅 All Events")
 
     events = get_all_events()
