@@ -1,8 +1,7 @@
 import streamlit as st
 from firestore import db
-from utils import session_get
+from utils import session_get, get_active_event_id
 from ui_components import show_event_mode_banner, render_event_toolbar
-
 
 # ----------------------------
 # 🔥 Get All Events
@@ -16,15 +15,6 @@ def get_all_events():
 # ----------------------------
 def activate_event(event_id):
     db.collection("config").document("global").set({"active_event": event_id})
-
-# ----------------------------
-# 🧠 Load Active Event
-# ----------------------------
-def get_active_event_id():
-    doc = db.collection("config").document("global").get()
-    if doc.exists:
-        return doc.to_dict().get("active_event")
-    return None
 
 # ----------------------------
 # 🎛 Events Tab UI
