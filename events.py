@@ -1,8 +1,9 @@
-# events.py
+# events.py - Updated with Smart Context Buttons
 
 import streamlit as st
 from utils import session_get, get_active_event_id, format_date, generate_id
-from ui_components import show_event_mode_banner, render_event_toolbar
+from ui_components import show_event_mode_banner
+from layout import render_smart_event_button, render_status_indicator
 from datetime import datetime
 from db_client import db
 
@@ -20,18 +21,38 @@ def get_all_events() -> list[dict]:
         return []
 
 # ----------------------------
-# ⚡ Set Active Event
+# ⚡ Smart Event Management
 # ----------------------------
 
 def activate_event(event_id: str) -> None:
-    """Sets the active event globally in the config document."""
+    """Sets the active event globally and updates status if needed."""
     try:
+        # Set global Event Mode
         db.collection("config").document("global").set({"active_event": event_id}, merge=True)
-        # Also update session state for immediate UI update
         st.session_state["active_event_id"] = event_id
+        
+        # Update event status to 'active' if it's still in 'planning'
+        event_ref = db.collection("events").document(event_id)
+        event_doc = event_ref.get()
+        if event_doc.exists:
+            event_data = event_doc.to_dict()
+            if event_data.get('status') == 'planning':
+                update_event(event_id, {"status": "active"})
+        
         st.success(f"✅ Event activated: {event_id}")
     except Exception as e:
         st.error(f"❌ Could not activate event: {e}")
+
+def deactivate_event_mode() -> None:
+    """Deactivates the currently active event mode globally."""
+    try:
+        db.collection("config").document("global").update({"active_event": None})
+        # Clear session state
+        if "active_event_id" in st.session_state:
+            del st.session_state["active_event_id"]
+        st.success("✅ Event Mode deactivated")
+    except Exception as e:
+        st.error(f"❌ Could not deactivate Event Mode: {e}")
 
 # ----------------------------
 # 📅 Create New Event
@@ -97,9 +118,10 @@ def delete_event(event_id: str) -> bool:
             "deleted_at": datetime.utcnow()
         })
         
-        # If this was the active event, clear it
+        # If this was the active event, clear it and store as recent
         active_event_id = get_active_event_id()
         if active_event_id == event_id:
+            st.session_state["recent_event_id"] = event_id
             db.collection("config").document("global").update({"active_event": None})
             if "active_event_id" in st.session_state:
                 del st.session_state["active_event_id"]
@@ -111,11 +133,11 @@ def delete_event(event_id: str) -> bool:
         return False
 
 # ----------------------------
-# 🎛 Events Tab UI
+# 🎛 Enhanced Events Tab UI
 # ----------------------------
 
 def event_ui(user: dict | None) -> None:
-    """Main Events tab UI showing list of events and actions."""
+    """Enhanced Events tab UI with smart context buttons."""
     st.markdown("## 📅 All Events")
 
     if not user:
@@ -124,7 +146,7 @@ def event_ui(user: dict | None) -> None:
 
     # Create new event section
     with st.container():
-        st.markdown("### ➕ Create New Event")
+        st.markdown("### Create New Event")
         
         with st.form("create_event_form"):
             col1, col2 = st.columns(2)
@@ -139,7 +161,7 @@ def event_ui(user: dict | None) -> None:
                 end_date = st.date_input("End Date *")
                 guest_count = st.number_input("Expected Guests", min_value=0, value=20)
             
-            submitted = st.form_submit_button("🎪 Create Event")
+            submitted = st.form_submit_button("Create Event")
             
             if submitted:
                 if not all([name, location, start_date, end_date]):
@@ -171,7 +193,13 @@ def event_ui(user: dict | None) -> None:
         st.info("No events found. Create your first event above!")
         return
 
-    st.markdown("### 📋 Existing Events")
+    st.markdown("### Existing Events")
+    
+    # Event Mode status
+    if active_event_id:
+        active_event = next((e for e in events if e["id"] == active_event_id), None)
+        if active_event:
+            st.info(f"🟣 Event Mode Active: **{active_event.get('name', 'Unknown Event')}**")
     
     for event in events:
         if event.get("deleted"):
@@ -179,36 +207,39 @@ def event_ui(user: dict | None) -> None:
             
         is_active = event["id"] == active_event_id
         
-        with st.expander(f"{'🟣' if is_active else '⚪'} {event.get('name', 'Unnamed Event')}", expanded=is_active):
+        # Use different styling for active event
+        container_class = "active-event" if is_active else "inactive-event"
+        
+        with st.expander(f"{'🟣 ' if is_active else '⚪ '}{event.get('name', 'Unnamed Event')}", expanded=is_active):
             # Event details
             col1, col2 = st.columns(2)
             
             with col1:
-                st.markdown(f"📍 **Location:** {event.get('location', 'Unknown')}")
-                st.markdown(f"📆 **Dates:** {event.get('start_date', '?')} → {event.get('end_date', '?')}")
-                st.markdown(f"👥 **Guests:** {event.get('guest_count', '-')}")
+                st.markdown(f"**Location:** {event.get('location', 'Unknown')}")
+                st.markdown(f"**Dates:** {event.get('start_date', '?')} → {event.get('end_date', '?')}")
+                st.markdown(f"**Guests:** {event.get('guest_count', '-')}")
                 
             with col2:
-                st.markdown(f"📊 **Status:** `{event.get('status', 'planning')}`")
-                st.markdown(f"👤 **Created by:** {event.get('created_by', 'Unknown')}")
+                st.markdown(f"**Status:** ", end="")
+                render_status_indicator(event.get('status', 'planning'))
+                st.markdown(f"**Created by:** {event.get('created_by', 'Unknown')}")
                 if event.get('created_at'):
-                    st.markdown(f"🕒 **Created:** {format_date(event.get('created_at'))}")
+                    st.markdown(f"**Created:** {format_date(event.get('created_at'))}")
             
             # Description
             if event.get('description'):
-                st.markdown(f"📝 **Description:** {event.get('description')}")
+                st.markdown(f"**Description:** {event.get('description')}")
             
             # Action buttons
             st.markdown("---")
-            col1, col2, col3, col4 = st.columns([1, 1, 1, 2])
+            col1, col2, col3, col4 = st.columns([2, 1, 1, 2])
             
             with col1:
-                if st.button("⚡ Activate", key=f"act_{event['id']}", disabled=is_active):
-                    activate_event(event["id"])
-                    st.rerun()
+                # Smart context button (replaces Activate and Start Event)
+                render_smart_event_button(event, user)
 
             with col2:
-                if st.button("✏️ Edit", key=f"edit_{event['id']}"):
+                if st.button("Edit", key=f"edit_{event['id']}"):
                     st.session_state["editing_event_id"] = event["id"]
                     st.session_state["top_nav"] = "Event Planner"
                     st.rerun()
@@ -219,43 +250,46 @@ def event_ui(user: dict | None) -> None:
                             st.session_state.get("user_role") == "admin")
                 
                 if can_delete:
-                    if st.button("🗑️ Delete", key=f"del_{event['id']}"):
-                        if st.confirm(f"Delete event '{event.get('name')}'?"):
+                    if st.button("Delete", key=f"del_{event['id']}"):
+                        # Use session state for confirmation
+                        confirm_key = f"confirm_delete_{event['id']}"
+                        if st.session_state.get(confirm_key):
                             if delete_event(event["id"]):
                                 st.success("Event deleted")
+                                st.session_state[confirm_key] = False
                                 st.rerun()
+                        else:
+                            st.session_state[confirm_key] = True
+                            st.warning("Click Delete again to confirm")
             
             with col4:
-                # Status management
-                if event.get('status') == 'planning':
-                    if st.button("▶️ Start Event", key=f"start_{event['id']}"):
-                        if update_event(event["id"], {"status": "active"}):
-                            st.success("Event started")
-                            st.rerun()
-                elif event.get('status') == 'active':
-                    if st.button("✅ Complete Event", key=f"complete_{event['id']}"):
+                # Status progression buttons (only if not using smart button for status)
+                current_status = event.get('status', 'planning')
+                
+                if current_status == 'active':
+                    if st.button("Complete Event", key=f"complete_{event['id']}"):
                         if update_event(event["id"], {"status": "complete"}):
                             st.success("Event completed")
                             st.rerun()
+                elif current_status == 'complete':
+                    st.info("Event completed")
 
-    # Show event mode banner and toolbar if active event
+    # Show event mode banner
     show_event_mode_banner()
-    if active_event_id:
-        render_event_toolbar(active_event_id, context="active")
 
 # ----------------------------
 # 📊 Event Statistics
 # ----------------------------
 
 def show_event_statistics():
-    """Display event statistics"""
+    """Display event statistics dashboard"""
     try:
         events = get_all_events()
         
         if not events:
             return
         
-        st.markdown("### 📊 Event Statistics")
+        st.markdown("### Event Statistics")
         
         col1, col2, col3, col4 = st.columns(4)
         
@@ -274,13 +308,88 @@ def show_event_statistics():
         with col4:
             total_guests = sum(e.get('guest_count', 0) for e in events if not e.get('deleted'))
             st.metric("Total Guests Served", total_guests)
-            
+        
+        # Show recent activity
+        recent_events = sorted(
+            [e for e in events if not e.get('deleted')], 
+            key=lambda x: x.get('created_at', datetime.min), 
+            reverse=True
+        )[:3]
+        
+        if recent_events:
+            st.markdown("#### Recent Events")
+            for event in recent_events:
+                status = event.get('status', 'planning')
+                st.write(f"• **{event.get('name', 'Unnamed')}** - ", end="")
+                render_status_indicator(status)
+                
     except Exception as e:
         st.error(f"⚠️ Could not load statistics: {e}")
 
-# Enhanced event UI with statistics
+# ----------------------------
+# 🔍 Event Search and Filter
+# ----------------------------
+
+def render_event_filters():
+    """Render event search and filter controls"""
+    col1, col2, col3 = st.columns(3)
+    
+    with col1:
+        search_term = st.text_input("Search events", placeholder="Search by name or location...")
+    
+    with col2:
+        status_filter = st.selectbox("Filter by status", ["All", "planning", "active", "complete"])
+    
+    with col3:
+        date_filter = st.selectbox("Date range", ["All time", "This month", "Next month", "Past events"])
+    
+    return search_term, status_filter, date_filter
+
+def filter_events(events, search_term, status_filter, date_filter):
+    """Apply filters to events list"""
+    filtered = events
+    
+    # Apply search filter
+    if search_term:
+        search_lower = search_term.lower()
+        filtered = [e for e in filtered if 
+                   search_lower in e.get('name', '').lower() or 
+                   search_lower in e.get('location', '').lower()]
+    
+    # Apply status filter
+    if status_filter != "All":
+        filtered = [e for e in filtered if e.get('status') == status_filter]
+    
+    # Apply date filter (simplified)
+    if date_filter != "All time":
+        # This could be enhanced with actual date filtering logic
+        pass
+    
+    return filtered
+
+# ----------------------------
+# 🎯 Enhanced Event UI with Filters
+# ----------------------------
+
 def enhanced_event_ui(user: dict | None) -> None:
-    """Enhanced event UI with statistics"""
+    """Enhanced event UI with statistics and filters"""
     show_event_statistics()
     st.markdown("---")
+    
+    # Add search and filter controls
+    search_term, status_filter, date_filter = render_event_filters()
+    
+    # Get and filter events
+    events = get_all_events()
+    if search_term or status_filter != "All" or date_filter != "All time":
+        events = filter_events(events, search_term, status_filter, date_filter)
+        st.info(f"Showing {len(events)} filtered events")
+    
+    # Show main event UI with filtered events
     event_ui(user)
+
+# For backward compatibility
+def get_active_event():
+    """Get the full active event document"""
+    from utils import get_active_event
+    return get_active_event()
