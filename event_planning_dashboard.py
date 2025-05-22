@@ -2,7 +2,7 @@ import streamlit as st
 from firestore import db
 from utils import session_get
 from menu_editor import render_menu_editor
-from files import upload_ui
+from upload import upload_ui
 from datetime import datetime
 from layout import render_event_toolbar
 
