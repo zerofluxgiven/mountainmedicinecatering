@@ -86,7 +86,7 @@ def main():
 
     # 🧭 Header with user info and global controls
     render_user_header()
-    # render_global_event_controls() - This is already called in apply_theme()
+    render_global_event_controls() - This is already called in apply_theme()
 
     # 💬 Floating AI Assistant
     integrate_floating_chat()
