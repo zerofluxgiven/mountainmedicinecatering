@@ -2,12 +2,12 @@ import streamlit as st
 from datetime import datetime
 from auth import load_user_session, get_user_role
 from utils import format_date, get_active_event
-from layout import apply_theme, render_top_navbar
-from layout import render_user_header, render_global_event_controls
+from layout import apply_theme
+from layout import render_top_navbar
+from layout import render_user_header
+from layout import render_global_event_controls
 from ui_components import show_event_mode_banner
 from landing import show as show_landing
-from notifications import notifications_sidebar
-from floating_ai_chat import integrate_floating_chat
 from events import enhanced_event_ui
 from post_event import post_event_ui
 from file_storage import file_manager_ui, show_file_analytics
