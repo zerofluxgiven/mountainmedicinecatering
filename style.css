@@ -1,4 +1,4 @@
-/* Updated style.css - Purple Theme & Mobile Responsive - COMPACT VERSION */
+/* Updated style.css - Compact Event Mode & Fixed Spacing */
 
 /* -----------------------------
    Base Styling & Mobile First
@@ -25,24 +25,79 @@ h1, h2, h3 {
 }
 
 /* -----------------------------
-   COMPACT LAYOUT FIXES
+   REMOVE EXCESSIVE WHITE SPACE
 ----------------------------- */
 
-/* Remove excessive top padding from main container */
+/* Remove top padding from main container */
 .main .block-container {
-    padding-top: 1rem !important;
+    padding-top: 0 !important;
     padding-bottom: 1rem !important;
+    max-width: 100% !important;
 }
 
-/* Reduce header spacing */
+/* Remove streamlit default padding */
 .stApp > header {
-    height: auto !important;
+    height: 0 !important;
+    min-height: 0 !important;
 }
 
-/* Make title more compact */
+/* Tighten title spacing */
 h1, h2 {
-    margin-top: 0.5rem !important;
+    margin-top: 0 !important;
     margin-bottom: 0.5rem !important;
+}
+
+/* Remove empty space from top */
+.stApp {
+    padding-top: 0 !important;
+}
+
+/* -----------------------------
+   COMPACT EVENT MODE INDICATOR
+----------------------------- */
+
+.event-mode-indicator {
+    display: inline-flex !important;
+    align-items: center !important;
+    gap: 0.5rem !important;
+    background: rgba(108, 74, 182, 0.1) !important;
+    padding: 0.25rem 0.75rem !important;
+    border-radius: 20px !important;
+    border: 1px solid var(--primary-purple) !important;
+    font-size: 0.85rem !important;
+    margin: 0 !important;
+}
+
+.event-icon {
+    font-size: 1rem !important;
+}
+
+.event-name {
+    color: var(--primary-purple) !important;
+    font-weight: 600 !important;
+    max-width: 200px !important;
+    overflow: hidden !important;
+    text-overflow: ellipsis !important;
+    white-space: nowrap !important;
+}
+
+/* Exit button styling */
+.stButton:has([data-testid*="exit_event"]) button {
+    background: transparent !important;
+    color: var(--primary-purple) !important;
+    border: 1px solid var(--primary-purple) !important;
+    width: 32px !important;
+    height: 32px !important;
+    padding: 0 !important;
+    font-size: 1.2rem !important;
+    font-weight: bold !important;
+    border-radius: 50% !important;
+    min-height: 32px !important;
+}
+
+.stButton:has([data-testid*="exit_event"]) button:hover {
+    background: var(--primary-purple) !important;
+    color: white !important;
 }
 
 /* -----------------------------
@@ -58,7 +113,7 @@ button, .stButton > button, .stDownloadButton > button {
     padding: 0.5rem 1rem !important;
     font-weight: 500 !important;
     transition: all 0.2s ease !important;
-    min-height: 44px !important; /* Touch-friendly */
+    min-height: 44px !important;
     cursor: pointer !important;
 }
 
@@ -109,38 +164,6 @@ button:disabled, .stButton > button:disabled {
     display: none !important;
 }
 
-/* Checkbox styling */
-.stCheckbox > label {
-    background-color: var(--light-purple) !important;
-    color: white !important;
-    padding: 0.3rem 0.7rem !important;
-    border-radius: var(--border-radius) !important;
-    cursor: pointer !important;
-    display: inline-block !important;
-    margin: 0.2rem !important;
-}
-
-.stCheckbox > label:hover {
-    background-color: var(--accent-purple) !important;
-}
-
-.stCheckbox input:checked + label {
-    background-color: var(--primary-purple) !important;
-}
-
-/* Input Styling */
-.stTextInput input, .stTextArea textarea, .stSelectbox select {
-    border: 1px solid #ccc !important;
-    border-radius: var(--border-radius) !important;
-    font-size: 1rem !important;
-    padding: 0.5rem !important;
-}
-
-.stTextInput input:focus, .stTextArea textarea:focus, .stSelectbox select:focus {
-    border-color: var(--primary-purple) !important;
-    box-shadow: 0 0 0 2px rgba(108, 74, 182, 0.2) !important;
-}
-
 /* -----------------------------
    Top Navigation Purple Tabs - COMPACT
 ----------------------------- */
@@ -149,15 +172,15 @@ button:disabled, .stButton > button:disabled {
     top: 0 !important;
     background: white !important;
     z-index: 100 !important;
-    padding: 0.25rem 0 !important; /* Reduced from 0.5rem */
-    margin-bottom: 0.5rem !important; /* Reduced from 1rem */
+    padding: 0.5rem 0 !important;
+    margin-bottom: 0.5rem !important;
     border-bottom: 1px solid #eee !important;
 }
 
 .stTabs [role="tablist"] {
     display: flex !important;
     flex-wrap: wrap !important;
-    gap: 0.25rem !important; /* Reduced gap */
+    gap: 0.25rem !important;
     border: none !important;
 }
 
@@ -166,14 +189,14 @@ button:disabled, .stButton > button:disabled {
     color: white !important;
     border: none !important;
     border-radius: var(--border-radius) !important;
-    padding: 0.4rem 0.8rem !important; /* Slightly smaller padding */
+    padding: 0.4rem 0.8rem !important;
     transition: all 0.2s ease !important;
     font-weight: 500 !important;
     cursor: pointer !important;
-    min-height: 36px !important; /* Reduced from 44px */
+    min-height: 36px !important;
     display: flex !important;
     align-items: center !important;
-    font-size: 0.9rem !important; /* Slightly smaller text */
+    font-size: 0.9rem !important;
 }
 
 .stTabs [role="tab"]:hover {
@@ -188,7 +211,7 @@ button:disabled, .stButton > button:disabled {
 /* Remove default tab styling */
 .stTabs [role="tabpanel"] {
     border: none !important;
-    padding: 0.5rem 0 !important; /* Reduced from 1rem */
+    padding: 0.5rem 0 !important;
 }
 
 /* -----------------------------
@@ -196,18 +219,18 @@ button:disabled, .stButton > button:disabled {
 ----------------------------- */
 .user-header {
     position: fixed !important;
-    top: 0.5rem !important; /* Moved up from 1rem */
+    top: 0.5rem !important;
     right: 1rem !important;
     z-index: 200 !important;
-    background: rgba(255, 255, 255, 0.95) !important; /* Semi-transparent */
+    background: rgba(255, 255, 255, 0.95) !important;
     backdrop-filter: blur(8px) !important;
-    padding: 0.3rem 0.7rem !important; /* Smaller padding */
+    padding: 0.3rem 0.7rem !important;
     border-radius: var(--border-radius) !important;
     box-shadow: 0 2px 8px rgba(0,0,0,0.1) !important;
     display: flex !important;
     align-items: center !important;
-    gap: 0.4rem !important; /* Reduced gap */
-    font-size: 0.85rem !important; /* Smaller text */
+    gap: 0.4rem !important;
+    font-size: 0.85rem !important;
 }
 
 .user-name {
@@ -218,9 +241,9 @@ button:disabled, .stButton > button:disabled {
 .user-role {
     background: var(--light-purple) !important;
     color: white !important;
-    padding: 0.15rem 0.4rem !important; /* Smaller padding */
+    padding: 0.15rem 0.4rem !important;
     border-radius: 10px !important;
-    font-size: 0.7rem !important; /* Smaller text */
+    font-size: 0.7rem !important;
 }
 
 /* -----------------------------
@@ -248,135 +271,55 @@ button:disabled, .stButton > button:disabled {
     transform: scale(1.1) !important;
 }
 
-.chat-bubble-icon {
-    color: white !important;
-    font-size: 24px !important;
-}
-
-.chat-window {
-    position: fixed !important;
-    bottom: 100px !important;
-    right: 2rem !important;
-    width: 350px !important;
-    height: 500px !important;
-    background: white !important;
-    border-radius: 12px !important;
-    box-shadow: 0 8px 32px rgba(0,0,0,0.2) !important;
-    z-index: 999 !important;
-    display: flex !important;
-    flex-direction: column !important;
-    overflow: hidden !important;
-    transition: all 0.3s ease !important;
-}
-
-.chat-header {
-    background: var(--primary-purple) !important;
-    color: white !important;
-    padding: 1rem !important;
-    display: flex !important;
-    justify-content: space-between !important;
-    align-items: center !important;
-}
-
-.chat-body {
-    flex: 1 !important;
-    padding: 1rem !important;
-    overflow-y: auto !important;
-    background: #fafafa !important;
-}
-
-.chat-input-area {
-    padding: 1rem !important;
-    border-top: 1px solid #eee !important;
-    background: white !important;
-}
-
-.chat-input {
-    width: 100% !important;
-    padding: 0.5rem !important;
-    border: 1px solid #ddd !important;
-    border-radius: var(--border-radius) !important;
-    font-size: 1rem !important;
-}
-
-.chat-send-btn {
-    margin-top: 0.5rem !important;
-    width: 100% !important;
-}
-
-/* Chat message styling */
-.chat-message {
-    margin-bottom: 1rem !important;
-    padding: 0.5rem !important;
-    border-radius: var(--border-radius) !important;
-}
-
-.chat-message.user {
-    background: var(--light-purple) !important;
-    color: white !important;
-    margin-left: 2rem !important;
-}
-
-.chat-message.ai {
-    background: #e9ecef !important;
-    color: #333 !important;
-    margin-right: 2rem !important;
-}
-
 /* -----------------------------
-   Event Mode Banner - TINY & COMPACT
+   REMOVE OLD EVENT MODE BANNER
 ----------------------------- */
 .event-mode-banner {
-    background: linear-gradient(135deg, #fff8e1, #ffecb3) !important;
-    padding: 0.4rem 0.8rem !important; /* Much smaller padding */
-    border-radius: 4px !important; /* Smaller border radius */
-    margin: 0.25rem 0 !important; /* Minimal margins */
-    border: 1px solid #ffecb3 !important;
-    display: flex !important;
-    justify-content: space-between !important;
-    align-items: center !important;
-    font-size: 0.8rem !important; /* Smaller text */
-    position: fixed !important; /* Make it float */
-    top: 0.5rem !important; /* Position at top */
-    left: 1rem !important; /* Position from left */
-    right: 200px !important; /* Leave space for user header */
-    z-index: 150 !important; /* Below user header but above content */
-    max-height: 40px !important; /* Limit height */
-    overflow: hidden !important;
-    backdrop-filter: blur(8px) !important;
-    box-shadow: 0 1px 4px rgba(0,0,0,0.1) !important;
+    display: none !important;
 }
 
 .banner-content {
-    flex: 1 !important;
-    white-space: nowrap !important; /* Prevent wrapping */
-    overflow: hidden !important;
-    text-overflow: ellipsis !important;
-}
-
-.banner-content strong {
-    font-size: 0.75rem !important; /* Even smaller for the label */
-}
-
-.banner-content small {
-    font-size: 0.7rem !important; /* Tiny for details */
-    opacity: 0.8 !important;
+    display: none !important;
 }
 
 .banner-controls {
-    display: flex !important;
-    gap: 0.25rem !important; /* Smaller gap */
+    display: none !important;
 }
 
-.banner-controls button {
-    padding: 0.2rem 0.5rem !important; /* Tiny button */
-    font-size: 0.7rem !important;
-    min-height: 28px !important; /* Smaller button height */
+/* -----------------------------
+   Status Indicators - NOT BUTTONS
+----------------------------- */
+.status-planning { 
+    background: #ffd54f !important; 
+    color: #f57f17 !important; 
+    padding: 0.2rem 0.5rem !important; 
+    border-radius: 12px !important; 
+    font-size: 0.75rem !important; 
+    font-weight: 500 !important;
+    display: inline-block !important;
+    cursor: default !important;
 }
 
-/* Add top padding to main content to account for fixed banner */
-.main .block-container {
-    padding-top: 3.5rem !important; /* Space for both user header and event banner */
+.status-active { 
+    background: #81c784 !important; 
+    color: #2e7d32 !important; 
+    padding: 0.2rem 0.5rem !important; 
+    border-radius: 12px !important; 
+    font-size: 0.75rem !important; 
+    font-weight: 500 !important;
+    display: inline-block !important;
+    cursor: default !important;
+}
+
+.status-complete { 
+    background: #90a4ae !important; 
+    color: #37474f !important; 
+    padding: 0.2rem 0.5rem !important; 
+    border-radius: 12px !important; 
+    font-size: 0.75rem !important; 
+    font-weight: 500 !important;
+    display: inline-block !important;
+    cursor: default !important;
 }
 
 /* -----------------------------
@@ -398,105 +341,69 @@ button:disabled, .stButton > button:disabled {
         position: relative !important;
         top: auto !important;
         right: auto !important;
-        margin: 0.5rem 0 !important; /* Reduced margin */
+        margin: 0.5rem 0 !important;
         text-align: center !important;
     }
     
-    /* Make event banner relative on mobile */
-    .event-mode-banner {
-        position: relative !important;
-        top: auto !important;
-        left: auto !important;
-        right: auto !important;
-        margin: 0.5rem 0 !important;
+    /* Event mode indicator mobile */
+    .event-mode-indicator {
+        font-size: 0.75rem !important;
+        padding: 0.2rem 0.5rem !important;
     }
     
     /* Reduce mobile padding */
     .main .block-container {
-        padding-top: 1rem !important;
+        padding-top: 0 !important;
         padding-left: 0.5rem !important;
         padding-right: 0.5rem !important;
-    }
-    
-    /* Mobile chat window */
-    .chat-window {
-        bottom: 0 !important;
-        right: 0 !important;
-        left: 0 !important;
-        width: 100% !important;
-        height: 70vh !important;
-        border-radius: 12px 12px 0 0 !important;
-    }
-    
-    .chat-bubble {
-        bottom: 1rem !important;
-        right: 1rem !important;
-        width: 50px !important;
-        height: 50px !important;
-    }
-    
-    /* Mobile form adjustments */
-    .stColumns {
-        flex-direction: column !important;
-    }
-    
-    /* Touch-friendly buttons */
-    button, .stButton > button {
-        min-height: 48px !important;
-        font-size: 1rem !important;
-    }
-}
-
-@media (max-width: 480px) {
-    /* Extra small screens */
-    .user-header {
-        padding: 0.25rem 0.5rem !important; /* Even smaller */
-        font-size: 0.8rem !important;
-    }
-    
-    .event-mode-banner {
-        padding: 0.3rem 0.5rem !important;
-        font-size: 0.75rem !important;
-    }
-    
-    .chat-bubble {
-        width: 45px !important;
-        height: 45px !important;
-    }
-    
-    .chat-bubble-icon {
-        font-size: 20px !important;
     }
 }
 
 /* -----------------------------
-   Status Indicators Enhanced
+   Remove Empty Space Elements
 ----------------------------- */
-.status-planning { 
-    background: #ffd54f !important; 
-    color: #f57f17 !important; 
-    padding: 0.3rem 0.7rem !important; 
-    border-radius: 12px !important; 
-    font-size: 0.8rem !important; 
-    font-weight: 500 !important;
+
+/* Remove streamlit's default margins */
+.element-container {
+    margin: 0 !important;
 }
 
-.status-active { 
-    background: #81c784 !important; 
-    color: #2e7d32 !important; 
-    padding: 0.3rem 0.7rem !important; 
-    border-radius: 12px !important; 
-    font-size: 0.8rem !important; 
-    font-weight: 500 !important;
+/* Remove extra spacing from columns */
+.stColumns > div {
+    gap: 0.5rem !important;
 }
 
-.status-complete { 
-    background: #90a4ae !important; 
-    color: #37474f !important; 
-    padding: 0.3rem 0.7rem !important; 
-    border-radius: 12px !important; 
-    font-size: 0.8rem !important; 
-    font-weight: 500 !important;
+/* Tighten form spacing */
+.stForm {
+    padding: 0 !important;
+}
+
+/* Remove padding from expanders */
+.streamlit-expanderHeader {
+    padding: 0.5rem !important;
+}
+
+/* -----------------------------
+   Cleanup Misc Elements
+----------------------------- */
+
+/* Hide any empty buttons or elements */
+button:empty {
+    display: none !important;
+}
+
+.stButton:has(button:empty) {
+    display: none !important;
+}
+
+/* Remove mysterious spacing elements */
+[data-testid="stDecoration"] {
+    display: none !important;
+}
+
+/* Remove top toolbar spacing */
+[data-testid="stToolbar"] {
+    display: none !important;
 }
 
 /* -----------------------------
@@ -505,9 +412,9 @@ button:disabled, .stButton > button:disabled {
 .card {
     background: #ffffff !important;
     border-radius: 12px !important;
-    padding: 1.5rem !important;
-    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.05) !important;
-    margin-bottom: 1rem !important;
+    padding: 1rem !important;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.05) !important;
+    margin-bottom: 0.5rem !important;
     border: 1px solid #f0f0f0 !important;
 }
 
@@ -517,11 +424,11 @@ button:disabled, .stButton > button:disabled {
 .tag {
     background: #edeafa !important;
     color: var(--primary-purple) !important;
-    padding: 0.3rem 0.7rem !important;
+    padding: 0.2rem 0.5rem !important;
     border-radius: 20px !important;
-    font-size: 0.85rem !important;
+    font-size: 0.75rem !important;
     display: inline-block !important;
-    margin: 0.2rem 0.3rem 0.2rem 0 !important;
+    margin: 0.1rem !important;
     font-weight: 500 !important;
 }
 
@@ -539,49 +446,4 @@ button:disabled, .stButton > button:disabled {
 
 ::-webkit-scrollbar-thumb:hover {
     background: var(--primary-purple) !important;
-}
-
-/* -----------------------------
-   Animation & Transitions
------------------------------ */
-.fade-in {
-    animation: fadeIn 0.3s ease-in !important;
-}
-
-@keyframes fadeIn {
-    from { opacity: 0; transform: translateY(-10px); }
-    to { opacity: 1; transform: translateY(0); }
-}
-
-.slide-up {
-    animation: slideUp 0.3s ease-out !important;
-}
-
-@keyframes slideUp {
-    from { transform: translateY(20px); opacity: 0; }
-    to { transform: translateY(0); opacity: 1; }
-}
-
-/* -----------------------------
-   Accessibility Improvements
------------------------------ */
-button:focus, .stButton > button:focus {
-    outline: 2px solid var(--primary-purple) !important;
-    outline-offset: 2px !important;
-}
-
-/* High contrast mode support */
-@media (prefers-contrast: high) {
-    button, .stButton > button {
-        border: 2px solid var(--primary-purple) !important;
-    }
-}
-
-/* Reduced motion support */
-@media (prefers-reduced-motion: reduce) {
-    *, *::before, *::after {
-        animation-duration: 0.01ms !important;
-        animation-iteration-count: 1 !important;
-        transition-duration: 0.01ms !important;
-    }
 }
