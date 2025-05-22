@@ -15,16 +15,16 @@ from notifications import notifications_sidebar
 # 🌟 App Modules
 from events import event_ui
 from post_event import post_event_ui
-from file_storage import file_manager_ui  # ✅ Corrected: was 'files'
+from file_storage import file_manager_ui
 from receipts import receipt_upload_ui
 from pdf_export import pdf_export_ui
 from menu_editor import menu_editor_ui
 from event_planning_dashboard import event_planning_dashboard_ui
 from event_modifications import event_modifications_ui
 from bulk_suggestions import bulk_suggestions_ui
-from audit import audit_log_ui  # ✅ Fixed: was audit_logs
-from tag_merging import admin_tag_manager_ui
-from roles import role_admin_ui
+from audit import audit_log_ui
+from tag_merging import tag_merging_ui  # ✅ Fixed: was admin_tag_manager_ui
+from admin_panel import admin_panel_ui  # ✅ Fixed: was roles.role_admin_ui
 from ai_chat import ai_chat_ui
 
 # ⚙️ Config
@@ -155,15 +155,15 @@ def main():
 
     elif selected_tab == "Explore Tags":
         if user:
-            admin_tag_manager_ui()
+            tag_merging_ui()  # ✅ Fixed: was admin_tag_manager_ui()
         else:
             st.info("🔒 Login required to manage tags.")
 
     elif selected_tab == "Admin Panel":
-        # ✅ Fixed: Check role properly
+        # ✅ Fixed: Check role properly and use correct function
         from auth import check_role
         if user and check_role(user, "admin"):
-            role_admin_ui()
+            admin_panel_ui()  # ✅ Fixed: was role_admin_ui()
         else:
             st.warning("⚠️ Admin access required.")
 
