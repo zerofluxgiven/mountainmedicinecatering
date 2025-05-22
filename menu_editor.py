@@ -70,6 +70,51 @@ def menu_editor_ui(user: dict) -> None:
                 _render_feedback(m)
 
 # ----------------------------
+# 🧱 Embedded Menu Editor (for dashboards)
+# ----------------------------
+
+def render_menu_editor(event_id: str, user: dict) -> None:
+    """Minimal scoped menu editor for inclusion inside dashboards or forms."""
+    st.markdown("### 🍽️ Menu Editor")
+
+    locked = _is_locked()
+    query = db.collection("menus").where("event_id", "==", event_id)
+    menus = [doc.to_dict() for doc in query.stream()]
+
+    if not menus:
+        st.info("No menu items for this event.")
+        return
+
+    for m in menus:
+        with st.expander(m.get("name", "Unnamed")):
+            st.markdown("**Description:**")
+            suggest_edit_box(
+                field_name="Description",
+                current_value=m.get("description", ""),
+                user=user,
+                target_id=m["id"],
+                doc_type="menu_item"
+            )
+
+            st.markdown("**Ingredients:**")
+            suggest_edit_box(
+                field_name="Ingredients",
+                current_value=m.get("ingredients", ""),
+                user=user,
+                target_id=m["id"],
+                doc_type="menu_item"
+            )
+
+            st.markdown("**Tags:**")
+            suggest_edit_box(
+                field_name="Tags",
+                current_value=", ".join(m.get("tags", [])),
+                user=user,
+                target_id=m["id"],
+                doc_type="menu_item"
+            )
+
+# ----------------------------
 # 🔒 Lock Logic
 # ----------------------------
 
