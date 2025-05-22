@@ -1,3 +1,5 @@
+# pdf_export.py
+
 import streamlit as st
 from fpdf import FPDF
 from firebase_admin import firestore
@@ -5,13 +7,14 @@ from datetime import datetime
 from utils import format_date
 import os
 
-# Firestore init
 db = firestore.client()
 
 # ----------------------------
 # 📄 Generate Event Summary PDF
 # ----------------------------
-def generate_event_summary_pdf(event_id):
+
+def generate_event_summary_pdf(event_id: str) -> None:
+    """Generates a post-event summary PDF for the given event."""
     event = db.collection("events").document(event_id).get().to_dict()
     if not event:
         st.error("Event not found.")
@@ -28,11 +31,11 @@ def generate_event_summary_pdf(event_id):
 
     pdf.set_title(f"Event Summary: {event.get('name')}")
 
-    def add_section(title, body):
+    def add_section(title: str, body: str) -> None:
         pdf.set_font("Arial", 'B', 14)
         pdf.cell(200, 10, txt=title, ln=1)
         pdf.set_font("Arial", size=12)
-        pdf.multi_cell(0, 10, txt=body)
+        pdf.multi_cell(0, 10, txt=body or "N/A")
         pdf.ln(5)
 
     # Title
@@ -42,17 +45,16 @@ def generate_event_summary_pdf(event_id):
     pdf.cell(200, 10, txt=f"Date: {format_date(event.get('date'))} | Location: {event.get('location')}", ln=1)
     pdf.ln(5)
 
-    # Popularity
+    # Sections
     pop_data = summary.get("menu_popularity", {})
     if pop_data:
         pop_text = "\n".join([f"{k}: {v}/5" for k, v in pop_data.items()])
         add_section("Menu Popularity", pop_text)
 
-    # Notes
-    add_section("Leftovers / Overages", summary.get("leftovers_notes", "No notes."))
-    add_section("Timing Issues", summary.get("timing_issues", "None noted."))
-    add_section("Improvements", summary.get("improvements", "No suggestions provided."))
-    add_section("Forgotten / Missing Items", summary.get("forgotten_items", "None listed."))
+    add_section("Leftovers / Overages", summary.get("leftovers_notes", ""))
+    add_section("Timing Issues", summary.get("timing_issues", ""))
+    add_section("Improvements", summary.get("improvements", ""))
+    add_section("Forgotten / Missing Items", summary.get("forgotten_items", ""))
 
     pdf.ln(10)
     pdf.set_font("Arial", 'I', 10)
