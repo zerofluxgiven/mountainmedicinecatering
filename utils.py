@@ -1,5 +1,3 @@
-# utils.py
-
 import streamlit as st
 import uuid
 from datetime import datetime
@@ -82,9 +80,9 @@ def get_event_by_id(event_id):
     doc = db.collection("events").document(event_id).get()
     return doc.to_dict() if doc.exists else None
 
-import streamlit as st
-from suggestions import create_suggestion
-from auth import get_user_id
+# ----------------------------
+# ✍️ Suggestion Box for Locked Fields
+# ----------------------------
 
 def suggest_edit_box(
     field_name: str,
@@ -97,11 +95,15 @@ def suggest_edit_box(
     Renders a locked field with a suggestion input box.
     Submits suggestion if changed and confirmed.
     """
+    from auth import get_user_id  # needed for accessing user ID at runtime
     st.markdown(f"🔒 **{field_name}** (locked)")
     suggested_value = st.text_input(f"💡 Suggest a new value for {field_name}:", value=current_value, key=f"suggest_{field_name}")
 
     if suggested_value != current_value:
         if st.button(f"💬 Submit Suggestion for {field_name}", key=f"submit_{field_name}"):
+            # 🔁 Delayed import to avoid circular dependency
+            from suggestions import create_suggestion
+
             create_suggestion(
                 document_type=doc_type,
                 document_id=target_id,
@@ -109,8 +111,7 @@ def suggest_edit_box(
                 current_value=current_value,
                 suggested_value=suggested_value,
                 user=user,
-                edited_by="user",  # or "ai_assistant" if used by AI
+                edited_by="user",  # or "ai_assistant"
             )
             st.success("✅ Suggestion submitted for review.")
-    return current_value  # field stays unchanged unless suggestion is approved
-
+    return current_value  # return original value, not suggested
