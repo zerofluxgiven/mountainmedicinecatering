@@ -2,9 +2,7 @@ import streamlit as st
 from auth import require_role
 from admin_utilities import admin_utilities_ui
 from tag_merging import tag_merging_ui
-# ✅ Fixed: Import from user_admin instead of roles
-# Note: Make sure your user_admin file is named user_admin.py (with .py extension)
-from user_admin import user_admin_ui
+from user_admin import user_admin_ui  # ✅ Fixed: was 'from roles import user_admin_ui'
 
 # ----------------------------
 # 🔐 Admin Panel UI
@@ -16,7 +14,7 @@ def admin_panel_ui():
 
     tab = st.selectbox("Choose a section:", [
         "🛠️ Utilities",
-        "🏷️ Tag Merging", 
+        "🏷️ Tag Merging",
         "👥 User Management"
     ])
 
