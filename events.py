@@ -387,7 +387,28 @@ def enhanced_event_ui(user: dict | None) -> None:
     st.markdown("---")
     
     # Add search and filter controls
-    search_term, status_filter, date_filter = render_event_filters()
+    search_term, status_filter, # events.py - Key fixes for status display
+
+# Find this section in your events.py file and replace the status display part:
+
+# In the event_ui function, where events are displayed in expanders:
+
+# REPLACE THIS SECTION:
+with col2:
+    st.markdown("**Status:**", unsafe_allow_html=True)
+    render_status_indicator(event.get('status', 'planning'))
+    st.markdown(f"**Created by:** {event.get('created_by', 'Unknown')}")
+    if event.get('created_at'):
+        st.markdown(f"**Created:** {format_date(event.get('created_at'))}")
+
+# The render_status_indicator function should just display the status, not create a button
+# Make sure in layout.py, the render_status_indicator function looks like this:
+
+def render_status_indicator(status):
+    """Render enhanced status indicator badge - NO BUTTON"""
+    status_lower = status.lower()
+    # Just show the status text, not as a button
+    st.markdown(f'<span class="status-{status_lower}">{status.title()}</span>', unsafe_allow_html=True) = render_event_filters()
     
     # Get and filter events
     events = get_all_events()
