@@ -1,11 +1,13 @@
-from events import get_active_event_id, get_active_event
+# event_mode.py
+
+from utils import get_active_event_id, get_active_event
 
 # -------------------------------
 # ✅ Is Event Mode Active?
 # -------------------------------
 
-def is_event_mode_active():
-    """Returns True if Event Mode is active."""
+def is_event_mode_active() -> bool:
+    """Returns True if Event Mode is active (i.e., an event is selected)."""
     return get_active_event_id() is not None
 
 # -------------------------------
@@ -13,24 +15,27 @@ def is_event_mode_active():
 # -------------------------------
 
 def is_locked(item_event_id: str) -> bool:
-    """Returns True if the item is outside the scope of the active event."""
+    """
+    Returns True if the item is locked due to being outside the active event.
+    If Event Mode is off, all items are editable.
+    """
     active_event_id = get_active_event_id()
     if not active_event_id:
-        return False  # No event mode = nothing is locked
+        return False
     return item_event_id != active_event_id
 
 # -------------------------------
 # 🧠 Get the Scoped Event ID
 # -------------------------------
 
-def get_scoped_event_id(default=None):
-    """Returns the current active event ID, or fallback to a default."""
+def get_scoped_event_id(default=None) -> str | None:
+    """Returns the active event ID, or a provided default fallback."""
     return get_active_event_id() or default
 
 # -------------------------------
 # 📋 Current Event Info (If Any)
 # -------------------------------
 
-def get_event_context():
-    """Returns the full active event object or None."""
+def get_event_context() -> dict | None:
+    """Returns the full active event document, or None if not set."""
     return get_active_event()
