@@ -439,8 +439,9 @@ def render_status_indicator(status):
 # ----------------------------
 def apply_theme():
     """Apply the complete Mountain Medicine theme"""
-    # Set location context for unique keys
-    st.session_state["current_location"] = "main_header"
+    # Set location context for unique keys with timestamp to ensure uniqueness
+import time
+st.session_state["current_location"] = f"main_header_{int(time.time())}"
     
     inject_custom_css()
     render_user_header()
