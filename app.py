@@ -1,4 +1,6 @@
 import streamlit as st
+from floating_ai_chat import integrate_floating_chat
+from notifications import notifications_sidebar
 from datetime import datetime
 from auth import load_user_session, get_user_role
 from utils import format_date, get_active_event
@@ -80,7 +82,7 @@ def main():
 
     # 🧭 Header with user info and global controls
     render_user_header()
-    render_global_event_controls()
+    # render_global_event_controls() - This is already called in apply_theme()
 
     # 💬 Floating AI Assistant
     integrate_floating_chat()
