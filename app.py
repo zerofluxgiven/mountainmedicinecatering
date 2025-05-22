@@ -65,6 +65,10 @@ def main():
     # 💅 Apply complete theme system
     apply_theme()
 
+    # 🔧 Fix layout issues
+    from ui_components import inject_layout_fixes
+    inject_layout_fixes()
+
     # 🔐 Auth
     user = load_user_session()
 
