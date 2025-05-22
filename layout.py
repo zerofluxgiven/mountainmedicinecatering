@@ -1,10 +1,7 @@
 import streamlit as st
-from utils import session_get, format_date
+from utils import session_get, format_date, get_event_by_id, get_active_event
 from ai_chat import ai_chat_ui
-from events import get_event_by_id
 from ui_components import show_event_mode_banner, render_event_toolbar
-
-
 
 # ----------------------------
 # 🎨 Inject Custom CSS + JS
@@ -65,26 +62,6 @@ def render_floating_assistant():
 def toggle_assistant_visibility():
     show = st.session_state.get("show_assistant", False)
     st.session_state["show_assistant"] = not show
-
-# ----------------------------
-# 📢 Event Mode Banner
-# ----------------------------
-def show_event_mode_banner():
-    active_event = get_active_event()
-    if not active_event:
-        return
-
-    name = active_event.get("name", "Unnamed Event")
-    date = format_date(active_event.get("date"))
-    location = active_event.get("location", "Unknown")
-
-    st.markdown(f"""
-    <div class='sticky-banner'>
-        <strong>📅 Event Mode Active:</strong> {name}
-        <br>📍 <i>{location}</i> on <b>{date}</b>
-        <br>✏️ Only content tagged to this event is editable.
-    </div>
-    """, unsafe_allow_html=True)
 
 # ----------------------------
 # 🔒 Lock Notice
