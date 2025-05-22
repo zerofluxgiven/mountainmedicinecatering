@@ -1,3 +1,4 @@
+# upload.py
 
 import streamlit as st
 from firebase_admin import firestore, storage
@@ -5,8 +6,6 @@ from auth import require_role
 from utils import format_date, generate_id, session_get
 from suggestions import create_suggestion
 from datetime import datetime
-import mimetypes
-import os
 
 db = firestore.client()
 bucket = storage.bucket()
@@ -15,9 +14,11 @@ COLLECTION = "files"
 # ----------------------------
 # 📦 File Upload Logic
 # ----------------------------
-def save_uploaded_file(file, event_id, uploaded_by):
+
+def save_uploaded_file(file, event_id: str, uploaded_by: str) -> str:
+    """Saves uploaded file to Firebase Storage and creates a Firestore record."""
     if not file:
-        return
+        return None
 
     file_id = generate_id("file")
     file_path = f"uploads/{file_id}_{file.name}"
@@ -37,25 +38,26 @@ def save_uploaded_file(file, event_id, uploaded_by):
         "deleted": False
     })
 
-    st.success("File uploaded.")
+    st.success("✅ File uploaded.")
     return file_id
 
 # ----------------------------
 # 🧠 AI Smart Tagging Stub
 # ----------------------------
-def suggest_tags_for_file(file):
-    # Placeholder for AI logic. Extend with actual file parsing & tagging.
+
+def suggest_tags_for_file(file) -> list[str]:
+    """Returns a basic tag list based on file type (can be extended with AI)."""
     if file.type.startswith("image"):
         return ["photo"]
     elif file.type in ("application/pdf", "application/msword"):
         return ["document"]
-    else:
-        return ["other"]
+    return ["other"]
 
 # ----------------------------
 # 📥 Upload UI
 # ----------------------------
-def upload_ui(event_id):
+
+def upload_ui(event_id: str):
     user = session_get("user")
     if not user:
         st.warning("Login required.")
@@ -71,7 +73,8 @@ def upload_ui(event_id):
 # ----------------------------
 # 📂 List Uploaded Files
 # ----------------------------
-def list_files(event_id=None, include_deleted=False):
+
+def list_files(event_id: str = None, include_deleted: bool = False) -> list[dict]:
     query = db.collection(COLLECTION)
     if event_id:
         query = query.where("event_id", "==", event_id)
@@ -83,19 +86,22 @@ def list_files(event_id=None, include_deleted=False):
 # ----------------------------
 # 🗑 Soft Delete
 # ----------------------------
-def soft_delete_file(file_id):
+
+def soft_delete_file(file_id: str):
     db.collection(COLLECTION).document(file_id).update({"deleted": True})
 
 # ----------------------------
 # ♻️ Restore Deleted File
 # ----------------------------
-def restore_file(file_id):
+
+def restore_file(file_id: str):
     db.collection(COLLECTION).document(file_id).update({"deleted": False})
 
 # ----------------------------
 # 🔍 File Manager UI
 # ----------------------------
-def file_manager_ui(user):
+
+def file_manager_ui(user: dict):
     st.subheader("📁 Uploaded Files")
 
     scoped_event_id = session_get("active_event_id")
@@ -116,6 +122,7 @@ def file_manager_ui(user):
 # ----------------------------
 # 🔐 Admin Restore Panel
 # ----------------------------
+
 def admin_restore_ui():
     st.subheader("🗂 Restore Deleted Files")
 
