@@ -4,7 +4,14 @@ import streamlit as st
 from firebase_admin import firestore
 from typing import List
 
-db = firestore.client()
+# Don't create the client at import time - use a function instead
+def get_db():
+    """Get the Firestore database client"""
+    try:
+        return firestore.client()
+    except Exception:
+        # Firebase not initialized yet
+        return None
 
 # ----------------------------
 # 🔔 Fetch User Notifications
@@ -12,6 +19,10 @@ db = firestore.client()
 
 def get_user_notifications(user_id: str) -> List[dict]:
     """Returns up to 10 recent notifications for a given user ID."""
+    db = get_db()
+    if not db:
+        return []
+        
     try:
         docs = db.collection("notifications") \
             .where("user_id", "==", user_id) \
@@ -25,6 +36,10 @@ def get_user_notifications(user_id: str) -> List[dict]:
 
 def get_suggestion_count() -> int:
     """Returns the count of pending suggestions."""
+    db = get_db()
+    if not db:
+        return 0
+        
     try:
         docs = db.collection("suggestions").where("status", "==", "pending").stream()
         return sum(1 for _ in docs)
@@ -65,6 +80,11 @@ def send_notification(message: str, user_id: str = None, role: str = None) -> No
         user_id: Optional direct recipient
         role: Optional role filter (e.g., "admin")
     """
+    db = get_db()
+    if not db:
+        st.error("❌ Database not available for notifications")
+        return
+        
     try:
         if user_id:
             db.collection("notifications").add({
