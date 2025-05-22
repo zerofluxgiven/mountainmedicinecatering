@@ -227,7 +227,7 @@ def event_ui(user: dict | None) -> None:
                 st.markdown(f"**Guests:** {event.get('guest_count', '-')}")
                 
             with col2:
-                st.markdown(f"**Status:** ", end="")
+                st.markdown("**Status:**", unsafe_allow_html=True)
                 render_status_indicator(event.get('status', 'planning'))
                 st.markdown(f"**Created by:** {event.get('created_by', 'Unknown')}")
                 if event.get('created_at'):
