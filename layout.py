@@ -1,110 +1,151 @@
 import streamlit as st
 from utils import session_get, format_date, get_event_by_id, get_active_event
-from ai_chat import ai_chat_ui
-from ui_components import show_event_mode_banner, render_event_toolbar
 
 # ----------------------------
 # 🎨 Inject Custom CSS + JS
 # ----------------------------
 def inject_custom_css():
-    try:
-        with open("public/style.css") as f:
-            st.markdown(f"<style>{f.read()}</style>", unsafe_allow_html=True)
-    except FileNotFoundError:
-        st.warning("⚠️ style.css not found in /public.")
-
-    js_code = """
-    <script>
-    const fab = window.parent.document.querySelector('#ai-fab');
-    if (!fab) {
-        const btn = document.createElement('button');
-        btn.id = 'ai-fab';
-        btn.innerHTML = '💬';
-        btn.style.position = 'fixed';
-        btn.style.bottom = '1.5rem';
-        btn.style.right = '1.5rem';
-        btn.style.background = '#6C4AB6';
-        btn.style.color = 'white';
-        btn.style.border = 'none';
-        btn.style.borderRadius = '50%';
-        btn.style.width = '3.5rem';
-        btn.style.height = '3.5rem';
-        btn.style.fontSize = '1.4rem';
-        btn.style.boxShadow = '0 4px 14px rgba(0,0,0,0.15)';
-        btn.style.cursor = 'pointer';
-        btn.style.zIndex = 1000;
-        btn.onclick = function() {
-            const el = window.parent.document.getElementById('streamlit-assistant-toggle');
-            if (el) el.click();
-        };
-        document.body.appendChild(btn);
+    """Inject custom CSS styling for the application"""
+    css_content = """
+    <style>
+    /* Base Styling */
+    .stApp {
+        font-family: 'Inter', sans-serif;
     }
-    </script>
-    """
-    st.markdown(js_code, unsafe_allow_html=True)
-
-# ----------------------------
-# 💬 Floating Assistant
-# ----------------------------
-def render_floating_assistant():
-    user = session_get("user")
-    if not user:
-        return
-
-    if st.session_state.get("show_assistant", False):
-        st.markdown("<div style='position: fixed; bottom: 5rem; right: 2rem; width: 400px; z-index: 999;'>", unsafe_allow_html=True)
-        with st.expander("💬 Assistant", expanded=True):
-            ai_chat_ui()
-        st.markdown("</div>", unsafe_allow_html=True)
-
-    st.button("toggle", key="streamlit-assistant-toggle", on_click=toggle_assistant_visibility)
-
-def toggle_assistant_visibility():
-    show = st.session_state.get("show_assistant", False)
-    st.session_state["show_assistant"] = not show
-
-# ----------------------------
-# 🔒 Lock Notice
-# ----------------------------
-def show_locked_notice():
-    st.info("✏️ This item is locked due to Event Mode. You can suggest changes, but editing is disabled.", icon="🔒")
-
-# ----------------------------
-# 🏷️ Event Tag Label
-# ----------------------------
-def show_event_tag_label(event_id):
-    event = get_event_by_id(event_id)
-    if not event:
-        return
-    name = event.get("name", "Unnamed Event")
-    st.markdown(f"<div style='margin-top: -0.5rem; color: gray;'>🏷️ <i>Tagged to:</i> <b>{name}</b></div>", unsafe_allow_html=True)
-
-# ----------------------------
-# 🧭 Top Navigation Tabs
-# ----------------------------
-def render_top_navbar(tabs):
-    st.markdown("<div class='nav-tabs'>", unsafe_allow_html=True)
-    selected = st.radio(
-        "Navigation",
-        tabs,
-        key="top_nav",
-        horizontal=True,
-        label_visibility="collapsed"
-    )
-    st.markdown("</div>", unsafe_allow_html=True)
-    return selected
-
-# ----------------------------
-# 🧰 Event Toolbar (Leave/Pause/Switch)
-# ----------------------------
-def render_event_toolbar(event_id, context="active"):
-    st.markdown("""
-    <div class="event-toolbar">
-        <span style="float: right;">
-            <a href="#" onclick="window.location.reload(); return false;">🔁 Switch</a> &nbsp;
-            <a href="#" onclick="alert('Event Paused!'); return false;">⏸ Pause</a> &nbsp;
-            <a href="#" onclick="window.location.href='/?leave_event=true'; return false;">🚪 Leave</a>
-        </span>
-    </div>
-    """, unsafe_allow_html=True)
-    st.markdown("<div style='margin-top: 2.5rem'></div>", unsafe_allow_html=True)
+    
+    /* Button Styling */
+    .stButton > button {
+        background-color: #6C4AB6 !important;
+        color: white !important;
+        border: none !important;
+        border-radius: 8px !important;
+        padding: 0.5rem 1rem !important;
+        font-weight: 500 !important;
+        transition: background-color 0.2s ease !important;
+    }
+    
+    .stButton > button:hover {
+        background-color: #563a9d !important;
+    }
+    
+    /* Input Styling */
+    .stTextInput input, .stTextArea textarea {
+        border: 1px solid #ccc !important;
+        border-radius: 6px !important;
+        font-size: 1rem !important;
+    }
+    
+    /* Card Styling */
+    .card {
+        background: #ffffff;
+        border-radius: 1rem;
+        padding: 1.5rem;
+        box-shadow: 0 0.5rem 1.5rem rgba(0, 0, 0, 0.05);
+        margin-bottom: 1rem;
+    }
+    
+    /* Tag Styling */
+    .tag {
+        background: #edeafa;
+        color: #6C4AB6;
+        padding: 0.3rem 0.7rem;
+        border-radius: 999px;
+        font-size: 0.85rem;
+        display: inline-block;
+        margin-right: 0.5rem;
+        margin-bottom: 0.3rem;
+    }
+    
+    /* Event Mode Banner */
+    .event-mode-banner {
+        background-color: #fff8e1;
+        padding: 12px;
+        border-radius: 10px;
+        margin: 12px 0;
+        border: 1px solid #ffecb3;
+    }
+    
+    /* Event Toolbar */
+    .event-toolbar {
+        position: sticky;
+        top: 0;
+        background: white;
+        padding: 1rem;
+        border-bottom: 1px solid #eee;
+        z-index: 100;
+        margin-bottom: 1rem;
+    }
+    
+    /* Notification Badge */
+    .sidebar-badge {
+        margin-top: 10px;
+        color: #B00020;
+        font-weight: bold;
+        font-size: 0.9rem;
+    }
+    
+    /* Assistant Styling */
+    .assistant-box {
+        background-color: #f5f5f5;
+        padding: 12px;
+        border-radius: 12px;
+        margin-bottom: 1rem;
+    }
+    
+    .assistant-suggestion {
+        background: #eae3f9;
+        color: #4B0082;
+        padding: 0.3rem 0.8rem;
+        border-radius: 6px;
+        margin: 0 0.25rem 0.5rem 0;
+        display: inline-block;
+        font-size: 0.85rem;
+        cursor: pointer;
+        transition: background 0.2s;
+    }
+    
+    .assistant-suggestion:hover {
+        background: #d4c4f4;
+    }
+    
+    /* Tab Styling */
+    .stTabs [role="tab"] {
+        background-color: #6C4AB6;
+        color: white;
+        margin-right: 8px;
+        border-radius: 8px 8px 0 0;
+        padding: 0.5rem 1rem;
+        transition: background 0.2s ease;
+        font-weight: 500;
+    }
+    
+    .stTabs [role="tab"][aria-selected="true"] {
+        background-color: #563a9d;
+        font-weight: bold;
+    }
+    
+    /* Scrollbar Styling */
+    ::-webkit-scrollbar {
+        width: 8px;
+    }
+    ::-webkit-scrollbar-thumb {
+        background: #ccc;
+        border-radius: 4px;
+    }
+    
+    /* Modal Styling */
+    .stModalContent {
+        padding: 1.5rem;
+        background: #ffffff;
+        border-radius: 1rem;
+        box-shadow: 0 4px 20px rgba(0,0,0,0.15);
+    }
+    
+    /* Color Utility Classes */
+    .accent-purple { color: #6C4AB6; }
+    .accent-grey { color: #666666; }
+    .accent-black { color: #000000; }
+    
+    /* Status Indicators */
+    .status-planning { 
+        backgr
