@@ -1,426 +1,542 @@
-# events.py - Updated with Smart Context Buttons
+# layout.py - Fixed version with compact event mode indicator
 
 import streamlit as st
-from utils import session_get, get_active_event_id, format_date, generate_id
-from ui_components import show_event_mode_banner
-from layout import render_smart_event_button, render_status_indicator
-from datetime import datetime
-from db_client import db
+from utils import session_get, format_date, get_event_by_id, get_active_event
+from auth import get_user_role
 
 # ----------------------------
-# 🔥 Get All Events
+# 🎨 Inject Custom CSS + JS
 # ----------------------------
-
-def get_all_events() -> list[dict]:
-    """Fetch all events from Firestore, sorted by start date."""
+def inject_custom_css():
+    """Inject custom CSS styling for the application"""
+    # Load the updated CSS file
     try:
-        docs = db.collection("events").order_by("start_date").stream()
-        return [{"id": doc.id, **doc.to_dict()} for doc in docs]
-    except Exception as e:
-        st.error(f"⚠️ Failed to fetch events: {e}")
-        return []
+        with open("style.css", "r") as f:
+            css_content = f.read()
+        st.markdown(f"<style>{css_content}</style>", unsafe_allow_html=True)
+    except FileNotFoundError:
+        # Fallback to inline CSS if file not found
+        css_content = """
+        <style>
+        /* Fallback styling */
+        :root {
+            --primary-purple: #6C4AB6;
+            --light-purple: #B8A4D4;
+            --accent-purple: #563a9d;
+            --border-radius: 8px;
+        }
+        
+        button, .stButton > button {
+            background-color: var(--primary-purple) !important;
+            color: white !important;
+            border: none !important;
+            border-radius: var(--border-radius) !important;
+            padding: 0.5rem 1rem !important;
+            font-weight: 500 !important;
+            transition: all 0.2s ease !important;
+            min-height: 44px !important;
+        }
+        
+        button:hover, .stButton > button:hover {
+            background-color: var(--accent-purple) !important;
+        }
+        </style>
+        """
+        st.markdown(css_content, unsafe_allow_html=True)
 
 # ----------------------------
-# ⚡ Smart Event Management
+# 👤 Header User Display
 # ----------------------------
-
-def activate_event(event_id: str) -> None:
-    """Sets the active event globally and updates status if needed."""
-    try:
-        # Set global Event Mode
-        db.collection("config").document("global").set({"active_event": event_id}, merge=True)
-        
-        # Ensure session state is updated
-        st.session_state["active_event"] = event_id
-        st.session_state["active_event_id"] = event_id
-        
-        # Update event status to 'active' if it's still in 'planning'
-        event_ref = db.collection("events").document(event_id)
-        event_doc = event_ref.get()
-        if event_doc.exists:
-            event_data = event_doc.to_dict()
-            if event_data.get('status') == 'planning':
-                update_event(event_id, {"status": "active"})
-        
-        st.success(f"✅ Event Mode activated: {event_id}")
-    except Exception as e:
-        st.error(f"❌ Could not activate event: {e}")
-def deactivate_event_mode() -> None:
-    """Deactivates the currently active event mode globally."""
-    try:
-        # Update global config
-        db.collection("config").document("global").update({"active_event": None})
-        
-        # Ensure session state is cleared
-        if "active_event_id" in st.session_state:
-            del st.session_state["active_event_id"]
-            
-        # Force synchronization with app state
-        st.session_state["active_event"] = None
-        
-        st.success("✅ Event Mode deactivated")
-    except Exception as e:
-        st.error(f"❌ Could not deactivate Event Mode: {e}")
-# ----------------------------
-# 📅 Create New Event
-# ----------------------------
-
-def create_event(event_data: dict, user_id: str) -> str:
-    """Create a new event with validation"""
-    try:
-        event_id = generate_id("evt")
-        
-        # Add metadata
-        event_data.update({
-            "id": event_id,
-            "created_by": user_id,
-            "created_at": datetime.utcnow(),
-            "status": "planning",
-            "version": 1
-        })
-        
-        # Ensure required fields have defaults
-        event_data.setdefault("guest_count", 0)
-        event_data.setdefault("staff_count", 0)
-        event_data.setdefault("menu", [])
-        event_data.setdefault("shopping_list", [])
-        event_data.setdefault("equipment_list", [])
-        
-        db.collection("events").document(event_id).set(event_data)
-        return event_id
-        
-    except Exception as e:
-        st.error(f"❌ Failed to create event: {e}")
-        return None
-
-# ----------------------------
-# ✏️ Edit Event
-# ----------------------------
-
-def update_event(event_id: str, updates: dict) -> bool:
-    """Update an existing event"""
-    try:
-        # Add update metadata
-        updates.update({
-            "updated_at": datetime.utcnow(),
-            "version": db.increment(1)
-        })
-        
-        db.collection("events").document(event_id).update(updates)
-        return True
-        
-    except Exception as e:
-        st.error(f"❌ Failed to update event: {e}")
-        return False
-
-# ----------------------------
-# 🗑️ Delete Event
-# ----------------------------
-
-def delete_event(event_id: str) -> bool:
-    """Soft delete an event"""
-    try:
-        db.collection("events").document(event_id).update({
-            "deleted": True,
-            "deleted_at": datetime.utcnow()
-        })
-        
-        # If this was the active event, clear it and store as recent
-        active_event_id = get_active_event_id()
-        if active_event_id == event_id:
-            st.session_state["recent_event_id"] = event_id
-            db.collection("config").document("global").update({"active_event": None})
-            if "active_event_id" in st.session_state:
-                del st.session_state["active_event_id"]
-        
-        return True
-        
-    except Exception as e:
-        st.error(f"❌ Failed to delete event: {e}")
-        return False
-
-# ----------------------------
-# 🎛 Enhanced Events Tab UI
-# ----------------------------
-
-def event_ui(user: dict | None) -> None:
-    """Enhanced Events tab UI with smart context buttons."""
-    st.markdown("## 📅 All Events")
-
+def render_user_header():
+    """Render user info in the top-right corner"""
+    user = session_get("user")
     if not user:
-        st.warning("Please log in to manage events.")
         return
-
-    # Create new event section
-    with st.container():
-        st.markdown("### Create New Event")
-        
-        with st.form("create_event_form"):
-            col1, col2 = st.columns(2)
-            
-            with col1:
-                name = st.text_input("Event Name *", placeholder="e.g., Summer Retreat 2025")
-                location = st.text_input("Location *", placeholder="e.g., Mountain Lodge")
-                start_date = st.date_input("Start Date *")
-                
-            with col2:
-                description = st.text_area("Description", placeholder="Brief description of the event...")
-                end_date = st.date_input("End Date *")
-                guest_count = st.number_input("Expected Guests", min_value=0, value=20)
-            
-            submitted = st.form_submit_button("Create Event")
-            
-            if submitted:
-                if not all([name, location, start_date, end_date]):
-                    st.error("Please fill in all required fields (*)")
-                elif start_date > end_date:
-                    st.error("Start date must be before end date")
-                else:
-                    event_data = {
-                        "name": name,
-                        "location": location,
-                        "description": description,
-                        "start_date": start_date.isoformat(),
-                        "end_date": end_date.isoformat(),
-                        "guest_count": guest_count
-                    }
-                    
-                    event_id = create_event(event_data, user["id"])
-                    if event_id:
-                        st.success(f"✅ Event created: {name}")
-                        st.rerun()
-
-    st.markdown("---")
     
-    # List existing events
-    events = get_all_events()
+    user_name = user.get("name", "User")
+    user_role = get_user_role(user)
+    
+    # Add the header with user info
+    header_html = f"""
+    <div class="user-header">
+        <div class="user-info">
+            <span class="user-name">{user_name}</span>
+            <span class="user-role">{user_role}</span>
+        </div>
+    </div>
+    """
+    st.markdown(header_html, unsafe_allow_html=True)
+
+# ----------------------------
+# 🎛️ Compact Event Mode Indicator with Exit Button
+# ----------------------------
+def render_global_event_controls():
+    """Render compact event mode indicator with integrated exit button"""
+    from utils import get_active_event_id, get_active_event
+    
     active_event_id = get_active_event_id()
-
-    if not events:
-        st.info("No events found. Create your first event above!")
+    user = session_get("user")
+    
+    if not user:
         return
-
-    st.markdown("### Existing Events")
     
-    # Event Mode status
+    # Check if we have a recent event stored in session
+    recent_event_id = st.session_state.get("recent_event_id")
+    
     if active_event_id:
-        active_event = next((e for e in events if e["id"] == active_event_id), None)
-        if active_event:
-            st.info(f"🟣 Event Mode Active: **{active_event.get('name', 'Unknown Event')}**")
-    
-    for event in events:
-        if event.get("deleted"):
-            continue  # Skip deleted events in main view
-            
-        is_active = event["id"] == active_event_id
+        # Get event info
+        active_event = get_active_event()
+        event_name = active_event.get("name", "Unknown Event") if active_event else "Unknown"
         
-        # Use different styling for active event
-        container_class = "active-event" if is_active else "inactive-event"
+        # Compact event mode indicator with exit button
+        indicator_html = f"""
+        <div class="event-mode-indicator">
+            <span class="event-icon">📅</span>
+            <span class="event-name">{event_name}</span>
+        </div>
+        """
         
-        with st.expander(f"{'🟣 ' if is_active else '⚪ '}{event.get('name', 'Unnamed Event')}", expanded=is_active):
-            # Event details
-            col1, col2 = st.columns(2)
-            
-            with col1:
-                st.markdown(f"**Location:** {event.get('location', 'Unknown')}")
-                st.markdown(f"**Dates:** {event.get('start_date', '?')} → {event.get('end_date', '?')}")
-                st.markdown(f"**Guests:** {event.get('guest_count', '-')}")
-                
-            with col2:
-                st.markdown("**Status:**", unsafe_allow_html=True)
-                render_status_indicator(event.get('status', 'planning'))
-                st.markdown(f"**Created by:** {event.get('created_by', 'Unknown')}")
-                if event.get('created_at'):
-                    st.markdown(f"**Created:** {format_date(event.get('created_at'))}")
-            
-            # Description
-            if event.get('description'):
-                st.markdown(f"**Description:** {event.get('description')}")
-            
-            # Action buttons
-            st.markdown("---")
-            col1, col2, col3, col4 = st.columns([2, 1, 1, 2])
-            
-            with col1:
-                # Smart context button (replaces Activate and Start Event)
-                render_smart_event_button(event, user)
-
-            with col2:
-                if st.button("Edit", key=f"edit_{event['id']}"):
-                    st.session_state["editing_event_id"] = event["id"]
-                    st.session_state["top_nav"] = "Event Planner"
-                    st.rerun()
-            
-            with col3:
-                # Only allow deletion by creator or admin
-                can_delete = (user.get("id") == event.get("created_by") or 
-                            st.session_state.get("user_role") == "admin")
-                
-                if can_delete:
-                    if st.button("Delete", key=f"del_{event['id']}"):
-                        # Use session state for confirmation
-                        confirm_key = f"confirm_delete_{event['id']}"
-                        if st.session_state.get(confirm_key):
-                            if delete_event(event["id"]):
-                                st.success("Event deleted")
-                                st.session_state[confirm_key] = False
-                                st.rerun()
-                        else:
-                            st.session_state[confirm_key] = True
-                            st.warning("Click Delete again to confirm")
-            
-            with col4:
-                # Status progression buttons (only if not using smart button for status)
-                current_status = event.get('status', 'planning')
-                
-                if current_status == 'active':
-                    if st.button("Complete Event", key=f"complete_{event['id']}"):
-                        if update_event(event["id"], {"status": "complete"}):
-                            st.success("Event completed")
-                            st.rerun()
-                elif current_status == 'complete':
-                    st.info("Event completed")
-
-    # Show event mode banner
-    show_event_mode_banner()
-
-# ----------------------------
-# 📊 Event Statistics
-# ----------------------------
-
-def show_event_statistics():
-    """Display event statistics dashboard"""
-    try:
-        events = get_all_events()
-        
-        if not events:
-            return
-        
-        st.markdown("### Event Statistics")
-        
-        col1, col2, col3, col4 = st.columns(4)
+        # Create columns for indicator and exit button
+        col1, col2 = st.columns([10, 1])
         
         with col1:
-            total_events = len([e for e in events if not e.get('deleted')])
-            st.metric("Total Events", total_events)
+            st.markdown(indicator_html, unsafe_allow_html=True)
         
         with col2:
-            active_events = len([e for e in events if e.get('status') == 'active'])
-            st.metric("Active Events", active_events)
+            # Exit button with unique key
+            if st.button("✕", key=f"exit_event_{active_event_id}", 
+                        help="Exit Event Mode",
+                        use_container_width=True):
+                # Store current event as recent before deactivating
+                st.session_state["recent_event_id"] = active_event_id
+                
+                # Deactivate Event Mode
+                from events import deactivate_event_mode, update_event
+                
+                # Force status update
+                update_event(active_event_id, {"status": "planning"})
+                deactivate_event_mode()
+                st.rerun()
+    
+    elif recent_event_id:
+        # Show Resume button for recent event
+        recent_event = get_event_by_id(recent_event_id)
+        if recent_event:
+            event_name = recent_event.get("name", "Recent Event")
+            col1, col2 = st.columns([10, 2])
+            with col2:
+                if st.button(f"Resume", key=f"resume_{recent_event_id}", 
+                           help=f"Resume working on {event_name}"):
+                    from events import activate_event
+                    activate_event(recent_event_id)
+                    # Clear recent event since we're now active
+                    if "recent_event_id" in st.session_state:
+                        del st.session_state["recent_event_id"]
+                    st.rerun()
+
+# ----------------------------
+# 💬 Fixed Floating AI Assistant
+# ----------------------------
+def render_floating_ai_chat():
+    """Render working floating AI chat bubble and window"""
+    user = session_get("user")
+    if not user:
+        return
+    
+    # Initialize chat state properly
+    if "chat_window_open" not in st.session_state:
+        st.session_state.chat_window_open = False
+    if "chat_history" not in st.session_state:
+        st.session_state.chat_history = []
+    
+    # Render the chat interface based on state
+    if st.session_state.chat_window_open:
+        render_chat_window()
+    
+    render_chat_bubble()
+
+def render_chat_bubble():
+    """Render the floating chat bubble"""
+    # Chat bubble with working toggle
+    if st.button("💬", key="floating_chat_toggle", 
+                 help="Toggle AI Assistant",
+                 use_container_width=False):
+        st.session_state.chat_window_open = not st.session_state.chat_window_open
+        st.rerun()
+    
+    # Position the button using CSS
+    st.markdown("""
+    <style>
+    .stButton:has([data-testid*="floating_chat_toggle"]) {
+        position: fixed !important;
+        bottom: 2rem !important;
+        right: 2rem !important;
+        z-index: 1000 !important;
+        width: 60px !important;
+        height: 60px !important;
+    }
+    
+    .stButton:has([data-testid*="floating_chat_toggle"]) button {
+        width: 60px !important;
+        height: 60px !important;
+        border-radius: 50% !important;
+        font-size: 24px !important;
+        background: var(--primary-purple, #6C4AB6) !important;
+        box-shadow: 0 4px 12px rgba(108, 74, 182, 0.3) !important;
+    }
+    
+    .stButton:has([data-testid*="floating_chat_toggle"]) button:hover {
+        transform: scale(1.1) !important;
+        background: var(--accent-purple, #563a9d) !important;
+    }
+    </style>
+    """, unsafe_allow_html=True)
+
+def render_chat_window():
+    """Render the chat window when open"""
+    # Create a container for the chat window
+    with st.container():
+        # Chat window header
+        col1, col2 = st.columns([4, 1])
+        with col1:
+            st.markdown("### 🤖 AI Assistant")
+        with col2:
+            if st.button("×", key="close_chat_window", help="Close chat"):
+                st.session_state.chat_window_open = False
+                st.rerun()
+        
+        # Chat messages area
+        st.markdown("---")
+        
+        # Display recent chat messages
+        if st.session_state.chat_history:
+            with st.container(height=300):
+                for i, msg in enumerate(st.session_state.chat_history[-10:]):
+                    if msg.get("sender") == "user":
+                        st.markdown(f"""
+                        <div style="background: var(--light-purple, #B8A4D4); color: white; 
+                                    padding: 0.5rem; border-radius: 8px; margin: 0.5rem 0; 
+                                    margin-left: 2rem;">
+                            <strong>You:</strong> {msg.get("content", "")}
+                        </div>
+                        """, unsafe_allow_html=True)
+                    else:
+                        st.markdown(f"""
+                        <div style="background: #e9ecef; color: #333; 
+                                    padding: 0.5rem; border-radius: 8px; margin: 0.5rem 0; 
+                                    margin-right: 2rem;">
+                            <strong>AI:</strong> {msg.get("content", "")}
+                        </div>
+                        """, unsafe_allow_html=True)
+        else:
+            st.info("👋 Hi! I'm your AI assistant. Ask me anything about your events!")
+        
+        # Quick action buttons
+        st.markdown("**🎯 Quick Actions:**")
+        col1, col2, col3 = st.columns(3)
+        
+        with col1:
+            if st.button("🛒 Shopping List", key="quick_shopping"):
+                _add_message("user", "Generate a shopping list for the active event")
+                _get_ai_response("Generate a shopping list for the active event")
+                st.rerun()
+        
+        with col2:
+            if st.button("📋 Menu Ideas", key="quick_menu"):
+                _add_message("user", "Suggest menu items for the active event")
+                _get_ai_response("Suggest menu items for the active event")
+                st.rerun()
         
         with col3:
-            completed_events = len([e for e in events if e.get('status') == 'complete'])
-            st.metric("Completed Events", completed_events)
+            if st.button("⏰ Timeline", key="quick_timeline"):
+                _add_message("user", "Help me create an event timeline")
+                _get_ai_response("Help me create an event timeline")
+                st.rerun()
         
-        with col4:
-            total_guests = sum(e.get('guest_count', 0) for e in events if not e.get('deleted'))
-            st.metric("Total Guests Served", total_guests)
+        # Chat input
+        st.markdown("---")
+        with st.form("chat_input_form", clear_on_submit=True):
+            user_input = st.text_input("Ask me anything...", placeholder="Type your message here")
+            send_button = st.form_submit_button("Send", use_container_width=True)
+            
+            if send_button and user_input.strip():
+                _add_message("user", user_input.strip())
+                _get_ai_response(user_input.strip())
+                st.rerun()
+    
+    # Position the chat window with CSS
+    st.markdown("""
+    <style>
+    .stContainer:has([data-testid*="close_chat_window"]) {
+        position: fixed !important;
+        bottom: 100px !important;
+        right: 2rem !important;
+        width: 350px !important;
+        max-height: 500px !important;
+        background: white !important;
+        border-radius: 12px !important;
+        box-shadow: 0 8px 32px rgba(0,0,0,0.2) !important;
+        z-index: 999 !important;
+        padding: 1rem !important;
+        border: 1px solid #ddd !important;
+    }
+    
+    @media (max-width: 768px) {
+        .stContainer:has([data-testid*="close_chat_window"]) {
+            bottom: 0 !important;
+            right: 0 !important;
+            left: 0 !important;
+            width: 100% !important;
+            height: 70vh !important;
+            border-radius: 12px 12px 0 0 !important;
+        }
+    }
+    </style>
+    """, unsafe_allow_html=True)
+
+def _add_message(sender: str, content: str):
+    """Add a message to chat history"""
+    st.session_state.chat_history.append({
+        "sender": sender,
+        "content": content,
+        "timestamp": st.session_state.get("current_time", "now")
+    })
+
+def _get_ai_response(message: str):
+    """Get AI response (simplified for this fix)"""
+    # This is a simplified version - you can integrate with your existing AI system
+    responses = {
+        "shopping": "Here's a sample shopping list for your event: \n• Fresh vegetables\n• Proteins (chicken, fish)\n• Grains (rice, pasta)\n• Seasonings and spices",
+        "menu": "Here are some menu suggestions:\n• Grilled chicken with herbs\n• Seasonal vegetable medley\n• Wild rice pilaf\n• Fresh fruit dessert",
+        "timeline": "Here's a basic event timeline:\n• 2 days before: Shop for ingredients\n• 1 day before: Prep vegetables\n• Day of: Start cooking 4 hours before service\n• 1 hour before: Final plating and setup"
+    }
+    
+    # Simple keyword matching for demo
+    if "shopping" in message.lower():
+        response = responses["shopping"]
+    elif "menu" in message.lower():
+        response = responses["menu"]
+    elif "timeline" in message.lower():
+        response = responses["timeline"]
+    else:
+        response = "I'd be happy to help with your catering needs! Ask me about shopping lists, menu planning, or event timelines."
+    
+    _add_message("ai", response)
+
+# ----------------------------
+# 📢 Enhanced Event Mode Banner - REMOVED
+# ----------------------------
+def show_event_mode_banner():
+    """This function is now empty - functionality moved to render_global_event_controls"""
+    # Intentionally empty - we don't want the big banner anymore
+    pass
+
+# ----------------------------
+# 🧭 Purple Tab Navigation
+# ----------------------------
+def render_top_navbar(tabs):
+    """Render purple-themed navigation tabs"""
+    # Get current selection from session state
+    current_tab = st.session_state.get("top_nav", tabs[0])
+    
+    # Ensure current tab is valid
+    if current_tab not in tabs:
+        current_tab = tabs[0]
+        st.session_state["top_nav"] = current_tab
+    
+    # Create purple button-style navigation
+    st.markdown('<div class="nav-container">', unsafe_allow_html=True)
+    
+    # Use Streamlit radio but styled as purple buttons
+    selected = st.radio(
+        "Navigation",
+        tabs,
+        index=tabs.index(current_tab),
+        key="top_nav",
+        horizontal=True,
+        label_visibility="collapsed"
+    )
+    
+    st.markdown('</div>', unsafe_allow_html=True)
+    return selected
+
+# ----------------------------
+# 🎯 Smart Context Buttons
+# ----------------------------
+def render_smart_event_button(event, user):
+    """Render context-aware event button with unique keys"""
+    from utils import get_active_event_id
+    from events import activate_event, deactivate_event_mode, update_event
+    
+    active_event_id = get_active_event_id()
+    event_id = event["id"]
+    
+    # Create unique key for this button
+    button_key = f"smart_event_btn_{event_id}"
+    
+    # Determine button text and action based on context
+    if active_event_id == event_id:
+        # This event is currently active
+        button_text = "🚪 Deactivate Event Mode"
+        button_type = "secondary"
+        action = "deactivate"
+    elif active_event_id and active_event_id != event_id:
+        # Another event is active
+        button_text = "⚡ Switch to This Event"
+        button_type = "secondary"
+        action = "switch"
+    else:
+        # No event is active
+        button_text = "🔘 Activate Event Mode"
+        button_type = "primary"
+        action = "activate"
+    
+    if st.button(button_text, key=button_key, type=button_type, use_container_width=True):
+        if action == "activate":
+            # Update event status to active and set Event Mode
+            update_event(event_id, {"status": "active"})
+            activate_event(event_id)
+            st.success(f"Event activated: {event.get('name', 'Unknown')}")
+        elif action == "deactivate":
+            # Store as recent and deactivate
+            st.session_state["recent_event_id"] = event_id
+            # Update status before deactivating
+            update_event(event_id, {"status": "planning"})
+            deactivate_event_mode()
+            st.success("Event Mode deactivated")
+        elif action == "switch":
+            # Store current as recent and switch
+            if active_event_id:
+                st.session_state["recent_event_id"] = active_event_id
+                # Update old event status
+                update_event(active_event_id, {"status": "planning"})
+            # Update new event status
+            update_event(event_id, {"status": "active"})
+            activate_event(event_id)
+            st.success(f"Switched to: {event.get('name', 'Unknown')}")
         
-        # Show recent activity
-        recent_events = sorted(
-            [e for e in events if not e.get('deleted')], 
-            key=lambda x: x.get('created_at', datetime.min), 
-            reverse=True
-        )[:3]
-        
-        if recent_events:
-            st.markdown("#### Recent Events")
-            for event in recent_events:
-                status = event.get('status', 'planning')
-                col1, col2 = st.columns([10, 1])
-                with col1:
-                    st.write(f"• **{event.get('name', 'Unnamed')}**")
-                with col2:
-                    render_status_indicator(status)
-                
-    except Exception as e:
-        st.error(f"⚠️ Could not load statistics: {e}")
+        st.rerun()
 
 # ----------------------------
-# 🔍 Event Search and Filter
+# 📊 Status Indicator
 # ----------------------------
-
-def render_event_filters():
-    """Render event search and filter controls"""
-    col1, col2, col3 = st.columns(3)
-    
-    with col1:
-        search_term = st.text_input("Search events", placeholder="Search by name or location...")
-    
-    with col2:
-        status_filter = st.selectbox("Filter by status", ["All", "planning", "active", "complete"])
-    
-    with col3:
-        date_filter = st.selectbox("Date range", ["All time", "This month", "Next month", "Past events"])
-    
-    return search_term, status_filter, date_filter
-
-def filter_events(events, search_term, status_filter, date_filter):
-    """Apply filters to events list"""
-    filtered = events
-    
-    # Apply search filter
-    if search_term:
-        search_lower = search_term.lower()
-        filtered = [e for e in filtered if 
-                   search_lower in e.get('name', '').lower() or 
-                   search_lower in e.get('location', '').lower()]
-    
-    # Apply status filter
-    if status_filter != "All":
-        filtered = [e for e in filtered if e.get('status') == status_filter]
-    
-    # Apply date filter (simplified)
-    if date_filter != "All time":
-        # This could be enhanced with actual date filtering logic
-        pass
-    
-    return filtered
-
-# ----------------------------
-# 🎯 Enhanced Event UI with Filters
-# ----------------------------
-
-def enhanced_event_ui(user: dict | None) -> None:
-    """Enhanced event UI with statistics and filters"""
-    show_event_statistics()
-    st.markdown("---")
-    
-    # Add search and filter controls
-    search_term, status_filter, # events.py - Key fixes for status display
-
-# Find this section in your events.py file and replace the status display part:
-
-# In the event_ui function, where events are displayed in expanders:
-
-# REPLACE THIS SECTION:
-with col2:
-    st.markdown("**Status:**", unsafe_allow_html=True)
-    render_status_indicator(event.get('status', 'planning'))
-    st.markdown(f"**Created by:** {event.get('created_by', 'Unknown')}")
-    if event.get('created_at'):
-        st.markdown(f"**Created:** {format_date(event.get('created_at'))}")
-
-# The render_status_indicator function should just display the status, not create a button
-# Make sure in layout.py, the render_status_indicator function looks like this:
-
 def render_status_indicator(status):
     """Render enhanced status indicator badge - NO BUTTON"""
     status_lower = status.lower()
     # Just show the status text, not as a button
-    st.markdown(f'<span class="status-{status_lower}">{status.title()}</span>', unsafe_allow_html=True) = render_event_filters()
+    st.markdown(f'<span class="status-{status_lower}">{status.title()}</span>', unsafe_allow_html=True)
+
+# ----------------------------
+# 🎨 Apply Theme
+# ----------------------------
+def apply_theme():
+    """Apply the complete Mountain Medicine theme"""
+    # Set location context for unique keys with timestamp to ensure uniqueness
+    import time
+    st.session_state["current_location"] = f"main_header_{int(time.time())}"
     
-    # Get and filter events
-    events = get_all_events()
-    if search_term or status_filter != "All" or date_filter != "All time":
-        events = filter_events(events, search_term, status_filter, date_filter)
-        st.info(f"Showing {len(events)} filtered events")
+    inject_custom_css()
+    render_user_header()
+    render_floating_ai_chat()
+
+# ----------------------------
+# 📱 Mobile Responsive Container
+# ----------------------------
+def responsive_container():
+    """Create a responsive container with mobile considerations"""
+    container = st.container()
     
-    # Show main event UI with filtered events
-    event_ui(user)
+    # Add mobile-specific styling
+    st.markdown("""
+    <style>
+    @media (max-width: 768px) {
+        .main .block-container {
+            padding-top: 2rem;
+            padding-left: 1rem;
+            padding-right: 1rem;
+        }
+    }
+    </style>
+    """, unsafe_allow_html=True)
+    
+    return container
+
+# ----------------------------
+# 🎯 Action Button Group
+# ----------------------------
+def render_action_buttons(actions):
+    """Render a group of purple-themed action buttons"""
+    if not actions:
+        return
+    
+    cols = st.columns(len(actions))
+    results = {}
+    
+    for i, (key, label, button_type) in enumerate(actions):
+        with cols[i]:
+            button_args = {"label": label, "key": key}
+            if button_type == "primary":
+                button_args["type"] = "primary"
+            
+            results[key] = st.button(**button_args)
+    
+    return results
+
+# ----------------------------
+# 📋 Enhanced Info Cards
+# ----------------------------
+def render_info_card(title, content, icon="ℹ️", card_type="info"):
+    """Render styled information card"""
+    card_colors = {
+        "info": "#e3f2fd",
+        "success": "#e8f5e8", 
+        "warning": "#fff3e0",
+        "error": "#ffebee"
+    }
+    
+    bg_color = card_colors.get(card_type, card_colors["info"])
+    
+    st.markdown(f"""
+    <div class="card" style="background-color: {bg_color};">
+        <h4>{icon} {title}</h4>
+        <p>{content}</p>
+    </div>
+    """, unsafe_allow_html=True)
+
+# ----------------------------
+# 🔧 Event Toolbar Enhanced
+# ----------------------------
+def render_event_toolbar(event_id, context="active"):
+    """Render enhanced event management toolbar"""
+    if not event_id:
+        return
+        
+    event = get_event_by_id(event_id)
+    if not event:
+        return
+    
+    status = event.get('status', 'planning')
+    
+    toolbar_html = f"""
+    <div class="event-toolbar slide-up">
+        <div style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap;">
+            <div style="flex: 1; min-width: 200px;">
+                <strong>🎪 {event.get('name', 'Unnamed Event')}</strong><br>
+                <small style="color: gray;">
+                    📍 {event.get('location', 'Unknown')} | 
+                    📅 {event.get('start_date', 'Unknown')}
+                </small>
+            </div>
+            <div style="display: flex; align-items: center; gap: 1rem; margin-top: 0.5rem;">
+                <span class="status-{status}">{status.title()}</span>
+            </div>
+        </div>
+    </div>
+    """
+    
+    st.markdown(toolbar_html, unsafe_allow_html=True)
 
 # For backward compatibility
-def get_active_event():
-    """Get the full active event document"""
-    from utils import get_active_event
-    return get_active_event()
+def render_floating_assistant():
+    """Legacy function name - redirects to new floating chat"""
+    render_floating_ai_chat()
