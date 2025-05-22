@@ -2,9 +2,7 @@
 
 from typing import List, Dict, Optional
 import streamlit as st
-from firebase_admin import firestore
-
-db = firestore.client()
+from db_client import db  # ✅ Fixed: Use centralized database client instead of firebase_admin
 
 TAGS_COLLECTION = "tags"
 
@@ -49,6 +47,8 @@ def increment_tag_usage(tag: str) -> None:
     tag_doc = tag_ref.get()
 
     if tag_doc.exists:
+        # ✅ Fixed: Use proper Firestore increment
+        from firebase_admin import firestore
         tag_ref.update({"count": firestore.Increment(1)})
     else:
         tag_ref.set({"display": tag.strip(), "count": 1})
@@ -59,8 +59,12 @@ def increment_tag_usage(tag: str) -> None:
 
 def get_all_tags() -> Dict[str, Dict]:
     """Fetch all tag documents from Firestore."""
-    docs = db.collection(TAGS_COLLECTION).stream()
-    return {doc.id: doc.to_dict() for doc in docs}
+    try:
+        docs = db.collection(TAGS_COLLECTION).stream()
+        return {doc.id: doc.to_dict() for doc in docs}
+    except Exception as e:
+        st.error(f"⚠️ Could not fetch tags: {e}")
+        return {}
 
 # ----------------------------
 # 🔄 Merge Tag Logic
@@ -74,25 +78,31 @@ def merge_tags(from_tag: str, to_tag: str) -> None:
     from_ref = db.collection(TAGS_COLLECTION).document(from_norm)
     to_ref = db.collection(TAGS_COLLECTION).document(to_norm)
 
-    from_doc = from_ref.get()
-    to_doc = to_ref.get()
+    try:
+        from_doc = from_ref.get()
+        to_doc = to_ref.get()
 
-    if not from_doc.exists:
-        st.warning(f"Tag '{from_tag}' not found.")
-        return
+        if not from_doc.exists:
+            st.warning(f"Tag '{from_tag}' not found.")
+            return
 
-    from_count = from_doc.to_dict().get("count", 0)
+        from_count = from_doc.to_dict().get("count", 0)
 
-    if to_doc.exists:
-        to_ref.update({"count": firestore.Increment(from_count)})
-    else:
-        to_ref.set({
-            "display": to_tag.strip(),
-            "count": from_count
-        })
+        if to_doc.exists:
+            # ✅ Fixed: Use proper Firestore increment
+            from firebase_admin import firestore
+            to_ref.update({"count": firestore.Increment(from_count)})
+        else:
+            to_ref.set({
+                "display": to_tag.strip(),
+                "count": from_count
+            })
 
-    from_ref.delete()
-    st.success(f"Merged '{from_tag}' into '{to_tag}'.")
+        from_ref.delete()
+        st.success(f"Merged '{from_tag}' into '{to_tag}'.")
+        
+    except Exception as e:
+        st.error(f"❌ Failed to merge tags: {e}")
 
 # ----------------------------
 # ⚙️ Admin Tag Manager UI
@@ -103,11 +113,18 @@ def admin_tag_manager_ui() -> None:
     st.subheader("🏷️ Tag Management")
 
     tags = get_all_tags()
+    if not tags:
+        st.info("No tags found in the system.")
+        return
+        
     sorted_tags = sorted(tags.items(), key=lambda x: x[1].get("count", 0), reverse=True)
 
     st.write("### Existing Tags")
-    for tag_id, data in sorted_tags:
+    for tag_id, data in sorted_tags[:20]:  # Show top 20 tags
         st.write(f"- **{data.get('display')}** (used {data.get('count', 0)} times)")
+    
+    if len(sorted_tags) > 20:
+        st.write(f"... and {len(sorted_tags) - 20} more tags")
 
     st.write("### Merge Tags")
     with st.form("merge_tags"):
@@ -116,3 +133,4 @@ def admin_tag_manager_ui() -> None:
         submitted = st.form_submit_button("Merge")
         if submitted and from_tag and to_tag:
             merge_tags(from_tag, to_tag)
+            st.rerun()  # ✅ Fixed: was st.experimental_rerun()
