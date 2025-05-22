@@ -6,6 +6,7 @@ from firebase_admin import firestore
 from datetime import datetime
 from utils import format_date
 import os
+from auth import require_login
 
 db = firestore.client()
 
@@ -68,3 +69,15 @@ def generate_event_summary_pdf(event_id: str) -> None:
         st.download_button("📥 Download PDF", f, file_name=filename)
 
     os.remove(filepath)
+
+# ----------------------------
+# 📄 Full-Page UI for app.py
+# ----------------------------
+
+@require_login
+def pdf_export_ui():
+    st.title("📄 Export Post-Event Summary")
+
+    event_id = st.text_input("Enter Event ID")
+    if event_id and st.button("Generate PDF"):
+        generate_event_summary_pdf(event_id)
