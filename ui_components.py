@@ -7,7 +7,52 @@ from event_mode import get_active_event
 # ----------------------------
 # 📢 Event Mode Banner with Unique Keys
 # ----------------------------
-
+def inject_layout_fixes():
+    """Inject CSS to fix layout issues and tighten spacing"""
+    layout_css = """
+    <style>
+    /* Tighten overall layout */
+    .main .block-container {
+        padding-top: 0.5rem !important;
+        padding-bottom: 1rem !important;
+        max-width: 1200px !important;
+    }
+    
+    /* Reduce excessive spacing */
+    .element-container {
+        margin-bottom: 0.25rem !important;
+    }
+    
+    /* Fix navigation spacing */
+    .stRadio > div {
+        gap: 0.25rem !important;
+        margin: 0.5rem 0 !important;
+    }
+    
+    /* Tighten header */
+    h1, h2 {
+        margin-top: 0.5rem !important;
+        margin-bottom: 0.5rem !important;
+    }
+    
+    /* Remove mysterious empty buttons */
+    .stButton button:empty,
+    .stButton button[aria-label=""] {
+        display: none !important;
+    }
+    
+    /* Fix floating chat position */
+    .stButton:has([data-testid*="floating_chat_toggle"]) {
+        position: fixed !important;
+        bottom: 1.5rem !important;
+        right: 1.5rem !important;
+        z-index: 1000 !important;
+        width: 50px !important;
+        height: 50px !important;
+    }
+    </style>
+    """
+    st.markdown(layout_css, unsafe_allow_html=True)
 def show_event_mode_banner() -> None:
     """Displays a visual banner when Event Mode is active - no duplicate button."""
     active_event = get_active_event()
