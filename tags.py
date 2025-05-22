@@ -1,3 +1,5 @@
+# tags.py
+
 from typing import List, Dict, Optional
 import streamlit as st
 from firebase_admin import firestore
@@ -6,25 +8,13 @@ db = firestore.client()
 
 TAGS_COLLECTION = "tags"
 
+# ----------------------------
+# 🔤 Normalization Helpers
+# ----------------------------
+
 def normalize_tag(tag: str) -> str:
     """Standardizes a tag by lowercasing and stripping whitespace."""
     return tag.strip().lower()
-
-def get_all_tags() -> Dict[str, Dict]:
-    """Fetch all tag documents from Firestore."""
-    docs = db.collection(TAGS_COLLECTION).stream()
-    return {doc.id: doc.to_dict() for doc in docs}
-
-def increment_tag_usage(tag: str):
-    """Increments usage count for a normalized tag or creates it."""
-    norm_tag = normalize_tag(tag)
-    tag_ref = db.collection(TAGS_COLLECTION).document(norm_tag)
-    tag_doc = tag_ref.get()
-
-    if tag_doc.exists:
-        tag_ref.update({"count": firestore.Increment(1)})
-    else:
-        tag_ref.set({"display": tag.strip(), "count": 1})
 
 def get_most_common_variant(tag: str) -> str:
     """Returns the most commonly used display version of a tag."""
@@ -40,18 +30,43 @@ def get_suggested_tag(tag: str) -> str:
     all_tags = get_all_tags()
     if norm_tag in all_tags:
         return all_tags[norm_tag]["display"]
-    # Check for similar tags (e.g., same spelling with different cases)
     candidates = {
-        k: v for k, v in all_tags.items()
-        if k.lower() == norm_tag
+        k: v for k, v in all_tags.items() if k.lower() == norm_tag
     }
     if candidates:
-        # Return the one with highest count
         sorted_candidates = sorted(candidates.items(), key=lambda x: x[1].get("count", 0), reverse=True)
         return sorted_candidates[0][1]["display"]
     return tag
 
-def merge_tags(from_tag: str, to_tag: str):
+# ----------------------------
+# 📊 Usage Counting
+# ----------------------------
+
+def increment_tag_usage(tag: str) -> None:
+    """Increments usage count for a normalized tag or creates it."""
+    norm_tag = normalize_tag(tag)
+    tag_ref = db.collection(TAGS_COLLECTION).document(norm_tag)
+    tag_doc = tag_ref.get()
+
+    if tag_doc.exists:
+        tag_ref.update({"count": firestore.Increment(1)})
+    else:
+        tag_ref.set({"display": tag.strip(), "count": 1})
+
+# ----------------------------
+# 🔍 Fetch All Tags
+# ----------------------------
+
+def get_all_tags() -> Dict[str, Dict]:
+    """Fetch all tag documents from Firestore."""
+    docs = db.collection(TAGS_COLLECTION).stream()
+    return {doc.id: doc.to_dict() for doc in docs}
+
+# ----------------------------
+# 🔄 Merge Tag Logic
+# ----------------------------
+
+def merge_tags(from_tag: str, to_tag: str) -> None:
     """Merge one tag into another, deleting the old one."""
     from_norm = normalize_tag(from_tag)
     to_norm = normalize_tag(to_tag)
@@ -69,9 +84,7 @@ def merge_tags(from_tag: str, to_tag: str):
     from_count = from_doc.to_dict().get("count", 0)
 
     if to_doc.exists:
-        to_ref.update({
-            "count": firestore.Increment(from_count)
-        })
+        to_ref.update({"count": firestore.Increment(from_count)})
     else:
         to_ref.set({
             "display": to_tag.strip(),
@@ -81,7 +94,11 @@ def merge_tags(from_tag: str, to_tag: str):
     from_ref.delete()
     st.success(f"Merged '{from_tag}' into '{to_tag}'.")
 
-def admin_tag_manager_ui():
+# ----------------------------
+# ⚙️ Admin Tag Manager UI
+# ----------------------------
+
+def admin_tag_manager_ui() -> None:
     """Admin UI for viewing and merging tags."""
     st.subheader("🏷️ Tag Management")
 
