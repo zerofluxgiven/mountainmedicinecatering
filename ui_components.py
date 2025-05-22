@@ -54,25 +54,49 @@ def inject_layout_fixes():
     """
     st.markdown(layout_css, unsafe_allow_html=True)
 def show_event_mode_banner() -> None:
-    """Displays a visual banner when Event Mode is active - no duplicate button."""
+    """Displays enhanced Event Mode banner with controls"""
     active_event = get_active_event()
     if not active_event:
         return
 
     name = active_event.get("name", "Unnamed Event")
-    date = format_date(active_event.get("date"))
+    date = format_date(active_event.get("date", active_event.get("start_date")))
     location = active_event.get("location", "Unknown")
+    status = active_event.get("status", "planning")
 
-    # Just show the banner - no button to avoid duplicates
+    # Enhanced banner with status indicator
     banner_html = f"""
-        <div style="background-color:#fff8e1;padding:8px 12px;border-radius:8px;margin:8px 0;border:1px solid #ffecb3;">
-            <strong>📅 Event Mode Active:</strong> {name}<br>
-            <small>📍 {location} | 🗓 {date}</small>
+    <div class="event-mode-banner fade-in" style="background: linear-gradient(135deg, #e1f5fe, #b3e5fc); border: 2px solid #81d4fa; padding: 15px; border-radius: 10px;">
+        <div class="banner-content">
+            <h3 style="margin: 0; color: #0277bd;">📅 Event Mode Active: {name}</h3>
+            <div style="margin-top: 5px;">
+                <span style="margin-right: 15px;">📍 {location}</span>
+                <span style="margin-right: 15px;">🗓 {date}</span>
+                <span class="status-{status.lower()}" style="display: inline-block; padding: 3px 8px; border-radius: 12px; font-size: 0.8rem; font-weight: 500;">
+                    {status.title()}
+                </span>
+            </div>
         </div>
+    </div>
     """
     
-    # Display banner only - the exit button is in the header
+    # Create a full-width banner
     st.markdown(banner_html, unsafe_allow_html=True)
+    
+    # Add exit button below the banner
+    col1, col2, col3 = st.columns([3, 3, 2])
+    with col3:
+        if st.button("🚪 Exit Event Mode", key="enhanced_exit_event", use_container_width=True):
+            # Store current event as recent
+            st.session_state["recent_event_id"] = active_event["id"]
+            from events import deactivate_event_mode, update_event
+            
+            # Update status to planning when deactivating
+            if active_event["id"] and status == "active":
+                update_event(active_event["id"], {"status": "planning"})
+                
+            deactivate_event_mode()
+            st.rerun()
 
 # ----------------------------
 # 🧰 Event Toolbar Stub (Updated with unique keys)
