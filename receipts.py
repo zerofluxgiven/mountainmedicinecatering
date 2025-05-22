@@ -1,3 +1,5 @@
+# receipts.py
+
 import streamlit as st
 from firebase_admin import firestore, storage
 from auth import require_login
@@ -7,14 +9,15 @@ from PIL import Image
 import openai
 import tempfile
 
-# Firestore init
 db = firestore.client()
 
 # ----------------------------
 # 🧾 Receipt Upload & Parsing
 # ----------------------------
+
 @require_login
-def receipt_upload_ui(user):
+def receipt_upload_ui(user: dict) -> None:
+    """UI for uploading receipts with optional AI-assisted parsing."""
     st.title("🧾 Upload a Receipt")
     st.caption("AI-assisted receipt parser with manual editing and event linking.")
 
@@ -50,27 +53,32 @@ def receipt_upload_ui(user):
                 edited_items.append({"name": name, "quantity": qty, "price": price})
 
         if st.button("✅ Save Receipt"):
-            db.collection("receipts").document(file_id).set({
-                "id": file_id,
-                "name": file_name,
-                "uploaded_by": user["id"],
-                "uploaded_at": datetime.utcnow(),
-                "vendor": vendor,
-                "date": date.strftime("%Y-%m-%d"),
-                "total": total,
-                "items": edited_items,
-                "event_id": event_id or None,
-                "shopping_list_id": list_id or None,
-                "equipment_id": equipment_id or None
-            })
-            st.success("Receipt saved and parsed data stored.")
+            try:
+                db.collection("receipts").document(file_id).set({
+                    "id": file_id,
+                    "name": file_name,
+                    "uploaded_by": user["id"],
+                    "uploaded_at": datetime.utcnow(),
+                    "vendor": vendor,
+                    "date": date.strftime("%Y-%m-%d"),
+                    "total": total,
+                    "items": edited_items,
+                    "event_id": event_id or None,
+                    "shopping_list_id": list_id or None,
+                    "equipment_id": equipment_id or None
+                })
+                st.success("Receipt saved and parsed data stored.")
+            except Exception as e:
+                st.error(f"❌ Failed to save receipt: {e}")
 
 # ----------------------------
-# 🧠 AI Parser (OpenAI Vision or GPT prompt)
+# 🧠 AI Parser (mock / extendable)
 # ----------------------------
-def _parse_receipt_with_ai(file_path):
-    # You can expand this with OpenAI's vision or document parsing tools
-    # For now, return mock data
+
+def _parse_receipt_with_ai(file_path: str) -> dict:
+    """
+    Mock AI parser for receipts. Replace with OpenAI Vision/GPT call.
+    """
     return {
         "vendor": "Costco",
         "date": datetime.today(),
