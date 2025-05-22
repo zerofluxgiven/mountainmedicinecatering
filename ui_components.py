@@ -66,7 +66,7 @@ def show_event_mode_banner() -> None:
 
     # Enhanced banner with status indicator
     banner_html = f"""
-    <div class="event-mode-banner fade-in" style="background: linear-gradient(135deg, #e1f5fe, #b3e5fc); border: 2px solid #81d4fa; padding: 15px; border-radius: 10px;">
+    <div class="event-mode-banner fade-in" style="background: linear-gradient(135deg, #e1f5fe, #b3e5fc); border: 2px solid #81d4fa; padding: 8px; border-radius: 10px;">
         <div class="banner-content">
             <h3 style="margin: 0; color: #0277bd;">📅 Event Mode Active: {name}</h3>
             <div style="margin-top: 5px;">
