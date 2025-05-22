@@ -24,11 +24,14 @@ def get_all_events() -> list[dict]:
 # ⚡ Smart Event Management
 # ----------------------------
 
-def activate_event(event_id: str) -> None:
+ddef activate_event(event_id: str) -> None:
     """Sets the active event globally and updates status if needed."""
     try:
         # Set global Event Mode
         db.collection("config").document("global").set({"active_event": event_id}, merge=True)
+        
+        # Ensure session state is updated
+        st.session_state["active_event"] = event_id
         st.session_state["active_event_id"] = event_id
         
         # Update event status to 'active' if it's still in 'planning'
@@ -39,10 +42,9 @@ def activate_event(event_id: str) -> None:
             if event_data.get('status') == 'planning':
                 update_event(event_id, {"status": "active"})
         
-        st.success(f"✅ Event activated: {event_id}")
+        st.success(f"✅ Event Mode activated: {event_id}")
     except Exception as e:
         st.error(f"❌ Could not activate event: {e}")
-
 def deactivate_event_mode() -> None:
     """Deactivates the currently active event mode globally."""
     try:
