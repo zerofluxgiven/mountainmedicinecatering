@@ -9,7 +9,8 @@ from layout import (
     inject_custom_css,
     render_top_navbar,
     render_floating_assistant,
-    show_event_mode_banner
+    from ui_components import show_event_mode_banner
+
 )
 from notifications import notifications_sidebar
 
