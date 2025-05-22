@@ -1,261 +1,275 @@
 import streamlit as st
 from utils import session_get, format_date, get_event_by_id, get_active_event
+from auth import get_user_role
 
 # ----------------------------
 # 🎨 Inject Custom CSS + JS
 # ----------------------------
 def inject_custom_css():
     """Inject custom CSS styling for the application"""
-    css_content = """
-    <style>
-    /* Base Styling */
-    .stApp {
-        font-family: 'Inter', sans-serif;
-    }
-    
-    /* Button Styling */
-    .stButton > button {
-        background-color: #6C4AB6 !important;
-        color: white !important;
-        border: none !important;
-        border-radius: 8px !important;
-        padding: 0.5rem 1rem !important;
-        font-weight: 500 !important;
-        transition: background-color 0.2s ease !important;
-    }
-    
-    .stButton > button:hover {
-        background-color: #563a9d !important;
-    }
-    
-    /* Input Styling */
-    .stTextInput input, .stTextArea textarea {
-        border: 1px solid #ccc !important;
-        border-radius: 6px !important;
-        font-size: 1rem !important;
-    }
-    
-    /* Card Styling */
-    .card {
-        background: #ffffff;
-        border-radius: 1rem;
-        padding: 1.5rem;
-        box-shadow: 0 0.5rem 1.5rem rgba(0, 0, 0, 0.05);
-        margin-bottom: 1rem;
-    }
-    
-    /* Tag Styling */
-    .tag {
-        background: #edeafa;
-        color: #6C4AB6;
-        padding: 0.3rem 0.7rem;
-        border-radius: 999px;
-        font-size: 0.85rem;
-        display: inline-block;
-        margin-right: 0.5rem;
-        margin-bottom: 0.3rem;
-    }
-    
-    /* Event Mode Banner */
-    .event-mode-banner {
-        background-color: #fff8e1;
-        padding: 12px;
-        border-radius: 10px;
-        margin: 12px 0;
-        border: 1px solid #ffecb3;
-    }
-    
-    /* Event Toolbar */
-    .event-toolbar {
-        position: sticky;
-        top: 0;
-        background: white;
-        padding: 1rem;
-        border-bottom: 1px solid #eee;
-        z-index: 100;
-        margin-bottom: 1rem;
-    }
-    
-    /* Notification Badge */
-    .sidebar-badge {
-        margin-top: 10px;
-        color: #B00020;
-        font-weight: bold;
-        font-size: 0.9rem;
-    }
-    
-    /* Assistant Styling */
-    .assistant-box {
-        background-color: #f5f5f5;
-        padding: 12px;
-        border-radius: 12px;
-        margin-bottom: 1rem;
-    }
-    
-    .assistant-suggestion {
-        background: #eae3f9;
-        color: #4B0082;
-        padding: 0.3rem 0.8rem;
-        border-radius: 6px;
-        margin: 0 0.25rem 0.5rem 0;
-        display: inline-block;
-        font-size: 0.85rem;
-        cursor: pointer;
-        transition: background 0.2s;
-    }
-    
-    .assistant-suggestion:hover {
-        background: #d4c4f4;
-    }
-    
-    /* Tab Styling */
-    .stTabs [role="tab"] {
-        background-color: #6C4AB6;
-        color: white;
-        margin-right: 8px;
-        border-radius: 8px 8px 0 0;
-        padding: 0.5rem 1rem;
-        transition: background 0.2s ease;
-        font-weight: 500;
-    }
-    
-    .stTabs [role="tab"][aria-selected="true"] {
-        background-color: #563a9d;
-        font-weight: bold;
-    }
-    
-    /* Scrollbar Styling */
-    ::-webkit-scrollbar {
-        width: 8px;
-    }
-    ::-webkit-scrollbar-thumb {
-        background: #ccc;
-        border-radius: 4px;
-    }
-    
-    /* Modal Styling */
-    .stModalContent {
-        padding: 1.5rem;
-        background: #ffffff;
-        border-radius: 1rem;
-        box-shadow: 0 4px 20px rgba(0,0,0,0.15);
-    }
-    
-    /* Color Utility Classes */
-    .accent-purple { color: #6C4AB6; }
-    .accent-grey { color: #666666; }
-    .accent-black { color: #000000; }
-    
-    /* Status Indicators */
-    .status-planning { 
-        background: #ffd54f; 
-        color: #f57f17; 
-        padding: 0.2rem 0.5rem; 
-        border-radius: 12px; 
-        font-size: 0.8rem; 
-    }
-    .status-active { 
-        background: #81c784; 
-        color: #2e7d32; 
-        padding: 0.2rem 0.5rem; 
-        border-radius: 12px; 
-        font-size: 0.8rem; 
-    }
-    .status-complete { 
-        background: #90a4ae; 
-        color: #37474f; 
-        padding: 0.2rem 0.5rem; 
-        border-radius: 12px; 
-        font-size: 0.8rem; 
-    }
-    </style>
-    """
-    st.markdown(css_content, unsafe_allow_html=True)
+    # Load the updated CSS file
+    try:
+        with open("style.css", "r") as f:
+            css_content = f.read()
+        st.markdown(f"<style>{css_content}</style>", unsafe_allow_html=True)
+    except FileNotFoundError:
+        # Fallback to inline CSS if file not found
+        css_content = """
+        <style>
+        /* Fallback styling - use the CSS from the artifact above */
+        :root {
+            --primary-purple: #6C4AB6;
+            --light-purple: #B8A4D4;
+            --accent-purple: #563a9d;
+            --border-radius: 8px;
+        }
+        
+        button, .stButton > button {
+            background-color: var(--primary-purple) !important;
+            color: white !important;
+            border: none !important;
+            border-radius: var(--border-radius) !important;
+            padding: 0.5rem 1rem !important;
+            font-weight: 500 !important;
+            transition: all 0.2s ease !important;
+            min-height: 44px !important;
+        }
+        
+        button:hover, .stButton > button:hover {
+            background-color: var(--accent-purple) !important;
+        }
+        </style>
+        """
+        st.markdown(css_content, unsafe_allow_html=True)
 
 # ----------------------------
-# 💬 Floating Assistant (Simplified)
+# 👤 Header User Display
 # ----------------------------
-def render_floating_assistant():
-    """Render a simplified floating assistant using sidebar"""
+def render_user_header():
+    """Render user info in the top-right corner"""
     user = session_get("user")
     if not user:
         return
+    
+    user_name = user.get("name", "User")
+    user_role = get_user_role(user)
+    
+    # Add the header with user info and Event Mode controls
+    header_html = f"""
+    <div class="user-header">
+        <div class="user-info">
+            <span class="user-name">{user_name}</span>
+            <span class="user-role">{user_role}</span>
+        </div>
+        <div id="event-mode-controls">
+            <!-- Event Mode controls will be added here -->
+        </div>
+    </div>
+    """
+    st.markdown(header_html, unsafe_allow_html=True)
 
-    # Use sidebar for assistant instead of floating window
-    with st.sidebar:
-        st.markdown("---")
-        if st.button("💬 AI Assistant", help="Toggle AI Assistant"):
-            current_state = st.session_state.get("show_assistant", False)
-            st.session_state["show_assistant"] = not current_state
+# ----------------------------
+# 🎛️ Global Event Mode Controls
+# ----------------------------
+def render_global_event_controls():
+    """Render global Event Mode controls in header"""
+    from utils import get_active_event_id, get_active_event
+    
+    active_event_id = get_active_event_id()
+    user = session_get("user")
+    
+    if not user:
+        return
+    
+    # Check if we have a recent event stored in session
+    recent_event_id = st.session_state.get("recent_event_id")
+    
+    if active_event_id:
+        # Show Exit Event Mode button
+        active_event = get_active_event()
+        event_name = active_event.get("name", "Unknown Event") if active_event else "Unknown"
         
-        # Show assistant in sidebar if toggled
-        if st.session_state.get("show_assistant", False):
-            st.markdown("### 🤖 AI Assistant")
-            
-            # Quick actions
-            quick_actions = [
-                ("🛒 Shopping List", "Generate a shopping list for the active event"),
-                ("📋 Menu Ideas", "Suggest menu items for the active event"),
-                ("⏰ Timeline", "Help me create an event timeline"),
-            ]
-            
-            st.markdown("**Quick Actions:**")
-            for label, prompt in quick_actions:
-                if st.button(label, key=f"quick_{label}"):
-                    # Store the prompt for the main AI chat
-                    st.session_state["ai_quick_prompt"] = prompt
-                    st.session_state["top_nav"] = "Assistant"  # Switch to assistant tab
+        col1, col2 = st.columns([3, 1])
+        with col2:
+            if st.button("Exit Event Mode", key="global_exit_event", help=f"Exit {event_name}"):
+                # Store current event as recent before deactivating
+                st.session_state["recent_event_id"] = active_event_id
+                
+                # Deactivate Event Mode
+                from events import deactivate_event_mode
+                deactivate_event_mode()
+                st.rerun()
+    
+    elif recent_event_id:
+        # Show Resume button
+        recent_event = get_event_by_id(recent_event_id)
+        if recent_event:
+            event_name = recent_event.get("name", "Recent Event")
+            col1, col2 = st.columns([3, 1])
+            with col2:
+                if st.button(f"Resume {event_name[:15]}...", key="global_resume_event", 
+                           help=f"Resume working on {event_name}"):
+                    from events import activate_event
+                    activate_event(recent_event_id)
+                    # Clear recent event since we're now active
+                    if "recent_event_id" in st.session_state:
+                        del st.session_state["recent_event_id"]
                     st.rerun()
 
-def toggle_assistant_visibility():
-    """Toggle assistant visibility"""
-    show = st.session_state.get("show_assistant", False)
-    st.session_state["show_assistant"] = not show
-
 # ----------------------------
-# 🔒 Lock Notice
+# 💬 Floating AI Assistant
 # ----------------------------
-def show_locked_notice():
-    """Show notice when content is locked due to Event Mode"""
-    st.info("✏️ This item is locked due to Event Mode. You can suggest changes, but editing is disabled.", icon="🔒")
-
-# ----------------------------
-# 🏷️ Event Tag Label
-# ----------------------------
-def show_event_tag_label(event_id):
-    """Show which event an item is tagged to"""
-    if not event_id:
+def render_floating_ai_chat():
+    """Render floating AI chat bubble and window"""
+    user = session_get("user")
+    if not user:
         return
+    
+    # Initialize chat state
+    if "chat_window_open" not in st.session_state:
+        st.session_state.chat_window_open = False
+    if "chat_history" not in st.session_state:
+        st.session_state.chat_history = []
+    
+    # Chat bubble (always visible)
+    chat_bubble_html = """
+    <div class="chat-bubble" onclick="toggleChatWindow()">
+        <span class="chat-bubble-icon">💬</span>
+    </div>
+    """
+    
+    # Chat window (conditionally visible)
+    chat_window_style = "display: block;" if st.session_state.chat_window_open else "display: none;"
+    
+    # Get recent chat messages for display
+    recent_messages = st.session_state.chat_history[-5:] if st.session_state.chat_history else []
+    messages_html = ""
+    
+    for msg in recent_messages:
+        msg_class = "user" if msg.get("sender") == "user" else "ai"
+        messages_html += f"""
+        <div class="chat-message {msg_class}">
+            <strong>{"You" if msg_class == "user" else "AI"}:</strong> {msg.get("content", "")}
+        </div>
+        """
+    
+    chat_window_html = f"""
+    <div class="chat-window" style="{chat_window_style}" id="chatWindow">
+        <div class="chat-header">
+            <span>AI Assistant</span>
+            <button onclick="toggleChatWindow()" style="background: none; border: none; color: white; cursor: pointer;">×</button>
+        </div>
+        <div class="chat-body" id="chatBody">
+            {messages_html if messages_html else '<p style="color: #666; text-align: center; margin-top: 2rem;">Ask me anything about your events!</p>'}
+        </div>
+        <div class="chat-input-area">
+            <input type="text" class="chat-input" id="chatInput" placeholder="Type your message..." 
+                   onkeypress="if(event.key==='Enter') sendMessage()">
+            <button class="chat-send-btn" onclick="sendMessage()">Send</button>
+        </div>
+    </div>
+    """
+    
+    # JavaScript for chat functionality
+    chat_js = """
+    <script>
+    function toggleChatWindow() {
+        const chatWindow = document.getElementById('chatWindow');
+        const isOpen = chatWindow.style.display === 'block';
+        chatWindow.style.display = isOpen ? 'none' : 'block';
         
-    event = get_event_by_id(event_id)
-    if not event:
-        st.markdown(f"<div style='margin-top: -0.5rem; color: gray;'>🏷️ <i>Tagged to:</i> <b>Unknown Event ({event_id})</b></div>", unsafe_allow_html=True)
-        return
+        // Update Streamlit session state
+        window.parent.postMessage({
+            type: 'streamlit:setComponentValue',
+            value: !isOpen
+        }, '*');
+    }
+    
+    function sendMessage() {
+        const input = document.getElementById('chatInput');
+        const message = input.value.trim();
+        if (!message) return;
         
-    name = event.get("name", "Unnamed Event")
-    st.markdown(f"<div style='margin-top: -0.5rem; color: gray;'>🏷️ <i>Tagged to:</i> <b>{name}</b></div>", unsafe_allow_html=True)
+        // Add user message to chat
+        addMessageToChat('user', message);
+        input.value = '';
+        
+        // Send to backend for AI response
+        window.parent.postMessage({
+            type: 'streamlit:aiMessage',
+            value: message
+        }, '*');
+    }
+    
+    function addMessageToChat(sender, content) {
+        const chatBody = document.getElementById('chatBody');
+        const messageDiv = document.createElement('div');
+        messageDiv.className = `chat-message ${sender}`;
+        messageDiv.innerHTML = `<strong>${sender === 'user' ? 'You' : 'AI'}:</strong> ${content}`;
+        chatBody.appendChild(messageDiv);
+        chatBody.scrollTop = chatBody.scrollHeight;
+    }
+    
+    // Listen for AI responses
+    window.addEventListener('message', function(event) {
+        if (event.data.type === 'streamlit:aiResponse') {
+            addMessageToChat('ai', event.data.value);
+        }
+    });
+    </script>
+    """
+    
+    # Render all components
+    st.markdown(chat_bubble_html + chat_window_html + chat_js, unsafe_allow_html=True)
+    
+    # Handle chat toggle state
+    if st.session_state.get("chat_toggle_trigger"):
+        st.session_state.chat_window_open = not st.session_state.chat_window_open
+        st.session_state.chat_toggle_trigger = False
 
 # ----------------------------
-# 🧭 Top Navigation Tabs
+# 📢 Enhanced Event Mode Banner
+# ----------------------------
+def show_event_mode_banner():
+    """Displays enhanced Event Mode banner with controls"""
+    active_event = get_active_event()
+    if not active_event:
+        return
+
+    name = active_event.get("name", "Unnamed Event")
+    date = format_date(active_event.get("date"))
+    location = active_event.get("location", "Unknown")
+
+    banner_html = f"""
+    <div class="event-mode-banner fade-in">
+        <div class="banner-content">
+            <strong>📅 Event Mode Active:</strong> {name}<br>
+            <small>📍 {location} | 🗓 {date}</small>
+        </div>
+        <div class="banner-controls">
+            <!-- Exit button will be handled by Streamlit component -->
+        </div>
+    </div>
+    """
+    
+    # Render banner with exit button
+    col1, col2 = st.columns([4, 1])
+    with col1:
+        st.markdown(banner_html, unsafe_allow_html=True)
+    with col2:
+        if st.button("Exit Event Mode", key="banner_exit_event"):
+            # Store current event as recent
+            st.session_state["recent_event_id"] = active_event["id"]
+            from events import deactivate_event_mode
+            deactivate_event_mode()
+            st.rerun()
+
+# ----------------------------
+# 🧭 Purple Tab Navigation
 # ----------------------------
 def render_top_navbar(tabs):
-    """Render the top navigation bar with tabs"""
-    # Add custom styling for navigation
-    st.markdown("""
-    <style>
-    .nav-container {
-        position: sticky;
-        top: 0;
-        background: white;
-        z-index: 100;
-        padding: 0.5rem 0;
-        margin-bottom: 1rem;
-        border-bottom: 1px solid #eee;
-    }
-    </style>
-    """, unsafe_allow_html=True)
-    
-    st.markdown("<div class='nav-container'>", unsafe_allow_html=True)
+    """Render purple-themed navigation tabs"""
+    # Custom CSS for purple tabs (already in main CSS)
     
     # Get current selection from session state
     current_tab = st.session_state.get("top_nav", tabs[0])
@@ -265,6 +279,10 @@ def render_top_navbar(tabs):
         current_tab = tabs[0]
         st.session_state["top_nav"] = current_tab
     
+    # Create purple button-style navigation
+    st.markdown('<div class="nav-container">', unsafe_allow_html=True)
+    
+    # Use Streamlit radio but styled as purple buttons
     selected = st.radio(
         "Navigation",
         tabs,
@@ -274,68 +292,103 @@ def render_top_navbar(tabs):
         label_visibility="collapsed"
     )
     
-    st.markdown("</div>", unsafe_allow_html=True)
+    st.markdown('</div>', unsafe_allow_html=True)
     return selected
 
 # ----------------------------
-# 🧰 Event Toolbar
+# 🎯 Smart Context Buttons
 # ----------------------------
-def render_event_toolbar(event_id, context="active"):
-    """Render event management toolbar"""
-    if not event_id:
-        return
-        
-    event = get_event_by_id(event_id)
-    if not event:
-        return
+def render_smart_event_button(event, user):
+    """Render context-aware event button"""
+    from utils import get_active_event_id
+    from events import activate_event, deactivate_event_mode
     
-    st.markdown(f"""
-    <div class="event-toolbar">
-        <div style="display: flex; justify-content: space-between; align-items: center;">
-            <div>
-                <strong>🎪 {event.get('name', 'Unnamed Event')}</strong>
-                <span style="margin-left: 1rem; color: gray;">
-                    📍 {event.get('location', 'Unknown')} | 
-                    📅 {event.get('start_date', 'Unknown')}
-                </span>
-            </div>
-            <div>
-                <span class="status-{event.get('status', 'planning')}">{event.get('status', 'planning').title()}</span>
-            </div>
-        </div>
-    </div>
-    """, unsafe_allow_html=True)
+    active_event_id = get_active_event_id()
+    event_id = event["id"]
+    
+    # Determine button text and action based on context
+    if active_event_id == event_id:
+        # This event is currently active
+        button_text = "Deactivate Event Mode"
+        button_type = "secondary"
+        action = "deactivate"
+    elif active_event_id and active_event_id != event_id:
+        # Another event is active
+        button_text = "Switch to This Event"
+        button_type = "secondary"
+        action = "switch"
+    else:
+        # No event is active
+        button_text = "Activate Event"
+        button_type = "primary"
+        action = "activate"
+    
+    if st.button(button_text, key=f"smart_btn_{event_id}", type=button_type):
+        if action == "activate":
+            # Update event status to active and set Event Mode
+            from events import update_event
+            update_event(event_id, {"status": "active"})
+            activate_event(event_id)
+            st.success(f"Event activated: {event.get('name', 'Unknown')}")
+        elif action == "deactivate":
+            # Store as recent and deactivate
+            st.session_state["recent_event_id"] = event_id
+            deactivate_event_mode()
+            st.success("Event Mode deactivated")
+        elif action == "switch":
+            # Store current as recent and switch
+            if active_event_id:
+                st.session_state["recent_event_id"] = active_event_id
+            activate_event(event_id)
+            st.success(f"Switched to: {event.get('name', 'Unknown')}")
+        
+        st.rerun()
 
 # ----------------------------
 # 📊 Status Indicator
 # ----------------------------
 def render_status_indicator(status):
-    """Render a status indicator badge"""
-    status_colors = {
-        "planning": ("#ffd54f", "#f57f17"),
-        "active": ("#81c784", "#2e7d32"),
-        "complete": ("#90a4ae", "#37474f"),
-        "cancelled": ("#ef5350", "#c62828")
+    """Render enhanced status indicator badge"""
+    status_lower = status.lower()
+    st.markdown(f'<span class="status-{status_lower}">{status.title()}</span>', unsafe_allow_html=True)
+
+# ----------------------------
+# 🎨 Apply Theme
+# ----------------------------
+def apply_theme():
+    """Apply the complete Mountain Medicine theme"""
+    inject_custom_css()
+    render_user_header()
+    render_global_event_controls()
+    render_floating_ai_chat()
+
+# ----------------------------
+# 📱 Mobile Responsive Container
+# ----------------------------
+def responsive_container():
+    """Create a responsive container with mobile considerations"""
+    container = st.container()
+    
+    # Add mobile-specific styling
+    st.markdown("""
+    <style>
+    @media (max-width: 768px) {
+        .main .block-container {
+            padding-top: 2rem;
+            padding-left: 1rem;
+            padding-right: 1rem;
+        }
     }
-    
-    bg_color, text_color = status_colors.get(status.lower(), ("#e0e0e0", "#424242"))
-    
-    st.markdown(f"""
-    <span style="
-        background: {bg_color}; 
-        color: {text_color}; 
-        padding: 0.2rem 0.5rem; 
-        border-radius: 12px; 
-        font-size: 0.8rem;
-        font-weight: 500;
-    ">{status.title()}</span>
+    </style>
     """, unsafe_allow_html=True)
+    
+    return container
 
 # ----------------------------
 # 🎯 Action Button Group
 # ----------------------------
 def render_action_buttons(actions):
-    """Render a group of action buttons"""
+    """Render a group of purple-themed action buttons"""
     if not actions:
         return
     
@@ -353,54 +406,60 @@ def render_action_buttons(actions):
     return results
 
 # ----------------------------
-# 📱 Responsive Container
+# 📋 Enhanced Info Cards
 # ----------------------------
-def responsive_container():
-    """Create a responsive container that adapts to screen size"""
-    return st.container()
-
-# ----------------------------
-# 🎨 Theme Helper
-# ----------------------------
-def apply_theme():
-    """Apply the Mountain Medicine theme"""
-    inject_custom_css()
-
-# ----------------------------
-# 📋 Info Cards
-# ----------------------------
-def render_info_card(title, content, icon="ℹ️"):
-    """Render an information card"""
+def render_info_card(title, content, icon="ℹ️", card_type="info"):
+    """Render styled information card"""
+    card_colors = {
+        "info": "#e3f2fd",
+        "success": "#e8f5e8", 
+        "warning": "#fff3e0",
+        "error": "#ffebee"
+    }
+    
+    bg_color = card_colors.get(card_type, card_colors["info"])
+    
     st.markdown(f"""
-    <div class="card">
+    <div class="card" style="background-color: {bg_color};">
         <h4>{icon} {title}</h4>
         <p>{content}</p>
     </div>
     """, unsafe_allow_html=True)
 
 # ----------------------------
-# ⚠️ Alert Messages
+# 🔧 Event Toolbar Enhanced
 # ----------------------------
-def render_alert(message, alert_type="info"):
-    """Render styled alert messages"""
-    colors = {
-        "info": ("#e3f2fd", "#1976d2"),
-        "success": ("#e8f5e8", "#2e7d32"),
-        "warning": ("#fff3e0", "#f57c00"),
-        "error": ("#ffebee", "#d32f2f")
-    }
+def render_event_toolbar(event_id, context="active"):
+    """Render enhanced event management toolbar"""
+    if not event_id:
+        return
+        
+    event = get_event_by_id(event_id)
+    if not event:
+        return
     
-    bg_color, text_color = colors.get(alert_type, colors["info"])
+    status = event.get('status', 'planning')
     
-    st.markdown(f"""
-    <div style="
-        background: {bg_color};
-        color: {text_color};
-        padding: 1rem;
-        border-radius: 8px;
-        margin: 1rem 0;
-        border-left: 4px solid {text_color};
-    ">
-        {message}
+    toolbar_html = f"""
+    <div class="event-toolbar slide-up">
+        <div style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap;">
+            <div style="flex: 1; min-width: 200px;">
+                <strong>🎪 {event.get('name', 'Unnamed Event')}</strong><br>
+                <small style="color: gray;">
+                    📍 {event.get('location', 'Unknown')} | 
+                    📅 {event.get('start_date', 'Unknown')}
+                </small>
+            </div>
+            <div style="display: flex; align-items: center; gap: 1rem; margin-top: 0.5rem;">
+                <span class="status-{status}">{status.title()}</span>
+            </div>
+        </div>
     </div>
-    """, unsafe_allow_html=True)
+    """
+    
+    st.markdown(toolbar_html, unsafe_allow_html=True)
+
+# For backward compatibility
+def render_floating_assistant():
+    """Legacy function name - redirects to new floating chat"""
+    render_floating_ai_chat()
