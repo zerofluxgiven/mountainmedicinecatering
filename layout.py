@@ -92,8 +92,8 @@ def render_user_header():
         
         col1, col2 = st.columns([3, 1])
         with col2:
-            # Use unique key based on location
-            unique_key = f"{location_key}_exit_event_mode"
+            # Use unique key based on location and event ID to prevent duplicates
+            unique_key = f"{location_key}_exit_event_mode_{hash(str(active_event_id))}"
             if st.button("Exit Event Mode", key=unique_key, help=f"Exit {event_name}"):
                 # Store current event as recent before deactivating
                 st.session_state["recent_event_id"] = active_event_id
@@ -110,7 +110,7 @@ def render_user_header():
             event_name = recent_event.get("name", "Recent Event")
             col1, col2 = st.columns([3, 1])
             with col2:
-                unique_key = f"{location_key}_resume_event"
+                unique_key = f"{location_key}_resume_event_{hash(str(recent_event_id))}"
                 if st.button(f"Resume {event_name[:15]}...", key=unique_key, 
                            help=f"Resume working on {event_name}"):
                     from events import activate_event
