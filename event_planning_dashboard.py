@@ -1,8 +1,8 @@
 import streamlit as st
-from firestore import db
+from db_client import db  # ✅ Fixed: was 'from firestore import db'
 from utils import session_get
-from menu_editor import render_menu_editor
-from upload import upload_ui
+from menu_editor import menu_editor_ui  # ✅ Fixed: was render_menu_editor (doesn't exist)
+from file_storage import file_manager_ui  # ✅ Fixed: was 'from upload import upload_ui'
 from datetime import datetime
 from layout import render_event_toolbar
 
@@ -42,8 +42,20 @@ def event_planning_dashboard_ui(event_id):
         name = st.text_input("Event Name", value=event.get("name", ""))
         description = st.text_area("Description", value=event.get("description", ""))
         col1, col2 = st.columns(2)
-        start = col1.date_input("Start Date", value=datetime.strptime(event.get("start_date", "2025-01-01"), "%Y-%m-%d"))
-        end = col2.date_input("End Date", value=datetime.strptime(event.get("end_date", "2025-01-02"), "%Y-%m-%d"))
+        
+        # ✅ Fixed: Better date handling
+        try:
+            start_default = datetime.strptime(event.get("start_date", "2025-01-01"), "%Y-%m-%d").date()
+        except (ValueError, TypeError):
+            start_default = datetime.now().date()
+            
+        try:
+            end_default = datetime.strptime(event.get("end_date", "2025-01-02"), "%Y-%m-%d").date()
+        except (ValueError, TypeError):
+            end_default = datetime.now().date()
+            
+        start = col1.date_input("Start Date", value=start_default)
+        end = col2.date_input("End Date", value=end_default)
 
         instructions = st.text_area("🛠️ Other Instructions", value=event.get("instructions", ""))
         restrictions = st.text_area("🥗 Dietary Restrictions", value=event.get("dietary_restrictions", ""))
@@ -51,7 +63,9 @@ def event_planning_dashboard_ui(event_id):
         headcount = st.number_input("👥 Headcount", min_value=0, value=event.get("guest_count", 0))
 
         st.markdown("## 🍽️ Meal Plan")
-        render_menu_editor(event_id)
+        # ✅ Fixed: Use existing menu_editor_ui function with proper parameters
+        if st.checkbox("Show Menu Editor", value=True):
+            menu_editor_ui(user)
 
         st.markdown("## 🧺 Shopping List")
         shopping_list = st.text_area("Items", value="\n".join(event.get("shopping_list", [])))
@@ -60,7 +74,9 @@ def event_planning_dashboard_ui(event_id):
         equipment_list = st.text_area("Equipment", value="\n".join(event.get("equipment_list", [])))
 
         st.markdown("## 📎 Upload Files")
-        upload_ui(event_id)
+        # ✅ Fixed: Use file_manager_ui instead of upload_ui
+        if st.checkbox("Show File Manager", value=False):
+            file_manager_ui(user)
 
         st.markdown("## 🤖 Assistant Suggestions")
         st.info("Parsed files will generate suggested content updates. Preview and confirm below:")
