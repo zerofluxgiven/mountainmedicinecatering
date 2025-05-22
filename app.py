@@ -35,12 +35,7 @@ TABS = {
     "Upload": "files",
     "Receipts": "receipts",
     "Post-Event": "post_event",
-    "Suggestions": "suggestions",
-    "Bulk Suggestions": "bulk_suggestions",
-    "PDF Export": "pdf_export",
-    "Audit Logs": "audit_logs",
-    "Explore Tags": "tags",
-    "Admin Panel": "admin"
+    "Explore Tags": "tags"
 }
 
 # ----------------------------
@@ -83,6 +78,9 @@ def main():
         st.markdown("## 🌄 Mountain Medicine Catering")
         show_login_form()
         return
+        
+    from layout import render_streamlined_header
+    render_streamlined_header()
 
     # 🧭 Header with user info and global controls
     render_user_header()
