@@ -1,7 +1,9 @@
 import streamlit as st
 import uuid
 from datetime import datetime
-from firestore import db  # Needed for Firestore queries
+
+# Use centralized database client
+from db_client import db
 
 # ----------------------------
 # 💾 Session Helpers
@@ -35,6 +37,10 @@ def format_date(ts):
     except Exception:
         return str(ts)
 
+def format_timestamp(ts):
+    """Alias for format_date for backward compatibility"""
+    return format_date(ts)
+
 # ----------------------------
 # 🧬 Safe Dict Merge
 # ----------------------------
@@ -64,21 +70,38 @@ def deep_get(dictionary, keys, default=None):
 # ----------------------------
 
 def get_active_event_id():
-    doc = db.collection("config").document("global").get()
-    if doc.exists:
-        return doc.to_dict().get("active_event")
-    return None
+    """Get the currently active event ID from global config"""
+    try:
+        doc = db.collection("config").document("global").get()
+        if doc.exists:
+            return doc.to_dict().get("active_event")
+        return None
+    except Exception as e:
+        st.error(f"⚠️ Could not fetch active event: {e}")
+        return None
 
 def get_active_event():
+    """Get the full active event document"""
     event_id = get_active_event_id()
     if not event_id:
         return None
-    doc = db.collection("events").document(event_id).get()
-    return doc.to_dict() if doc.exists else None
+    try:
+        doc = db.collection("events").document(event_id).get()
+        return doc.to_dict() if doc.exists else None
+    except Exception as e:
+        st.error(f"⚠️ Could not fetch active event data: {e}")
+        return None
 
 def get_event_by_id(event_id):
-    doc = db.collection("events").document(event_id).get()
-    return doc.to_dict() if doc.exists else None
+    """Get a specific event by ID"""
+    if not event_id:
+        return None
+    try:
+        doc = db.collection("events").document(event_id).get()
+        return doc.to_dict() if doc.exists else None
+    except Exception as e:
+        st.error(f"⚠️ Could not fetch event {event_id}: {e}")
+        return None
 
 # ----------------------------
 # ✍️ Suggestion Box for Locked Fields
@@ -95,23 +118,31 @@ def suggest_edit_box(
     Renders a locked field with a suggestion input box.
     Submits suggestion if changed and confirmed.
     """
-    from auth import get_user_id  # needed for accessing user ID at runtime
     st.markdown(f"🔒 **{field_name}** (locked)")
-    suggested_value = st.text_input(f"💡 Suggest a new value for {field_name}:", value=current_value, key=f"suggest_{field_name}")
+    suggested_value = st.text_input(
+        f"💡 Suggest a new value for {field_name}:", 
+        value=current_value, 
+        key=f"suggest_{field_name}_{target_id}"  # ✅ Added unique key
+    )
 
-    if suggested_value != current_value:
-        if st.button(f"💬 Submit Suggestion for {field_name}", key=f"submit_{field_name}"):
-            # 🔁 Delayed import to avoid circular dependency
-            from suggestions import create_suggestion
-
-            create_suggestion(
-                document_type=doc_type,
-                document_id=target_id,
-                field=field_name,
-                current_value=current_value,
-                suggested_value=suggested_value,
-                user=user,
-                edited_by="user",  # or "ai_assistant"
-            )
-            st.success("✅ Suggestion submitted for review.")
+    if suggested_value != current_value and suggested_value:
+        if st.button(f"💬 Submit Suggestion for {field_name}", key=f"submit_{field_name}_{target_id}"):
+            # Import here to avoid circular dependency
+            try:
+                from suggestions import create_suggestion
+                create_suggestion(
+                    document_type=doc_type,
+                    document_id=target_id,
+                    field=field_name,
+                    current_value=current_value,
+                    suggested_value=suggested_value,
+                    user=user,
+                    edited_by="user",
+                )
+                st.success("✅ Suggestion submitted for review.")
+            except ImportError:
+                st.error("❌ Suggestion system not available")
+            except Exception as e:
+                st.error(f"❌ Failed to submit suggestion: {e}")
+    
     return current_value  # return original value, not suggested
