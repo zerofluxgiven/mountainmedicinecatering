@@ -1,7 +1,10 @@
 import streamlit as st
 from utils import session_get, format_date
 from ai_chat import ai_chat_ui
-from events import get_active_event, get_event_by_id
+from events import get_event_by_id
+from ui_components import show_event_mode_banner, render_event_toolbar
+
+
 
 # ----------------------------
 # 🎨 Inject Custom CSS + JS
