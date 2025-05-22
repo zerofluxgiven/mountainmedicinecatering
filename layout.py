@@ -445,7 +445,6 @@ def apply_theme():
     
     inject_custom_css()
     render_user_header()
-    render_global_event_controls()
     render_floating_ai_chat()
 
 # ----------------------------
