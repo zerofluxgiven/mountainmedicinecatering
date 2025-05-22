@@ -1,3 +1,5 @@
+# layout.py - Fixed version with unique keys and working floating chat
+
 import streamlit as st
 from utils import session_get, format_date, get_event_by_id, get_active_event
 from auth import get_user_role
@@ -54,25 +56,22 @@ def render_user_header():
     user_name = user.get("name", "User")
     user_role = get_user_role(user)
     
-    # Add the header with user info and Event Mode controls
+    # Add the header with user info
     header_html = f"""
     <div class="user-header">
         <div class="user-info">
             <span class="user-name">{user_name}</span>
             <span class="user-role">{user_role}</span>
         </div>
-        <div id="event-mode-controls">
-            <!-- Event Mode controls will be added here -->
-        </div>
     </div>
     """
     st.markdown(header_html, unsafe_allow_html=True)
 
 # ----------------------------
-# 🎛️ Global Event Mode Controls
+# 🎛️ Fixed Global Event Mode Controls
 # ----------------------------
 def render_global_event_controls():
-    """Render global Event Mode controls in header"""
+    """Render global Event Mode controls in header with unique keys"""
     from utils import get_active_event_id, get_active_event
     
     active_event_id = get_active_event_id()
@@ -84,6 +83,9 @@ def render_global_event_controls():
     # Check if we have a recent event stored in session
     recent_event_id = st.session_state.get("recent_event_id")
     
+    # Create a unique key based on location in the app
+    location_key = st.session_state.get("current_location", "header")
+    
     if active_event_id:
         # Show Exit Event Mode button
         active_event = get_active_event()
@@ -91,7 +93,9 @@ def render_global_event_controls():
         
         col1, col2 = st.columns([3, 1])
         with col2:
-            if st.button("Exit Event Mode", key="global_exit_event", help=f"Exit {event_name}"):
+            # Use unique key based on location
+            unique_key = f"{location_key}_exit_event_mode"
+            if st.button("Exit Event Mode", key=unique_key, help=f"Exit {event_name}"):
                 # Store current event as recent before deactivating
                 st.session_state["recent_event_id"] = active_event_id
                 
@@ -107,7 +111,8 @@ def render_global_event_controls():
             event_name = recent_event.get("name", "Recent Event")
             col1, col2 = st.columns([3, 1])
             with col2:
-                if st.button(f"Resume {event_name[:15]}...", key="global_resume_event", 
+                unique_key = f"{location_key}_resume_event"
+                if st.button(f"Resume {event_name[:15]}...", key=unique_key, 
                            help=f"Resume working on {event_name}"):
                     from events import activate_event
                     activate_event(recent_event_id)
@@ -117,121 +122,199 @@ def render_global_event_controls():
                     st.rerun()
 
 # ----------------------------
-# 💬 Floating AI Assistant
+# 💬 Fixed Floating AI Assistant
 # ----------------------------
 def render_floating_ai_chat():
-    """Render floating AI chat bubble and window"""
+    """Render working floating AI chat bubble and window"""
     user = session_get("user")
     if not user:
         return
     
-    # Initialize chat state
+    # Initialize chat state properly
     if "chat_window_open" not in st.session_state:
         st.session_state.chat_window_open = False
     if "chat_history" not in st.session_state:
         st.session_state.chat_history = []
     
-    # Chat bubble (always visible)
-    chat_bubble_html = """
-    <div class="chat-bubble" onclick="toggleChatWindow()">
-        <span class="chat-bubble-icon">💬</span>
-    </div>
-    """
+    # Render the chat interface based on state
+    if st.session_state.chat_window_open:
+        render_chat_window()
     
-    # Chat window (conditionally visible)
-    chat_window_style = "display: block;" if st.session_state.chat_window_open else "display: none;"
-    
-    # Get recent chat messages for display
-    recent_messages = st.session_state.chat_history[-5:] if st.session_state.chat_history else []
-    messages_html = ""
-    
-    for msg in recent_messages:
-        msg_class = "user" if msg.get("sender") == "user" else "ai"
-        messages_html += f"""
-        <div class="chat-message {msg_class}">
-            <strong>{"You" if msg_class == "user" else "AI"}:</strong> {msg.get("content", "")}
-        </div>
-        """
-    
-    chat_window_html = f"""
-    <div class="chat-window" style="{chat_window_style}" id="chatWindow">
-        <div class="chat-header">
-            <span>AI Assistant</span>
-            <button onclick="toggleChatWindow()" style="background: none; border: none; color: white; cursor: pointer;">×</button>
-        </div>
-        <div class="chat-body" id="chatBody">
-            {messages_html if messages_html else '<p style="color: #666; text-align: center; margin-top: 2rem;">Ask me anything about your events!</p>'}
-        </div>
-        <div class="chat-input-area">
-            <input type="text" class="chat-input" id="chatInput" placeholder="Type your message..." 
-                   onkeypress="if(event.key==='Enter') sendMessage()">
-            <button class="chat-send-btn" onclick="sendMessage()">Send</button>
-        </div>
-    </div>
-    """
-    
-    # JavaScript for chat functionality
-    chat_js = """
-    <script>
-    function toggleChatWindow() {
-        const chatWindow = document.getElementById('chatWindow');
-        const isOpen = chatWindow.style.display === 'block';
-        chatWindow.style.display = isOpen ? 'none' : 'block';
-        
-        // Update Streamlit session state
-        window.parent.postMessage({
-            type: 'streamlit:setComponentValue',
-            value: !isOpen
-        }, '*');
-    }
-    
-    function sendMessage() {
-        const input = document.getElementById('chatInput');
-        const message = input.value.trim();
-        if (!message) return;
-        
-        // Add user message to chat
-        addMessageToChat('user', message);
-        input.value = '';
-        
-        // Send to backend for AI response
-        window.parent.postMessage({
-            type: 'streamlit:aiMessage',
-            value: message
-        }, '*');
-    }
-    
-    function addMessageToChat(sender, content) {
-        const chatBody = document.getElementById('chatBody');
-        const messageDiv = document.createElement('div');
-        messageDiv.className = `chat-message ${sender}`;
-        messageDiv.innerHTML = `<strong>${sender === 'user' ? 'You' : 'AI'}:</strong> ${content}`;
-        chatBody.appendChild(messageDiv);
-        chatBody.scrollTop = chatBody.scrollHeight;
-    }
-    
-    // Listen for AI responses
-    window.addEventListener('message', function(event) {
-        if (event.data.type === 'streamlit:aiResponse') {
-            addMessageToChat('ai', event.data.value);
-        }
-    });
-    </script>
-    """
-    
-    # Render all components
-    st.markdown(chat_bubble_html + chat_window_html + chat_js, unsafe_allow_html=True)
-    
-    # Handle chat toggle state
-    if st.session_state.get("chat_toggle_trigger"):
+    render_chat_bubble()
+
+def render_chat_bubble():
+    """Render the floating chat bubble"""
+    # Chat bubble with working toggle
+    if st.button("💬", key="floating_chat_toggle", 
+                 help="Toggle AI Assistant",
+                 use_container_width=False):
         st.session_state.chat_window_open = not st.session_state.chat_window_open
-        st.session_state.chat_toggle_trigger = False
+        st.rerun()
+    
+    # Position the button using CSS
+    st.markdown("""
+    <style>
+    .stButton:has([data-testid*="floating_chat_toggle"]) {
+        position: fixed !important;
+        bottom: 2rem !important;
+        right: 2rem !important;
+        z-index: 1000 !important;
+        width: 60px !important;
+        height: 60px !important;
+    }
+    
+    .stButton:has([data-testid*="floating_chat_toggle"]) button {
+        width: 60px !important;
+        height: 60px !important;
+        border-radius: 50% !important;
+        font-size: 24px !important;
+        background: var(--primary-purple, #6C4AB6) !important;
+        box-shadow: 0 4px 12px rgba(108, 74, 182, 0.3) !important;
+    }
+    
+    .stButton:has([data-testid*="floating_chat_toggle"]) button:hover {
+        transform: scale(1.1) !important;
+        background: var(--accent-purple, #563a9d) !important;
+    }
+    </style>
+    """, unsafe_allow_html=True)
+
+def render_chat_window():
+    """Render the chat window when open"""
+    # Create a container for the chat window
+    with st.container():
+        # Chat window header
+        col1, col2 = st.columns([4, 1])
+        with col1:
+            st.markdown("### 🤖 AI Assistant")
+        with col2:
+            if st.button("×", key="close_chat_window", help="Close chat"):
+                st.session_state.chat_window_open = False
+                st.rerun()
+        
+        # Chat messages area
+        st.markdown("---")
+        
+        # Display recent chat messages
+        if st.session_state.chat_history:
+            with st.container(height=300):
+                for i, msg in enumerate(st.session_state.chat_history[-10:]):
+                    if msg.get("sender") == "user":
+                        st.markdown(f"""
+                        <div style="background: var(--light-purple, #B8A4D4); color: white; 
+                                    padding: 0.5rem; border-radius: 8px; margin: 0.5rem 0; 
+                                    margin-left: 2rem;">
+                            <strong>You:</strong> {msg.get("content", "")}
+                        </div>
+                        """, unsafe_allow_html=True)
+                    else:
+                        st.markdown(f"""
+                        <div style="background: #e9ecef; color: #333; 
+                                    padding: 0.5rem; border-radius: 8px; margin: 0.5rem 0; 
+                                    margin-right: 2rem;">
+                            <strong>AI:</strong> {msg.get("content", "")}
+                        </div>
+                        """, unsafe_allow_html=True)
+        else:
+            st.info("👋 Hi! I'm your AI assistant. Ask me anything about your events!")
+        
+        # Quick action buttons
+        st.markdown("**🎯 Quick Actions:**")
+        col1, col2, col3 = st.columns(3)
+        
+        with col1:
+            if st.button("🛒 Shopping List", key="quick_shopping"):
+                _add_message("user", "Generate a shopping list for the active event")
+                _get_ai_response("Generate a shopping list for the active event")
+                st.rerun()
+        
+        with col2:
+            if st.button("📋 Menu Ideas", key="quick_menu"):
+                _add_message("user", "Suggest menu items for the active event")
+                _get_ai_response("Suggest menu items for the active event")
+                st.rerun()
+        
+        with col3:
+            if st.button("⏰ Timeline", key="quick_timeline"):
+                _add_message("user", "Help me create an event timeline")
+                _get_ai_response("Help me create an event timeline")
+                st.rerun()
+        
+        # Chat input
+        st.markdown("---")
+        with st.form("chat_input_form", clear_on_submit=True):
+            user_input = st.text_input("Ask me anything...", placeholder="Type your message here")
+            send_button = st.form_submit_button("Send", use_container_width=True)
+            
+            if send_button and user_input.strip():
+                _add_message("user", user_input.strip())
+                _get_ai_response(user_input.strip())
+                st.rerun()
+    
+    # Position the chat window with CSS
+    st.markdown("""
+    <style>
+    .stContainer:has([data-testid*="close_chat_window"]) {
+        position: fixed !important;
+        bottom: 100px !important;
+        right: 2rem !important;
+        width: 350px !important;
+        max-height: 500px !important;
+        background: white !important;
+        border-radius: 12px !important;
+        box-shadow: 0 8px 32px rgba(0,0,0,0.2) !important;
+        z-index: 999 !important;
+        padding: 1rem !important;
+        border: 1px solid #ddd !important;
+    }
+    
+    @media (max-width: 768px) {
+        .stContainer:has([data-testid*="close_chat_window"]) {
+            bottom: 0 !important;
+            right: 0 !important;
+            left: 0 !important;
+            width: 100% !important;
+            height: 70vh !important;
+            border-radius: 12px 12px 0 0 !important;
+        }
+    }
+    </style>
+    """, unsafe_allow_html=True)
+
+def _add_message(sender: str, content: str):
+    """Add a message to chat history"""
+    st.session_state.chat_history.append({
+        "sender": sender,
+        "content": content,
+        "timestamp": st.session_state.get("current_time", "now")
+    })
+
+def _get_ai_response(message: str):
+    """Get AI response (simplified for this fix)"""
+    # This is a simplified version - you can integrate with your existing AI system
+    responses = {
+        "shopping": "Here's a sample shopping list for your event: \n• Fresh vegetables\n• Proteins (chicken, fish)\n• Grains (rice, pasta)\n• Seasonings and spices",
+        "menu": "Here are some menu suggestions:\n• Grilled chicken with herbs\n• Seasonal vegetable medley\n• Wild rice pilaf\n• Fresh fruit dessert",
+        "timeline": "Here's a basic event timeline:\n• 2 days before: Shop for ingredients\n• 1 day before: Prep vegetables\n• Day of: Start cooking 4 hours before service\n• 1 hour before: Final plating and setup"
+    }
+    
+    # Simple keyword matching for demo
+    if "shopping" in message.lower():
+        response = responses["shopping"]
+    elif "menu" in message.lower():
+        response = responses["menu"]
+    elif "timeline" in message.lower():
+        response = responses["timeline"]
+    else:
+        response = "I'd be happy to help with your catering needs! Ask me about shopping lists, menu planning, or event timelines."
+    
+    _add_message("ai", response)
 
 # ----------------------------
 # 📢 Enhanced Event Mode Banner
 # ----------------------------
 def show_event_mode_banner():
-    """Displays enhanced Event Mode banner with controls"""
+    """Displays enhanced Event Mode banner with controls using unique keys"""
     active_event = get_active_event()
     if not active_event:
         return
@@ -246,18 +329,16 @@ def show_event_mode_banner():
             <strong>📅 Event Mode Active:</strong> {name}<br>
             <small>📍 {location} | 🗓 {date}</small>
         </div>
-        <div class="banner-controls">
-            <!-- Exit button will be handled by Streamlit component -->
-        </div>
     </div>
     """
     
-    # Render banner with exit button
+    # Render banner with exit button using unique key
     col1, col2 = st.columns([4, 1])
     with col1:
         st.markdown(banner_html, unsafe_allow_html=True)
     with col2:
-        if st.button("Exit Event Mode", key="banner_exit_event"):
+        # Use unique key for banner exit button
+        if st.button("Exit Event Mode", key="banner_exit_event_mode"):
             # Store current event as recent
             st.session_state["recent_event_id"] = active_event["id"]
             from events import deactivate_event_mode
@@ -269,8 +350,6 @@ def show_event_mode_banner():
 # ----------------------------
 def render_top_navbar(tabs):
     """Render purple-themed navigation tabs"""
-    # Custom CSS for purple tabs (already in main CSS)
-    
     # Get current selection from session state
     current_tab = st.session_state.get("top_nav", tabs[0])
     
@@ -299,12 +378,15 @@ def render_top_navbar(tabs):
 # 🎯 Smart Context Buttons
 # ----------------------------
 def render_smart_event_button(event, user):
-    """Render context-aware event button"""
+    """Render context-aware event button with unique keys"""
     from utils import get_active_event_id
     from events import activate_event, deactivate_event_mode
     
     active_event_id = get_active_event_id()
     event_id = event["id"]
+    
+    # Create unique key for this button
+    button_key = f"smart_event_btn_{event_id}"
     
     # Determine button text and action based on context
     if active_event_id == event_id:
@@ -323,7 +405,7 @@ def render_smart_event_button(event, user):
         button_type = "primary"
         action = "activate"
     
-    if st.button(button_text, key=f"smart_btn_{event_id}", type=button_type):
+    if st.button(button_text, key=button_key, type=button_type):
         if action == "activate":
             # Update event status to active and set Event Mode
             from events import update_event
@@ -357,6 +439,9 @@ def render_status_indicator(status):
 # ----------------------------
 def apply_theme():
     """Apply the complete Mountain Medicine theme"""
+    # Set location context for unique keys
+    st.session_state["current_location"] = "main_header"
+    
     inject_custom_css()
     render_user_header()
     render_global_event_controls()
