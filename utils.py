@@ -1,6 +1,7 @@
 import streamlit as st
 import uuid
 from datetime import datetime
+from firestore import db  # ✅ Needed for get_active_event
 
 # ----------------------------
 # 💾 Session Helpers
@@ -57,3 +58,20 @@ def deep_get(dictionary, keys, default=None):
         except (KeyError, TypeError):
             return default
     return dictionary
+
+# ----------------------------
+# 🧠 Active Event Helpers
+# ----------------------------
+
+def get_active_event_id():
+    doc = db.collection("config").document("global").get()
+    if doc.exists:
+        return doc.to_dict().get("active_event")
+    return None
+
+def get_active_event():
+    event_id = get_active_event_id()
+    if not event_id:
+        return None
+    doc = db.collection("events").document(event_id).get()
+    return doc.to_dict() if doc.exists else None
