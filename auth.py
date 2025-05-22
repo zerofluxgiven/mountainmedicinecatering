@@ -9,8 +9,8 @@ USER_COLLECTION = "users"
 # 📥 Load User from Session
 # ------------------------------
 
-def load_user_session():
-    """Returns the user dict stored in session, or None if not logged in."""
+def load_user_session() -> dict | None:
+    """Returns the user dict stored in session, or prompts login form if not logged in."""
     if "user" in st.session_state:
         return st.session_state["user"]
 
@@ -24,7 +24,8 @@ def load_user_session():
         email = st.text_input("Email")
         name = st.text_input("Name")
         submitted = st.form_submit_button("Log in")
-        if submitted and email:
+
+        if submitted and email and "@" in email:
             user_id = email.lower().replace("@", "_at_").replace(".", "_dot_")
             user_data = {
                 "id": user_id,
@@ -41,29 +42,41 @@ def load_user_session():
                 st.error(f"❌ Failed to log in: {e}")
     return None
 
+def logout() -> None:
+    """Logs out the current user."""
+    st.session_state.pop("user", None)
+    session_set("user", None)
+    st.success("Logged out.")
+    st.experimental_rerun()
+
 # ------------------------------
 # 🔐 Permission + Identity
 # ------------------------------
 
-def get_user_id(user):
+def get_user_id(user: dict | None) -> str | None:
     return user.get("id") if user else None
 
-def get_user_role(user):
+def get_user_role(user: dict | None) -> str:
+    """Returns user role or 'viewer' if not set."""
     if not user:
         return "viewer"
-    doc = db.collection(USER_COLLECTION).document(user["id"]).get()
-    if doc.exists:
-        return doc.to_dict().get("role", "viewer")
+    try:
+        doc = db.collection(USER_COLLECTION).document(user["id"]).get()
+        if doc.exists:
+            return doc.to_dict().get("role", "viewer")
+    except Exception as e:
+        st.error(f"⚠️ Could not fetch user role: {e}")
     return "viewer"
 
-# ✅ New: Direct role check (non-decorator)
-def check_role(user, role_required):
+def check_role(user: dict | None, role_required: str) -> bool:
     roles = ["viewer", "manager", "admin"]
-    user_role = get_user_role(user)
-    return roles.index(user_role) >= roles.index(role_required)
+    try:
+        return roles.index(get_user_role(user)) >= roles.index(role_required)
+    except Exception:
+        return False
 
-# ✅ New: Decorator version
-def require_role(required_role):
+def require_role(required_role: str):
+    """Decorator that restricts function to users with given role or higher."""
     def decorator(fn):
         def wrapper(*args, **kwargs):
             user = st.session_state.get("user")
@@ -78,7 +91,8 @@ def require_role(required_role):
 # 📋 User Listing
 # ------------------------------
 
-def get_all_users():
+def get_all_users() -> list[dict]:
+    """Returns all users with their role and ID."""
     try:
         docs = db.collection(USER_COLLECTION).stream()
         return [doc.to_dict() | {"id": doc.id} for doc in docs]
