@@ -1,8 +1,13 @@
-streamlit==1.34.0
-firebase-admin==6.4.0
-fpdf==1.7.2
-openai
-
-
-# Optional: for local dev file handling
+streamlit>=1.39.0
+firebase-admin>=6.4.0
+fpdf2>=2.7.0
+openai>=1.0.0
+networkx>=3.0
+pyvis>=0.3.0
+Pillow>=10.0.0
 python-magic-bin==0.4.14; platform_system=="Windows"
+
+# Additional dependencies for enhanced functionality
+pandas>=2.0.0
+numpy>=1.24.0
+python-dateutil>=2.8.0
