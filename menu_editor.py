@@ -1,5 +1,3 @@
-# menu_editor.py
-
 import streamlit as st
 from firebase_admin import firestore
 from auth import require_login, get_user_role
@@ -43,32 +41,29 @@ def menu_editor_ui(user: dict) -> None:
 
             st.markdown("**Description:**")
             suggest_edit_box(
-                user=user,
-                doc_type="menu_item",
-                doc_id=m["id"],
-                field="description",
+                field_name="Description",
                 current_value=m.get("description", ""),
-                locked=locked
+                user=user,
+                target_id=m["id"],
+                doc_type="menu_item"
             )
 
             st.markdown("**Ingredients:**")
             suggest_edit_box(
-                user=user,
-                doc_type="menu_item",
-                doc_id=m["id"],
-                field="ingredients",
+                field_name="Ingredients",
                 current_value=m.get("ingredients", ""),
-                locked=locked
+                user=user,
+                target_id=m["id"],
+                doc_type="menu_item"
             )
 
             st.markdown("**Tags:**")
             suggest_edit_box(
-                user=user,
-                doc_type="menu_item",
-                doc_id=m["id"],
-                field="tags",
+                field_name="Tags",
                 current_value=", ".join(m.get("tags", [])),
-                locked=locked
+                user=user,
+                target_id=m["id"],
+                doc_type="menu_item"
             )
 
             if m.get("event_id") and _event_is_complete(m["event_id"]):
