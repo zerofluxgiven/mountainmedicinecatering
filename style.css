@@ -1,5 +1,7 @@
+/* Updated style.css - Purple Theme & Mobile Responsive */
+
 /* -----------------------------
-   Base Styling
+   Base Styling & Mobile First
 ----------------------------- */
 body, html {
     font-family: 'Inter', sans-serif;
@@ -8,147 +10,500 @@ body, html {
     scroll-behavior: smooth;
 }
 
+/* Mobile-first responsive breakpoints */
+:root {
+    --primary-purple: #6C4AB6;
+    --light-purple: #B8A4D4;
+    --accent-purple: #563a9d;
+    --border-radius: 8px;
+    --mobile-breakpoint: 768px;
+    --tablet-breakpoint: 1024px;
+}
+
 h1, h2, h3 {
     font-weight: 700;
 }
 
 /* -----------------------------
-   Buttons and Inputs
+   Purple Button Theme System
 ----------------------------- */
-button, .stButton > button {
-    background-color: #6C4AB6;
-    color: white;
-    border: none;
-    border-radius: 8px;
-    padding: 0.5rem 1rem;
-    font-weight: 500;
-    transition: background-color 0.2s ease;
+
+/* All buttons use purple theme */
+button, .stButton > button, .stDownloadButton > button {
+    background-color: var(--primary-purple) !important;
+    color: white !important;
+    border: none !important;
+    border-radius: var(--border-radius) !important;
+    padding: 0.5rem 1rem !important;
+    font-weight: 500 !important;
+    transition: all 0.2s ease !important;
+    min-height: 44px !important; /* Touch-friendly */
+    cursor: pointer !important;
 }
 
-button:hover, .stButton > button:hover {
-    background-color: #563a9d;
+button:hover, .stButton > button:hover, .stDownloadButton > button:hover {
+    background-color: var(--accent-purple) !important;
+    transform: translateY(-1px) !important;
 }
 
-.stTextInput input, .stTextArea textarea {
-    border: 1px solid #ccc;
-    padding: 0.5rem;
-    border-radius: 6px;
-    font-size: 1rem;
+button:disabled, .stButton > button:disabled {
+    background-color: var(--light-purple) !important;
+    cursor: not-allowed !important;
+    transform: none !important;
+}
+
+/* Remove default Streamlit radio button styling */
+.stRadio > div {
+    display: flex !important;
+    flex-direction: row !important;
+    flex-wrap: wrap !important;
+    gap: 0.5rem !important;
+}
+
+.stRadio > div > label {
+    background-color: var(--light-purple) !important;
+    color: white !important;
+    padding: 0.5rem 1rem !important;
+    border-radius: var(--border-radius) !important;
+    cursor: pointer !important;
+    transition: all 0.2s ease !important;
+    border: none !important;
+    min-height: 44px !important;
+    display: flex !important;
+    align-items: center !important;
+    justify-content: center !important;
+}
+
+.stRadio > div > label:hover {
+    background-color: var(--accent-purple) !important;
+}
+
+.stRadio > div > label[data-checked="true"] {
+    background-color: var(--primary-purple) !important;
+    font-weight: 600 !important;
+}
+
+/* Hide radio circle indicators */
+.stRadio > div > label > div:first-child {
+    display: none !important;
+}
+
+/* Checkbox styling */
+.stCheckbox > label {
+    background-color: var(--light-purple) !important;
+    color: white !important;
+    padding: 0.3rem 0.7rem !important;
+    border-radius: var(--border-radius) !important;
+    cursor: pointer !important;
+    display: inline-block !important;
+    margin: 0.2rem !important;
+}
+
+.stCheckbox > label:hover {
+    background-color: var(--accent-purple) !important;
+}
+
+.stCheckbox input:checked + label {
+    background-color: var(--primary-purple) !important;
+}
+
+/* Input Styling */
+.stTextInput input, .stTextArea textarea, .stSelectbox select {
+    border: 1px solid #ccc !important;
+    border-radius: var(--border-radius) !important;
+    font-size: 1rem !important;
+    padding: 0.5rem !important;
+}
+
+.stTextInput input:focus, .stTextArea textarea:focus, .stSelectbox select:focus {
+    border-color: var(--primary-purple) !important;
+    box-shadow: 0 0 0 2px rgba(108, 74, 182, 0.2) !important;
 }
 
 /* -----------------------------
-   Dashboard + Cards
+   Top Navigation Purple Tabs
 ----------------------------- */
-.card {
-    background: #ffffff;
-    border-radius: 1rem;
-    padding: 1.5rem;
-    box-shadow: 0 0.5rem 1.5rem rgba(0, 0, 0, 0.05);
-    margin-bottom: 1rem;
+.stTabs {
+    position: sticky !important;
+    top: 0 !important;
+    background: white !important;
+    z-index: 100 !important;
+    padding: 0.5rem 0 !important;
+    margin-bottom: 1rem !important;
+    border-bottom: 1px solid #eee !important;
 }
 
-/* -----------------------------
-   Tags + Pills
------------------------------ */
-.tag {
-    background: #edeafa;
-    color: #6C4AB6;
-    padding: 0.3rem 0.7rem;
-    border-radius: 999px;
-    font-size: 0.85rem;
-    display: inline-block;
-    margin-right: 0.5rem;
-    margin-bottom: 0.3rem;
-}
-
-/* -----------------------------
-   Notification Badge
------------------------------ */
-.sidebar-badge {
-    margin-top: 10px;
-    color: #B00020;
-    font-weight: bold;
-    font-size: 0.9rem;
-}
-
-/* -----------------------------
-   Assistant UI Enhancements
------------------------------ */
-.assistant-box {
-    background-color: #f5f5f5;
-    padding: 12px;
-    border-radius: 12px;
-    margin-bottom: 1rem;
-}
-
-.assistant-suggestion {
-    background: #eae3f9;
-    color: #4B0082;
-    padding: 0.3rem 0.8rem;
-    border-radius: 6px;
-    margin: 0 0.25rem 0.5rem 0;
-    display: inline-block;
-    font-size: 0.85rem;
-    cursor: pointer;
-    transition: background 0.2s;
-}
-
-.assistant-suggestion:hover {
-    background: #d4c4f4;
-}
-
-/* -----------------------------
-   Sticky Headers + Tab Row
------------------------------ */
-header, .stTabs {
-    position: sticky;
-    top: 0;
-    z-index: 100;
-    background: white;
+.stTabs [role="tablist"] {
+    display: flex !important;
+    flex-wrap: wrap !important;
+    gap: 0.5rem !important;
+    border: none !important;
 }
 
 .stTabs [role="tab"] {
-    background-color: #6C4AB6;
-    color: white;
-    margin-right: 8px;
-    border-radius: 8px 8px 0 0;
-    padding: 0.5rem 1rem;
-    transition: background 0.2s ease;
-    font-weight: 500;
+    background-color: var(--light-purple) !important;
+    color: white !important;
+    border: none !important;
+    border-radius: var(--border-radius) !important;
+    padding: 0.5rem 1rem !important;
+    transition: all 0.2s ease !important;
+    font-weight: 500 !important;
+    cursor: pointer !important;
+    min-height: 44px !important;
+    display: flex !important;
+    align-items: center !important;
+}
+
+.stTabs [role="tab"]:hover {
+    background-color: var(--accent-purple) !important;
 }
 
 .stTabs [role="tab"][aria-selected="true"] {
-    background-color: #563a9d;
-    font-weight: bold;
+    background-color: var(--primary-purple) !important;
+    font-weight: bold !important;
+}
+
+/* Remove default tab styling */
+.stTabs [role="tabpanel"] {
+    border: none !important;
+    padding: 1rem 0 !important;
 }
 
 /* -----------------------------
-   Scroll + Modal Styling
+   Header User Display
+----------------------------- */
+.user-header {
+    position: fixed !important;
+    top: 1rem !important;
+    right: 1rem !important;
+    z-index: 200 !important;
+    background: white !important;
+    padding: 0.5rem 1rem !important;
+    border-radius: var(--border-radius) !important;
+    box-shadow: 0 2px 8px rgba(0,0,0,0.1) !important;
+    display: flex !important;
+    align-items: center !important;
+    gap: 0.5rem !important;
+}
+
+.user-name {
+    font-weight: 600 !important;
+    color: var(--primary-purple) !important;
+}
+
+.user-role {
+    background: var(--light-purple) !important;
+    color: white !important;
+    padding: 0.2rem 0.5rem !important;
+    border-radius: 12px !important;
+    font-size: 0.8rem !important;
+}
+
+/* -----------------------------
+   Floating AI Chat System
+----------------------------- */
+.chat-bubble {
+    position: fixed !important;
+    bottom: 2rem !important;
+    right: 2rem !important;
+    width: 60px !important;
+    height: 60px !important;
+    background: var(--primary-purple) !important;
+    border-radius: 50% !important;
+    display: flex !important;
+    align-items: center !important;
+    justify-content: center !important;
+    cursor: pointer !important;
+    z-index: 1000 !important;
+    box-shadow: 0 4px 12px rgba(108, 74, 182, 0.3) !important;
+    transition: all 0.3s ease !important;
+}
+
+.chat-bubble:hover {
+    background: var(--accent-purple) !important;
+    transform: scale(1.1) !important;
+}
+
+.chat-bubble-icon {
+    color: white !important;
+    font-size: 24px !important;
+}
+
+.chat-window {
+    position: fixed !important;
+    bottom: 100px !important;
+    right: 2rem !important;
+    width: 350px !important;
+    height: 500px !important;
+    background: white !important;
+    border-radius: 12px !important;
+    box-shadow: 0 8px 32px rgba(0,0,0,0.2) !important;
+    z-index: 999 !important;
+    display: flex !important;
+    flex-direction: column !important;
+    overflow: hidden !important;
+    transition: all 0.3s ease !important;
+}
+
+.chat-header {
+    background: var(--primary-purple) !important;
+    color: white !important;
+    padding: 1rem !important;
+    display: flex !important;
+    justify-content: space-between !important;
+    align-items: center !important;
+}
+
+.chat-body {
+    flex: 1 !important;
+    padding: 1rem !important;
+    overflow-y: auto !important;
+    background: #fafafa !important;
+}
+
+.chat-input-area {
+    padding: 1rem !important;
+    border-top: 1px solid #eee !important;
+    background: white !important;
+}
+
+.chat-input {
+    width: 100% !important;
+    padding: 0.5rem !important;
+    border: 1px solid #ddd !important;
+    border-radius: var(--border-radius) !important;
+    font-size: 1rem !important;
+}
+
+.chat-send-btn {
+    margin-top: 0.5rem !important;
+    width: 100% !important;
+}
+
+/* Chat message styling */
+.chat-message {
+    margin-bottom: 1rem !important;
+    padding: 0.5rem !important;
+    border-radius: var(--border-radius) !important;
+}
+
+.chat-message.user {
+    background: var(--light-purple) !important;
+    color: white !important;
+    margin-left: 2rem !important;
+}
+
+.chat-message.ai {
+    background: #e9ecef !important;
+    color: #333 !important;
+    margin-right: 2rem !important;
+}
+
+/* -----------------------------
+   Event Mode Banner Enhanced
+----------------------------- */
+.event-mode-banner {
+    background: linear-gradient(135deg, #fff8e1, #ffecb3) !important;
+    padding: 1rem !important;
+    border-radius: var(--border-radius) !important;
+    margin: 1rem 0 !important;
+    border: 1px solid #ffecb3 !important;
+    display: flex !important;
+    justify-content: space-between !important;
+    align-items: center !important;
+}
+
+.banner-content {
+    flex: 1 !important;
+}
+
+.banner-controls {
+    display: flex !important;
+    gap: 0.5rem !important;
+}
+
+/* -----------------------------
+   Mobile Responsive Design
+----------------------------- */
+@media (max-width: 768px) {
+    /* Stack navigation tabs vertically on mobile */
+    .stTabs [role="tablist"] {
+        flex-direction: column !important;
+    }
+    
+    .stTabs [role="tab"] {
+        width: 100% !important;
+        justify-content: center !important;
+    }
+    
+    /* Adjust user header for mobile */
+    .user-header {
+        position: relative !important;
+        top: auto !important;
+        right: auto !important;
+        margin: 1rem 0 !important;
+        text-align: center !important;
+    }
+    
+    /* Mobile chat window */
+    .chat-window {
+        bottom: 0 !important;
+        right: 0 !important;
+        left: 0 !important;
+        width: 100% !important;
+        height: 70vh !important;
+        border-radius: 12px 12px 0 0 !important;
+    }
+    
+    .chat-bubble {
+        bottom: 1rem !important;
+        right: 1rem !important;
+        width: 50px !important;
+        height: 50px !important;
+    }
+    
+    /* Mobile form adjustments */
+    .stColumns {
+        flex-direction: column !important;
+    }
+    
+    /* Touch-friendly buttons */
+    button, .stButton > button {
+        min-height: 48px !important;
+        font-size: 1rem !important;
+    }
+}
+
+@media (max-width: 480px) {
+    /* Extra small screens */
+    .user-header {
+        padding: 0.3rem 0.7rem !important;
+        font-size: 0.9rem !important;
+    }
+    
+    .chat-bubble {
+        width: 45px !important;
+        height: 45px !important;
+    }
+    
+    .chat-bubble-icon {
+        font-size: 20px !important;
+    }
+}
+
+/* -----------------------------
+   Status Indicators Enhanced
+----------------------------- */
+.status-planning { 
+    background: #ffd54f !important; 
+    color: #f57f17 !important; 
+    padding: 0.3rem 0.7rem !important; 
+    border-radius: 12px !important; 
+    font-size: 0.8rem !important; 
+    font-weight: 500 !important;
+}
+
+.status-active { 
+    background: #81c784 !important; 
+    color: #2e7d32 !important; 
+    padding: 0.3rem 0.7rem !important; 
+    border-radius: 12px !important; 
+    font-size: 0.8rem !important; 
+    font-weight: 500 !important;
+}
+
+.status-complete { 
+    background: #90a4ae !important; 
+    color: #37474f !important; 
+    padding: 0.3rem 0.7rem !important; 
+    border-radius: 12px !important; 
+    font-size: 0.8rem !important; 
+    font-weight: 500 !important;
+}
+
+/* -----------------------------
+   Card Styling Enhanced
+----------------------------- */
+.card {
+    background: #ffffff !important;
+    border-radius: 12px !important;
+    padding: 1.5rem !important;
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.05) !important;
+    margin-bottom: 1rem !important;
+    border: 1px solid #f0f0f0 !important;
+}
+
+/* -----------------------------
+   Tag Styling Enhanced
+----------------------------- */
+.tag {
+    background: #edeafa !important;
+    color: var(--primary-purple) !important;
+    padding: 0.3rem 0.7rem !important;
+    border-radius: 20px !important;
+    font-size: 0.85rem !important;
+    display: inline-block !important;
+    margin: 0.2rem 0.3rem 0.2rem 0 !important;
+    font-weight: 500 !important;
+}
+
+/* -----------------------------
+   Scrollbar Styling
 ----------------------------- */
 ::-webkit-scrollbar {
-    width: 8px;
-}
-::-webkit-scrollbar-thumb {
-    background: #ccc;
-    border-radius: 4px;
+    width: 8px !important;
 }
 
-.stModalContent {
-    padding: 1.5rem;
-    background: #ffffff;
-    border-radius: 1rem;
-    box-shadow: 0 4px 20px rgba(0,0,0,0.15);
+::-webkit-scrollbar-thumb {
+    background: var(--light-purple) !important;
+    border-radius: 4px !important;
+}
+
+::-webkit-scrollbar-thumb:hover {
+    background: var(--primary-purple) !important;
 }
 
 /* -----------------------------
-   Color Accents (Purple/Grey/Black Theme)
+   Animation & Transitions
 ----------------------------- */
-.accent-purple {
-    color: #6C4AB6;
+.fade-in {
+    animation: fadeIn 0.3s ease-in !important;
 }
-.accent-grey {
-    color: #666666;
+
+@keyframes fadeIn {
+    from { opacity: 0; transform: translateY(-10px); }
+    to { opacity: 1; transform: translateY(0); }
 }
-.accent-black {
-    color: #000000;
+
+.slide-up {
+    animation: slideUp 0.3s ease-out !important;
+}
+
+@keyframes slideUp {
+    from { transform: translateY(20px); opacity: 0; }
+    to { transform: translateY(0); opacity: 1; }
+}
+
+/* -----------------------------
+   Accessibility Improvements
+----------------------------- */
+button:focus, .stButton > button:focus {
+    outline: 2px solid var(--primary-purple) !important;
+    outline-offset: 2px !important;
+}
+
+/* High contrast mode support */
+@media (prefers-contrast: high) {
+    button, .stButton > button {
+        border: 2px solid var(--primary-purple) !important;
+    }
+}
+
+/* Reduced motion support */
+@media (prefers-reduced-motion: reduce) {
+    *, *::before, *::after {
+        animation-duration: 0.01ms !important;
+        animation-iteration-count: 1 !important;
+        transition-duration: 0.01ms !important;
+    }
 }
