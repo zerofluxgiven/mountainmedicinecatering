@@ -1,4 +1,4 @@
-# layout.py - Fixed version with compact event mode indicator
+# layout.py - Streamlined version with toggle button and admin dropdown
 
 import streamlit as st
 from utils import session_get, format_date, get_event_by_id, get_active_event
@@ -45,10 +45,10 @@ def inject_custom_css():
         st.markdown(css_content, unsafe_allow_html=True)
 
 # ----------------------------
-# 👤 Header User Display
+# 👤 Header User Display with Dropdown
 # ----------------------------
-def render_user_header():
-    """Render user info in the top-right corner"""
+def render_user_header_with_dropdown():
+    """Render user info with admin dropdown menu"""
     user = session_get("user")
     if not user:
         return
@@ -56,22 +56,49 @@ def render_user_header():
     user_name = user.get("name", "User")
     user_role = get_user_role(user)
     
-    # Add the header with user info
-    header_html = f"""
-    <div class="user-header">
-        <div class="user-info">
+    # Create dropdown menu HTML
+    dropdown_html = f"""
+    <div class="user-header-dropdown">
+        <div class="user-info-trigger">
             <span class="user-name">{user_name}</span>
             <span class="user-role">{user_role}</span>
+            <span class="dropdown-arrow">▼</span>
+        </div>
+        <div class="admin-dropdown-menu">
+            <a onclick="window.parent.postMessage({{type: 'streamlit:setComponentValue', key: 'admin_nav', value: 'admin_panel'}}, '*')">🔐 Admin Panel</a>
+            <a onclick="window.parent.postMessage({{type: 'streamlit:setComponentValue', key: 'admin_nav', value: 'suggestions'}}, '*')">📝 Suggestions</a>
+            <a onclick="window.parent.postMessage({{type: 'streamlit:setComponentValue', key: 'admin_nav', value: 'bulk_suggestions'}}, '*')">🧠 Bulk Suggestions</a>
+            <a onclick="window.parent.postMessage({{type: 'streamlit:setComponentValue', key: 'admin_nav', value: 'audit_logs'}}, '*')">📜 Audit Logs</a>
+            <a onclick="window.parent.postMessage({{type: 'streamlit:setComponentValue', key: 'admin_nav', value: 'pdf_export'}}, '*')">📄 PDF Export</a>
         </div>
     </div>
     """
-    st.markdown(header_html, unsafe_allow_html=True)
+    
+    st.markdown(dropdown_html, unsafe_allow_html=True)
+    
+    # Handle dropdown navigation
+    if "admin_nav" in st.session_state and st.session_state.admin_nav:
+        nav_value = st.session_state.admin_nav
+        st.session_state.admin_nav = None  # Clear after use
+        
+        # Map to tab names
+        tab_map = {
+            "admin_panel": "Admin Panel",
+            "suggestions": "Suggestions",
+            "bulk_suggestions": "Bulk Suggestions",
+            "audit_logs": "Audit Logs",
+            "pdf_export": "PDF Export"
+        }
+        
+        if nav_value in tab_map:
+            st.session_state["top_nav"] = tab_map[nav_value]
+            st.rerun()
 
 # ----------------------------
-# 🎛️ Compact Event Mode Indicator with Exit Button
+# 🎛️ Event Mode Toggle Button
 # ----------------------------
-def render_global_event_controls():
-    """Render compact event mode indicator with integrated exit button"""
+def render_event_mode_toggle():
+    """Render event mode toggle button that shows status and allows toggling"""
     from utils import get_active_event_id, get_active_event
     
     active_event_id = get_active_event_id()
@@ -80,53 +107,63 @@ def render_global_event_controls():
     if not user:
         return
     
-    # Check if we have a recent event stored in session
+    # Get recent event for display when inactive
     recent_event_id = st.session_state.get("recent_event_id")
+    recent_event = None
+    if recent_event_id and not active_event_id:
+        recent_event = get_event_by_id(recent_event_id)
     
-    if active_event_id:
-        # Get event info
-        active_event = get_active_event()
-        event_name = active_event.get("name", "Unknown Event") if active_event else "Unknown"
-        
-        # Compact event mode indicator with exit button
-        indicator_html = f"""
-        <div class="event-mode-indicator">
-            <span class="event-icon">📅</span>
-            <span class="event-name">{event_name}</span>
-        </div>
-        """
-        
-        # Create columns for indicator and exit button
-        col1, col2 = st.columns([10, 1])
-        
-        with col1:
-            st.markdown(indicator_html, unsafe_allow_html=True)
-        
-        with col2:
-            # Exit button with unique key
-            if st.button("✕", key=f"exit_event_{active_event_id}", 
-                        help="Exit Event Mode",
-                        use_container_width=True):
+    # Create the toggle button
+    col1, col2 = st.columns([3, 7])
+    
+    with col1:
+        if active_event_id:
+            # Event mode is ON
+            active_event = get_active_event()
+            event_name = active_event.get("name", "Unknown Event") if active_event else "Unknown"
+            
+            button_html = f"""
+            <div class="event-toggle-container">
+                <button class="event-toggle-button active" onclick="document.getElementById('toggle_event_mode').click()">
+                    Event Mode ON: {event_name}
+                </button>
+                <span class="toggle-hint">toggle event mode</span>
+            </div>
+            """
+            
+            st.markdown(button_html, unsafe_allow_html=True)
+            
+            # Hidden button for actual functionality
+            if st.button("", key="toggle_event_mode", help="Toggle Event Mode"):
                 # Store current event as recent before deactivating
                 st.session_state["recent_event_id"] = active_event_id
                 
                 # Deactivate Event Mode
                 from events import deactivate_event_mode, update_event
-                
-                # Force status update
                 update_event(active_event_id, {"status": "planning"})
                 deactivate_event_mode()
                 st.rerun()
-    
-    elif recent_event_id:
-        # Show Resume button for recent event
-        recent_event = get_event_by_id(recent_event_id)
-        if recent_event:
-            event_name = recent_event.get("name", "Recent Event")
-            col1, col2 = st.columns([10, 2])
-            with col2:
-                if st.button(f"Resume", key=f"resume_{recent_event_id}", 
-                           help=f"Resume working on {event_name}"):
+        else:
+            # Event mode is OFF
+            recent_text = ""
+            if recent_event:
+                recent_text = f'<span class="recent-event-hint">{recent_event.get("name", "")}</span>'
+            
+            button_html = f"""
+            <div class="event-toggle-container">
+                <button class="event-toggle-button inactive" onclick="document.getElementById('activate_event_mode').click()">
+                    Select Event Mode
+                    {recent_text}
+                </button>
+                <span class="toggle-hint">toggle event mode</span>
+            </div>
+            """
+            
+            st.markdown(button_html, unsafe_allow_html=True)
+            
+            # Hidden button for actual functionality
+            if st.button("", key="activate_event_mode", help="Activate Recent Event"):
+                if recent_event_id:
                     from events import activate_event
                     activate_event(recent_event_id)
                     # Clear recent event since we're now active
@@ -327,7 +364,7 @@ def _get_ai_response(message: str):
 # 📢 Enhanced Event Mode Banner - REMOVED
 # ----------------------------
 def show_event_mode_banner():
-    """This function is now empty - functionality moved to render_global_event_controls"""
+    """This function is now empty - functionality moved to render_event_mode_toggle"""
     # Intentionally empty - we don't want the big banner anymore
     pass
 
@@ -335,7 +372,7 @@ def show_event_mode_banner():
 # 🧭 Purple Tab Navigation
 # ----------------------------
 def render_top_navbar(tabs):
-    """Render purple-themed navigation tabs"""
+    """Render purple-themed navigation tabs - now cleaner without admin tabs"""
     # Get current selection from session state
     current_tab = st.session_state.get("top_nav", tabs[0])
     
@@ -436,7 +473,6 @@ def apply_theme():
     st.session_state["current_location"] = f"main_header_{int(time.time())}"
     
     inject_custom_css()
-    render_user_header()
     render_floating_ai_chat()
 
 # ----------------------------
@@ -540,3 +576,14 @@ def render_event_toolbar(event_id, context="active"):
 def render_floating_assistant():
     """Legacy function name - redirects to new floating chat"""
     render_floating_ai_chat()
+
+# New header render function
+def render_streamlined_header():
+    """Render the streamlined header with toggle and dropdown"""
+    col1, col2 = st.columns([1, 1])
+    
+    with col1:
+        render_event_mode_toggle()
+    
+    with col2:
+        render_user_header_with_dropdown()
