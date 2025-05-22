@@ -64,9 +64,9 @@ def render_user_header():
             <span class="user-role">{user_role}</span>
         </div>
     </div>
-    """
-    st.markdown(header_html, unsafe_allow_html=True)
-
+    def render_global_event_controls():
+    """Render global Event Mode controls in header with unique keys"""
+    from utils import get_active_event_id, get_active_event
 # ----------------------------
 # 🎛️ Fixed Global Event Mode Controls
 # ----------------------------
@@ -439,8 +439,8 @@ def render_status_indicator(status):
 def apply_theme():
     """Apply the complete Mountain Medicine theme"""
     # Set location context for unique keys with timestamp to ensure uniqueness
-import time
-st.session_state["current_location"] = f"main_header_{int(time.time())}"
+    import time
+    st.session_state["current_location"] = f"main_header_{int(time.time())}"
     
     inject_custom_css()
     render_user_header()
