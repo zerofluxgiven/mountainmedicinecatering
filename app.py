@@ -95,7 +95,7 @@ def main():
     st.markdown("## 🌄 Mountain Medicine Catering")
     
     # Event Mode banner
-    show_event_mode_banner()
+    # show_event_mode_banner()
     
     # Top navigation
     selected_tab = render_top_navbar(list(TABS.keys()))
