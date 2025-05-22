@@ -70,9 +70,8 @@ def render_user_header():
 # ----------------------------
 # 🎛️ Fixed Global Event Mode Controls
 # ----------------------------
-def render_global_event_controls():
-    """Render global Event Mode controls in header with unique keys"""
-    from utils import get_active_event_id, get_active_event
+# Use unique key based on location and current time
+    unique_key = f"{location_key}_exit_event_mode_{hash(str(active_event_id))}"
     
     active_event_id = get_active_event_id()
     user = session_get("user")
