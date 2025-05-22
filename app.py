@@ -22,7 +22,7 @@ from menu_editor import menu_editor_ui
 from event_planning_dashboard import event_planning_dashboard_ui
 from event_modifications import event_modifications_ui
 from bulk_suggestions import bulk_suggestions_ui
-from audit_logs import audit_log_ui
+from audit import audit_log_ui  # ✅ Fixed: was audit_logs
 from tag_merging import admin_tag_manager_ui
 from roles import role_admin_ui
 from ai_chat import ai_chat_ui
@@ -52,6 +52,14 @@ TABS = {
 # 🚀 Main App
 # ----------------------------
 def main():
+    # ✅ Initialize Firebase first
+    try:
+        from firebase_config import initialize_firebase
+        initialize_firebase()
+    except Exception as e:
+        st.error(f"❌ Failed to initialize Firebase: {e}")
+        st.stop()
+
     st.set_page_config(page_title="Mountain Medicine Catering", layout="wide")
 
     # 💅 Style & JS
@@ -64,6 +72,13 @@ def main():
     # 🪧 Public mode
     if PUBLIC_MODE and not user:
         show_landing()
+        return
+
+    # Show login form if no user and not in public mode
+    if not user and not PUBLIC_MODE:
+        from auth import show_login_form
+        st.markdown("## 🌄 Mountain Medicine Catering")
+        show_login_form()
         return
 
     # 🧭 Logged-in navigation
@@ -133,7 +148,7 @@ def main():
         bulk_suggestions_ui()
 
     elif selected_tab == "PDF Export":
-        pdf_export_ui(user)
+        pdf_export_ui()
 
     elif selected_tab == "Audit Logs":
         audit_log_ui(user)
@@ -145,7 +160,9 @@ def main():
             st.info("🔒 Login required to manage tags.")
 
     elif selected_tab == "Admin Panel":
-        if require_role(user, "admin"):
+        # ✅ Fixed: Check role properly
+        from auth import check_role
+        if user and check_role(user, "admin"):
             role_admin_ui()
         else:
             st.warning("⚠️ Admin access required.")
