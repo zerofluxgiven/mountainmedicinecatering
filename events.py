@@ -48,14 +48,19 @@ ddef activate_event(event_id: str) -> None:
 def deactivate_event_mode() -> None:
     """Deactivates the currently active event mode globally."""
     try:
+        # Update global config
         db.collection("config").document("global").update({"active_event": None})
-        # Clear session state
+        
+        # Ensure session state is cleared
         if "active_event_id" in st.session_state:
             del st.session_state["active_event_id"]
+            
+        # Force synchronization with app state
+        st.session_state["active_event"] = None
+        
         st.success("✅ Event Mode deactivated")
     except Exception as e:
         st.error(f"❌ Could not deactivate Event Mode: {e}")
-
 # ----------------------------
 # 📅 Create New Event
 # ----------------------------
