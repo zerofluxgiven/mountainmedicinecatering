@@ -1,6 +1,5 @@
 # simple_floating_chat.py - Working floating chat with minimize functionality
 
-from datetime import datetime
 import streamlit as st
 from datetime import datetime
 
@@ -339,4 +338,8 @@ def integrate_simple_chat():
 # For backward compatibility
 def render_floating_ai_chat():
     """Legacy function name"""
+    integrate_simple_chat()
+    
+def integrate_floating_chat():
+    """Main integration function for the floating chat"""
     integrate_simple_chat()
