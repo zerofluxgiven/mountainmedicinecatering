@@ -9,7 +9,7 @@ from event_mode import get_active_event
 # ----------------------------
 
 def show_event_mode_banner() -> None:
-    """Displays a visual banner when Event Mode is active with unique button keys."""
+    """Displays a visual banner when Event Mode is active - no duplicate button."""
     active_event = get_active_event()
     if not active_event:
         return
@@ -18,34 +18,16 @@ def show_event_mode_banner() -> None:
     date = format_date(active_event.get("date"))
     location = active_event.get("location", "Unknown")
 
-    # Create banner HTML
+    # Just show the banner - no button to avoid duplicates
     banner_html = f"""
-        <div style="background-color:#fff8e1;padding:12px;border-radius:10px;margin:12px 0;border:1px solid #ffecb3;">
+        <div style="background-color:#fff8e1;padding:8px 12px;border-radius:8px;margin:8px 0;border:1px solid #ffecb3;">
             <strong>📅 Event Mode Active:</strong> {name}<br>
-            📍 {location} | 🗓 {date}
+            <small>📍 {location} | 🗓 {date}</small>
         </div>
     """
     
-    # Display banner with exit control
-    col1, col2 = st.columns([4, 1])
-    
-    with col1:
-        st.markdown(banner_html, unsafe_allow_html=True)
-    
-    with col2:
-        # Use unique key based on the active event ID to avoid conflicts
-        unique_key = f"ui_banner_exit_{active_event.get('id', 'unknown')}"
-        if st.button("Exit Event Mode", key=unique_key, help=f"Exit {name}"):
-            # Store current event as recent before deactivating
-            st.session_state["recent_event_id"] = active_event["id"]
-            
-            # Deactivate Event Mode
-            try:
-                from events import deactivate_event_mode
-                deactivate_event_mode()
-                st.rerun()
-            except ImportError:
-                st.error("Could not deactivate event mode - events module not available")
+    # Display banner only - the exit button is in the header
+    st.markdown(banner_html, unsafe_allow_html=True)
 
 # ----------------------------
 # 🧰 Event Toolbar Stub (Updated with unique keys)
