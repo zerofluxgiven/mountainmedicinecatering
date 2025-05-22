@@ -1,6 +1,9 @@
+# auth.py
+
 import streamlit as st
 from firebase_admin import firestore
 from utils import session_get, session_set
+import functools
 
 db = firestore.client()
 USER_COLLECTION = "users"
@@ -78,6 +81,7 @@ def check_role(user: dict | None, role_required: str) -> bool:
 def require_role(required_role: str):
     """Decorator that restricts function to users with given role or higher."""
     def decorator(fn):
+        @functools.wraps(fn)
         def wrapper(*args, **kwargs):
             user = st.session_state.get("user")
             if not check_role(user, required_role):
@@ -86,6 +90,17 @@ def require_role(required_role: str):
             return fn(*args, **kwargs)
         return wrapper
     return decorator
+
+def require_login(fn):
+    """Decorator that blocks access to a function unless a user is logged in."""
+    @functools.wraps(fn)
+    def wrapper(*args, **kwargs):
+        user = st.session_state.get("user")
+        if not user:
+            st.warning("🔐 Please log in to continue.")
+            return
+        return fn(*args, **kwargs)
+    return wrapper
 
 # ------------------------------
 # 📋 User Listing
