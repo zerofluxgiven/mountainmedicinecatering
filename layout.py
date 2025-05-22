@@ -1,4 +1,4 @@
-# layout.py - Fixed version with unique keys and working floating chat
+# layout.py - Fixed version with compact event mode indicator
 
 import streamlit as st
 from utils import session_get, format_date, get_event_by_id, get_active_event
@@ -18,7 +18,7 @@ def inject_custom_css():
         # Fallback to inline CSS if file not found
         css_content = """
         <style>
-        /* Fallback styling - use the CSS from the artifact above */
+        /* Fallback styling */
         :root {
             --primary-purple: #6C4AB6;
             --light-purple: #B8A4D4;
@@ -68,10 +68,10 @@ def render_user_header():
     st.markdown(header_html, unsafe_allow_html=True)
 
 # ----------------------------
-# 🎛️ Fixed Global Event Mode Controls
+# 🎛️ Compact Event Mode Indicator with Exit Button
 # ----------------------------
 def render_global_event_controls():
-    """Render global Event Mode controls in header with unique keys"""
+    """Render compact event mode indicator with integrated exit button"""
     from utils import get_active_event_id, get_active_event
     
     active_event_id = get_active_event_id()
@@ -83,38 +83,30 @@ def render_global_event_controls():
     # Check if we have a recent event stored in session
     recent_event_id = st.session_state.get("recent_event_id")
     
-    # Create a unique key based on location in the app
-    location_key = st.session_state.get("current_location", "header")
-    
     if active_event_id:
         # Get event info
         active_event = get_active_event()
         event_name = active_event.get("name", "Unknown Event") if active_event else "Unknown"
-        location = active_event.get("location", "Unknown")
-        status = active_event.get("status", "planning")
         
-        # Compact banner with exit button
-        col1, col2 = st.columns([3, 1])
+        # Compact event mode indicator with exit button
+        indicator_html = f"""
+        <div class="event-mode-indicator">
+            <span class="event-icon">📅</span>
+            <span class="event-name">{event_name}</span>
+        </div>
+        """
+        
+        # Create columns for indicator and exit button
+        col1, col2 = st.columns([10, 1])
         
         with col1:
-            # Compact banner
-            banner_html = f"""
-            <div style="background-color:#fff8e1; padding:8px 12px; border-radius:6px; 
-                      border:1px solid #ffecb3;">
-                <span style="font-weight:bold;">📅 Event Mode: {event_name}</span>
-                <span style="color:#555; margin-left:10px;">📍 {location}</span>
-                <span style="display:inline-block; padding:2px 6px; margin-left:10px;
-                     border-radius:12px; font-size:0.7rem; background-color:#e3f2fd;">
-                    {status.title()}
-                </span>
-            </div>
-            """
-            st.markdown(banner_html, unsafe_allow_html=True)
+            st.markdown(indicator_html, unsafe_allow_html=True)
         
         with col2:
-            # Exit button
-            unique_key = f"{location_key}_exit_event_mode_{hash(str(active_event_id))}"
-            if st.button("🚪 Exit Event Mode", key=unique_key, use_container_width=True):
+            # Exit button with unique key
+            if st.button("✕", key=f"exit_event_{active_event_id}", 
+                        help="Exit Event Mode",
+                        use_container_width=True):
                 # Store current event as recent before deactivating
                 st.session_state["recent_event_id"] = active_event_id
                 
@@ -127,31 +119,13 @@ def render_global_event_controls():
                 st.rerun()
     
     elif recent_event_id:
-        # Show Resume button (existing code - keep as is)
+        # Show Resume button for recent event
         recent_event = get_event_by_id(recent_event_id)
         if recent_event:
             event_name = recent_event.get("name", "Recent Event")
-            col1, col2 = st.columns([3, 1])
+            col1, col2 = st.columns([10, 2])
             with col2:
-                unique_key = f"{location_key}_resume_event_{hash(str(recent_event_id))}"
-                if st.button(f"Resume {event_name[:15]}...", key=unique_key, 
-                           help=f"Resume working on {event_name}"):
-                    from events import activate_event
-                    activate_event(recent_event_id)
-                    # Clear recent event since we're now active
-                    if "recent_event_id" in st.session_state:
-                        del st.session_state["recent_event_id"]
-                    st.rerun()
-    
-    elif recent_event_id:
-        # Show Resume button
-        recent_event = get_event_by_id(recent_event_id)
-        if recent_event:
-            event_name = recent_event.get("name", "Recent Event")
-            col1, col2 = st.columns([3, 1])
-            with col2:
-                unique_key = f"{location_key}_resume_event_{hash(str(recent_event_id))}"
-                if st.button(f"Resume {event_name[:15]}...", key=unique_key, 
+                if st.button(f"Resume", key=f"resume_{recent_event_id}", 
                            help=f"Resume working on {event_name}"):
                     from events import activate_event
                     activate_event(recent_event_id)
@@ -350,11 +324,11 @@ def _get_ai_response(message: str):
     _add_message("ai", response)
 
 # ----------------------------
-# 📢 Enhanced Event Mode Banner
+# 📢 Enhanced Event Mode Banner - REMOVED
 # ----------------------------
 def show_event_mode_banner():
-    """This function is now empty to avoid duplicate banners"""
-    # Intentionally empty - functionality moved to render_global_event_controls
+    """This function is now empty - functionality moved to render_global_event_controls"""
+    # Intentionally empty - we don't want the big banner anymore
     pass
 
 # ----------------------------
@@ -447,8 +421,9 @@ def render_smart_event_button(event, user):
 # 📊 Status Indicator
 # ----------------------------
 def render_status_indicator(status):
-    """Render enhanced status indicator badge"""
+    """Render enhanced status indicator badge - NO BUTTON"""
     status_lower = status.lower()
+    # Just show the status text, not as a button
     st.markdown(f'<span class="status-{status_lower}">{status.title()}</span>', unsafe_allow_html=True)
 
 # ----------------------------
