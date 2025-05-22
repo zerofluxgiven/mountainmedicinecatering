@@ -1,8 +1,5 @@
-# ui_components.py
-
 import streamlit as st
-from utils import format_date
-from events import get_active_event
+from utils import format_date, get_active_event
 
 def show_event_mode_banner():
     active_event = get_active_event()
@@ -20,5 +17,5 @@ def show_event_mode_banner():
         </div>
     """, unsafe_allow_html=True)
 
-def render_event_toolbar():
+def render_event_toolbar(*args, **kwargs):
     st.markdown("<!-- Event toolbar placeholder -->", unsafe_allow_html=True)
