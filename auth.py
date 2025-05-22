@@ -82,7 +82,7 @@ def check_role(user: dict | None, role_required: str) -> bool:
     try:
         current_role = get_user_role(user)
         return roles.index(current_role) >= roles.index(role_required)
-    except Exception:
+    except (ValueError, IndexError):
         return False
 
 def require_role(required_role: str):
@@ -93,7 +93,7 @@ def require_role(required_role: str):
             user = st.session_state.get("user")
             if not check_role(user, required_role):
                 st.warning(f"🔒 Access denied. Requires '{required_role}' role.")
-                return None  # ✅ Consistent return value
+                return  # ✅ Fixed: Consistent return behavior
             return fn(*args, **kwargs)
         return wrapper
     return decorator
@@ -105,7 +105,7 @@ def require_login(fn):
         user = st.session_state.get("user")
         if not user:
             st.warning("🔐 Please log in to continue.")
-            return None
+            return  # ✅ Fixed: Consistent return behavior
         return fn(*args, **kwargs)
     return wrapper
 
