@@ -56,10 +56,23 @@ def get_user_role(user):
         return doc.to_dict().get("role", "viewer")
     return "viewer"
 
-def require_role(user, role_required):
+# ✅ New: Direct role check (non-decorator)
+def check_role(user, role_required):
     roles = ["viewer", "manager", "admin"]
     user_role = get_user_role(user)
     return roles.index(user_role) >= roles.index(role_required)
+
+# ✅ New: Decorator version
+def require_role(required_role):
+    def decorator(fn):
+        def wrapper(*args, **kwargs):
+            user = st.session_state.get("user")
+            if not check_role(user, required_role):
+                st.warning(f"🔒 Access denied. Requires '{required_role}' role.")
+                return
+            return fn(*args, **kwargs)
+        return wrapper
+    return decorator
 
 # ------------------------------
 # 📋 User Listing
