@@ -64,14 +64,15 @@ def render_user_header():
             <span class="user-role">{user_role}</span>
         </div>
     </div>
-    def render_global_event_controls():
-    """Render global Event Mode controls in header with unique keys"""
-    from utils import get_active_event_id, get_active_event
+    """
+    st.markdown(header_html, unsafe_allow_html=True)
+
 # ----------------------------
 # 🎛️ Fixed Global Event Mode Controls
 # ----------------------------
-# Use unique key based on location and current time
-    unique_key = f"{location_key}_exit_event_mode_{hash(str(active_event_id))}"
+def render_global_event_controls():
+    """Render global Event Mode controls in header with unique keys"""
+    from utils import get_active_event_id, get_active_event
     
     active_event_id = get_active_event_id()
     user = session_get("user")
