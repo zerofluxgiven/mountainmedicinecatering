@@ -337,36 +337,9 @@ def _get_ai_response(message: str):
 # 📢 Enhanced Event Mode Banner
 # ----------------------------
 def show_event_mode_banner():
-    """Displays enhanced Event Mode banner with controls using unique keys"""
-    active_event = get_active_event()
-    if not active_event:
-        return
-
-    name = active_event.get("name", "Unnamed Event")
-    date = format_date(active_event.get("date"))
-    location = active_event.get("location", "Unknown")
-
-    banner_html = f"""
-    <div class="event-mode-banner fade-in">
-        <div class="banner-content">
-            <strong>📅 Event Mode Active:</strong> {name}<br>
-            <small>📍 {location} | 🗓 {date}</small>
-        </div>
-    </div>
-    """
-    
-    # Render banner with exit button using unique key
-    col1, col2 = st.columns([4, 1])
-    with col1:
-        st.markdown(banner_html, unsafe_allow_html=True)
-    with col2:
-        # Use unique key for banner exit button
-        if st.button("Exit Event Mode", key="banner_exit_event_mode"):
-            # Store current event as recent
-            st.session_state["recent_event_id"] = active_event["id"]
-            from events import deactivate_event_mode
-            deactivate_event_mode()
-            st.rerun()
+    """This function is now empty to avoid duplicate banners"""
+    # Intentionally empty - functionality moved to render_global_event_controls
+    pass
 
 # ----------------------------
 # 🧭 Purple Tab Navigation
