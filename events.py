@@ -1,7 +1,8 @@
 import streamlit as st
 from firestore import db
 from utils import session_get
-from layout import show_event_mode_banner, render_event_toolbar
+from ui_components import show_event_mode_banner, render_event_toolbar
+
 
 # ----------------------------
 # 🔥 Get All Events
