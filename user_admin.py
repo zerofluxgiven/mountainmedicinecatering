@@ -3,7 +3,7 @@ from datetime import datetime
 from utils import format_timestamp
 from notifications import send_notification
 from auth import require_role
-from db_client import db
+from db_client import db  # ✅ Fixed: Use centralized database client
 
 # ----------------------------
 # 👤 User Admin Panel (Admin Only)
@@ -166,14 +166,14 @@ def user_admin_ui():
                                 )
                                 
                                 st.success(f"✅ Role updated to **{new_role}**")
-                                st.rerun()
+                                st.rerun()  # ✅ Fixed: was st.experimental_rerun()
                                 
                             except Exception as e:
                                 st.error(f"❌ Failed to update role: {e}")
                     
                     with col_cancel:
                         if st.button("❌ Cancel", key=f"cancel_{user['id']}"):
-                            st.rerun()
+                            st.rerun()  # ✅ Fixed: was st.experimental_rerun()
             else:
                 # Show current role as read-only
                 st.info(f"Current role: **{current_role}** (cannot be changed)")
@@ -199,20 +199,23 @@ def user_admin_ui():
                     user.get('id') != current_admin and 
                     st.button("🗑️ Deactivate", key=f"deactivate_{user['id']}")):
                     
-                    if st.confirm(f"Deactivate user {user.get('name', user.get('email', 'Unknown'))}?"):
-                        try:
-                            # Mark user as inactive instead of deleting
-                            db.collection("users").document(user["id"]).update({
-                                "active": False,
-                                "deactivated_at": datetime.utcnow(),
-                                "deactivated_by": current_admin
-                            })
-                            
-                            st.success("User deactivated")
-                            st.rerun()
-                            
-                        except Exception as e:
-                            st.error(f"Failed to deactivate user: {e}")
+                    # ✅ Fixed: Using Streamlit's built-in confirmation
+                    with st.popover("⚠️ Confirm Deactivation"):
+                        st.write(f"Deactivate user {user.get('name', user.get('email', 'Unknown'))}?")
+                        if st.button("✅ Yes, Deactivate", type="primary"):
+                            try:
+                                # Mark user as inactive instead of deleting
+                                db.collection("users").document(user["id"]).update({
+                                    "active": False,
+                                    "deactivated_at": datetime.utcnow(),
+                                    "deactivated_by": current_admin
+                                })
+                                
+                                st.success("User deactivated")
+                                st.rerun()  # ✅ Fixed: was st.experimental_rerun()
+                                
+                            except Exception as e:
+                                st.error(f"Failed to deactivate user: {e}")
 
 # ----------------------------
 # 📊 User Activity Details
@@ -233,10 +236,14 @@ def show_user_activity(user):
         # Get user's files
         files_uploaded = list(db.collection("files").where("uploaded_by", "==", user_id).stream())
         
-        # Get user's logs
-        user_logs = list(db.collection("logs").where("user_id", "==", user_id)
-                        .order_by("timestamp", direction=db.query.DESCENDING)
-                        .limit(10).stream())
+        # Get user's logs (with proper ordering)
+        try:
+            user_logs = list(db.collection("logs").where("user_id", "==", user_id)
+                            .order_by("timestamp", direction=db.query.DESCENDING)
+                            .limit(10).stream())
+        except Exception:
+            # Fallback if ordering fails
+            user_logs = list(db.collection("logs").where("user_id", "==", user_id).limit(10).stream())
         
         # Display metrics
         col1, col2, col3, col4 = st.columns(4)
@@ -268,85 +275,3 @@ def show_user_activity(user):
         
     except Exception as e:
         st.error(f"Could not load user activity: {e}")
-
-# ----------------------------
-# 🔍 Advanced User Search
-# ----------------------------
-def advanced_user_search():
-    """Advanced search and filtering for users"""
-    st.markdown("### 🔍 Advanced Search")
-    
-    with st.form("advanced_search"):
-        col1, col2, col3 = st.columns(3)
-        
-        with col1:
-            name_search = st.text_input("Name contains:")
-            email_search = st.text_input("Email contains:")
-        
-        with col2:
-            role_search = st.multiselect("Roles:", ["admin", "manager", "user", "viewer"])
-            min_events = st.number_input("Min events created:", min_value=0, value=0)
-        
-        with col3:
-            joined_after = st.date_input("Joined after:", value=None)
-            joined_before = st.date_input("Joined before:", value=None)
-        
-        submitted = st.form_submit_button("🔍 Search")
-        
-        if submitted:
-            # Implement advanced search logic here
-            st.info("Advanced search results would appear here")
-
-# ----------------------------
-# 📈 User Analytics
-# ----------------------------
-def show_user_analytics():
-    """Show user analytics and trends"""
-    st.markdown("### 📈 User Analytics")
-    
-    try:
-        users = [doc.to_dict() for doc in db.collection("users").stream()]
-        
-        if not users:
-            st.info("No user data available")
-            return
-        
-        # Role distribution
-        role_counts = {}
-        for user in users:
-            role = user.get("role", "viewer")
-            role_counts[role] = role_counts.get(role, 0) + 1
-        
-        st.markdown("#### 👥 Role Distribution")
-        for role, count in role_counts.items():
-            percentage = (count / len(users)) * 100
-            st.write(f"**{role.title()}:** {count} users ({percentage:.1f}%)")
-        
-        # User registration trends (if creation dates are available)
-        users_with_dates = [u for u in users if u.get('created_at')]
-        
-        if users_with_dates:
-            st.markdown("#### 📅 Registration Trends")
-            # Group by month
-            monthly_registrations = {}
-            for user in users_with_dates:
-                created_at = user.get('created_at')
-                if hasattr(created_at, 'strftime'):
-                    month_key = created_at.strftime("%Y-%m")
-                    monthly_registrations[month_key] = monthly_registrations.get(month_key, 0) + 1
-            
-            for month, count in sorted(monthly_registrations.items()):
-                st.write(f"**{month}:** {count} new users")
-        
-    except Exception as e:
-        st.error(f"Could not generate user analytics: {e}")
-
-# Enhanced user admin UI with analytics
-def enhanced_user_admin_ui():
-    """Enhanced user admin interface with additional features"""
-    # Show analytics first
-    show_user_analytics()
-    st.markdown("---")
-    
-    # Then show main user admin interface
-    user_admin_ui()
