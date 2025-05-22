@@ -1,4 +1,4 @@
-/* Updated style.css - Purple Theme & Mobile Responsive */
+/* Updated style.css - Purple Theme & Mobile Responsive - COMPACT VERSION */
 
 /* -----------------------------
    Base Styling & Mobile First
@@ -22,6 +22,27 @@ body, html {
 
 h1, h2, h3 {
     font-weight: 700;
+}
+
+/* -----------------------------
+   COMPACT LAYOUT FIXES
+----------------------------- */
+
+/* Remove excessive top padding from main container */
+.main .block-container {
+    padding-top: 1rem !important;
+    padding-bottom: 1rem !important;
+}
+
+/* Reduce header spacing */
+.stApp > header {
+    height: auto !important;
+}
+
+/* Make title more compact */
+h1, h2 {
+    margin-top: 0.5rem !important;
+    margin-bottom: 0.5rem !important;
 }
 
 /* -----------------------------
@@ -121,22 +142,22 @@ button:disabled, .stButton > button:disabled {
 }
 
 /* -----------------------------
-   Top Navigation Purple Tabs
+   Top Navigation Purple Tabs - COMPACT
 ----------------------------- */
 .stTabs {
     position: sticky !important;
     top: 0 !important;
     background: white !important;
     z-index: 100 !important;
-    padding: 0.5rem 0 !important;
-    margin-bottom: 1rem !important;
+    padding: 0.25rem 0 !important; /* Reduced from 0.5rem */
+    margin-bottom: 0.5rem !important; /* Reduced from 1rem */
     border-bottom: 1px solid #eee !important;
 }
 
 .stTabs [role="tablist"] {
     display: flex !important;
     flex-wrap: wrap !important;
-    gap: 0.5rem !important;
+    gap: 0.25rem !important; /* Reduced gap */
     border: none !important;
 }
 
@@ -145,13 +166,14 @@ button:disabled, .stButton > button:disabled {
     color: white !important;
     border: none !important;
     border-radius: var(--border-radius) !important;
-    padding: 0.5rem 1rem !important;
+    padding: 0.4rem 0.8rem !important; /* Slightly smaller padding */
     transition: all 0.2s ease !important;
     font-weight: 500 !important;
     cursor: pointer !important;
-    min-height: 44px !important;
+    min-height: 36px !important; /* Reduced from 44px */
     display: flex !important;
     align-items: center !important;
+    font-size: 0.9rem !important; /* Slightly smaller text */
 }
 
 .stTabs [role="tab"]:hover {
@@ -166,24 +188,26 @@ button:disabled, .stButton > button:disabled {
 /* Remove default tab styling */
 .stTabs [role="tabpanel"] {
     border: none !important;
-    padding: 1rem 0 !important;
+    padding: 0.5rem 0 !important; /* Reduced from 1rem */
 }
 
 /* -----------------------------
-   Header User Display
+   Header User Display - COMPACT
 ----------------------------- */
 .user-header {
     position: fixed !important;
-    top: 1rem !important;
+    top: 0.5rem !important; /* Moved up from 1rem */
     right: 1rem !important;
     z-index: 200 !important;
-    background: white !important;
-    padding: 0.5rem 1rem !important;
+    background: rgba(255, 255, 255, 0.95) !important; /* Semi-transparent */
+    backdrop-filter: blur(8px) !important;
+    padding: 0.3rem 0.7rem !important; /* Smaller padding */
     border-radius: var(--border-radius) !important;
     box-shadow: 0 2px 8px rgba(0,0,0,0.1) !important;
     display: flex !important;
     align-items: center !important;
-    gap: 0.5rem !important;
+    gap: 0.4rem !important; /* Reduced gap */
+    font-size: 0.85rem !important; /* Smaller text */
 }
 
 .user-name {
@@ -194,9 +218,9 @@ button:disabled, .stButton > button:disabled {
 .user-role {
     background: var(--light-purple) !important;
     color: white !important;
-    padding: 0.2rem 0.5rem !important;
-    border-radius: 12px !important;
-    font-size: 0.8rem !important;
+    padding: 0.15rem 0.4rem !important; /* Smaller padding */
+    border-radius: 10px !important;
+    font-size: 0.7rem !important; /* Smaller text */
 }
 
 /* -----------------------------
@@ -300,26 +324,59 @@ button:disabled, .stButton > button:disabled {
 }
 
 /* -----------------------------
-   Event Mode Banner Enhanced
+   Event Mode Banner - TINY & COMPACT
 ----------------------------- */
 .event-mode-banner {
     background: linear-gradient(135deg, #fff8e1, #ffecb3) !important;
-    padding: 1rem !important;
-    border-radius: var(--border-radius) !important;
-    margin: 1rem 0 !important;
+    padding: 0.4rem 0.8rem !important; /* Much smaller padding */
+    border-radius: 4px !important; /* Smaller border radius */
+    margin: 0.25rem 0 !important; /* Minimal margins */
     border: 1px solid #ffecb3 !important;
     display: flex !important;
     justify-content: space-between !important;
     align-items: center !important;
+    font-size: 0.8rem !important; /* Smaller text */
+    position: fixed !important; /* Make it float */
+    top: 0.5rem !important; /* Position at top */
+    left: 1rem !important; /* Position from left */
+    right: 200px !important; /* Leave space for user header */
+    z-index: 150 !important; /* Below user header but above content */
+    max-height: 40px !important; /* Limit height */
+    overflow: hidden !important;
+    backdrop-filter: blur(8px) !important;
+    box-shadow: 0 1px 4px rgba(0,0,0,0.1) !important;
 }
 
 .banner-content {
     flex: 1 !important;
+    white-space: nowrap !important; /* Prevent wrapping */
+    overflow: hidden !important;
+    text-overflow: ellipsis !important;
+}
+
+.banner-content strong {
+    font-size: 0.75rem !important; /* Even smaller for the label */
+}
+
+.banner-content small {
+    font-size: 0.7rem !important; /* Tiny for details */
+    opacity: 0.8 !important;
 }
 
 .banner-controls {
     display: flex !important;
-    gap: 0.5rem !important;
+    gap: 0.25rem !important; /* Smaller gap */
+}
+
+.banner-controls button {
+    padding: 0.2rem 0.5rem !important; /* Tiny button */
+    font-size: 0.7rem !important;
+    min-height: 28px !important; /* Smaller button height */
+}
+
+/* Add top padding to main content to account for fixed banner */
+.main .block-container {
+    padding-top: 3.5rem !important; /* Space for both user header and event banner */
 }
 
 /* -----------------------------
@@ -341,8 +398,24 @@ button:disabled, .stButton > button:disabled {
         position: relative !important;
         top: auto !important;
         right: auto !important;
-        margin: 1rem 0 !important;
+        margin: 0.5rem 0 !important; /* Reduced margin */
         text-align: center !important;
+    }
+    
+    /* Make event banner relative on mobile */
+    .event-mode-banner {
+        position: relative !important;
+        top: auto !important;
+        left: auto !important;
+        right: auto !important;
+        margin: 0.5rem 0 !important;
+    }
+    
+    /* Reduce mobile padding */
+    .main .block-container {
+        padding-top: 1rem !important;
+        padding-left: 0.5rem !important;
+        padding-right: 0.5rem !important;
     }
     
     /* Mobile chat window */
@@ -377,8 +450,13 @@ button:disabled, .stButton > button:disabled {
 @media (max-width: 480px) {
     /* Extra small screens */
     .user-header {
-        padding: 0.3rem 0.7rem !important;
-        font-size: 0.9rem !important;
+        padding: 0.25rem 0.5rem !important; /* Even smaller */
+        font-size: 0.8rem !important;
+    }
+    
+    .event-mode-banner {
+        padding: 0.3rem 0.5rem !important;
+        font-size: 0.75rem !important;
     }
     
     .chat-bubble {
