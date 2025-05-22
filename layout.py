@@ -87,31 +87,47 @@ def render_global_event_controls():
     location_key = st.session_state.get("current_location", "header")
     
     if active_event_id:
-        # Show Exit Event Mode button
+        # Get event info
         active_event = get_active_event()
         event_name = active_event.get("name", "Unknown Event") if active_event else "Unknown"
+        location = active_event.get("location", "Unknown")
+        status = active_event.get("status", "planning")
         
-        st.warning(f"**📅 Event Mode Active:** {event_name} - Click below to exit")
+        # Compact banner with exit button
+        col1, col2 = st.columns([3, 1])
         
-        # Add a prominent exit button
-        unique_key = f"{location_key}_exit_event_mode_{hash(str(active_event_id))}"
-        if st.button("🚪 Exit Event Mode", key=unique_key, use_container_width=True, 
-                   help=f"Exit {event_name} and return to normal mode"):
-            # Store current event as recent before deactivating
-            st.session_state["recent_event_id"] = active_event_id
-            
-            # Deactivate Event Mode
-            from events import deactivate_event_mode, update_event
-            
-            # Force status update
-            if active_event and active_event.get("status") == "active":
-                update_event(active_event_id, {"status": "planning"})
+        with col1:
+            # Compact banner
+            banner_html = f"""
+            <div style="background-color:#fff8e1; padding:8px 12px; border-radius:6px; 
+                      border:1px solid #ffecb3;">
+                <span style="font-weight:bold;">📅 Event Mode: {event_name}</span>
+                <span style="color:#555; margin-left:10px;">📍 {location}</span>
+                <span style="display:inline-block; padding:2px 6px; margin-left:10px;
+                     border-radius:12px; font-size:0.7rem; background-color:#e3f2fd;">
+                    {status.title()}
+                </span>
+            </div>
+            """
+            st.markdown(banner_html, unsafe_allow_html=True)
+        
+        with col2:
+            # Exit button
+            unique_key = f"{location_key}_exit_event_mode_{hash(str(active_event_id))}"
+            if st.button("🚪 Exit Event Mode", key=unique_key, use_container_width=True):
+                # Store current event as recent before deactivating
+                st.session_state["recent_event_id"] = active_event_id
                 
-            deactivate_event_mode()
-            st.rerun()
+                # Deactivate Event Mode
+                from events import deactivate_event_mode, update_event
+                
+                # Force status update
+                update_event(active_event_id, {"status": "planning"})
+                deactivate_event_mode()
+                st.rerun()
     
     elif recent_event_id:
-        # Show Resume button
+        # Show Resume button (existing code - keep as is)
         recent_event = get_event_by_id(recent_event_id)
         if recent_event:
             event_name = recent_event.get("name", "Recent Event")
