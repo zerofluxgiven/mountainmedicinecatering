@@ -329,7 +329,7 @@ def show_event_statistics():
                 status = event.get('status', 'planning')
                 col1, col2 = st.columns([10, 1])
                 with col1:
-                    st.write(f"• **{event.get('name', 'Unnamed')}** - ")
+                    st.write(f"• **{event.get('name', 'Unnamed')}**")
                 with col2:
                     render_status_indicator(status)
                 
