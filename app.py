@@ -137,7 +137,7 @@ def main():
     
     # Top navigation
     if mobile_layout.is_mobile:
-            selected_tab = mobile_layout.render_mobile_navigation()
+        selected_tab = mobile_layout.render_mobile_navigation()
         else:
             selected_tab = render_top_navbar(list(TABS.keys()))
 
