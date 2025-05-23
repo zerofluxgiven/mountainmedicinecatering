@@ -1,0 +1,447 @@
+/* Complete Style Redesign - Mobile First, Clean & Modern */
+
+/* -----------------------------
+   CSS Variables & Base
+----------------------------- */
+:root {
+    --primary-purple: #6C4AB6;
+    --light-purple: #B8A4D4;
+    --accent-purple: #563a9d;
+    --dark-purple: #4a3280;
+    --border-radius: 8px;
+    --shadow-sm: 0 2px 4px rgba(0,0,0,0.1);
+    --shadow-md: 0 4px 12px rgba(0,0,0,0.15);
+    --shadow-lg: 0 8px 24px rgba(0,0,0,0.2);
+    --transition: all 0.2s ease;
+    
+    /* Mobile-specific variables */
+    --mobile-padding: 1rem;
+    --touch-target-size: 44px;
+}
+
+* {
+    box-sizing: border-box;
+    -webkit-tap-highlight-color: transparent;
+}
+
+body, html {
+    font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+    background-color: #ffffff;
+    color: #000000;
+    scroll-behavior: smooth;
+    margin: 0;
+    padding: 0;
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+}
+
+/* -----------------------------
+   MOBILE-FIRST BASE STYLES
+----------------------------- */
+.main .block-container {
+    padding: 0 var(--mobile-padding) 1rem !important;
+    max-width: 100% !important;
+    margin-top: 0 !important;
+}
+
+/* -----------------------------
+   TOUCH-FRIENDLY BUTTONS
+----------------------------- */
+button, .stButton > button {
+    background-color: var(--primary-purple) !important;
+    color: white !important;
+    border: none !important;
+    border-radius: var(--border-radius) !important;
+    padding: 0.75rem 1.5rem !important;
+    font-weight: 500 !important;
+    transition: var(--transition) !important;
+    cursor: pointer !important;
+    min-height: var(--touch-target-size) !important;
+    min-width: var(--touch-target-size) !important;
+    font-size: 1rem !important;
+    touch-action: manipulation !important;
+    -webkit-user-select: none !important;
+    user-select: none !important;
+}
+
+button:hover, .stButton > button:hover {
+    background-color: var(--accent-purple) !important;
+    transform: translateY(-1px) !important;
+    box-shadow: var(--shadow-sm) !important;
+}
+
+button:active, .stButton > button:active {
+    transform: translateY(0) !important;
+    box-shadow: none !important;
+}
+
+/* -----------------------------
+   MOBILE NAVIGATION
+----------------------------- */
+.nav-container {
+    margin: 1rem 0 !important;
+    padding: 0 !important;
+    overflow-x: auto !important;
+    -webkit-overflow-scrolling: touch !important;
+}
+
+.nav-tabs {
+    display: flex !important;
+    gap: 0.5rem !important;
+    padding-bottom: 0.5rem !important;
+    min-width: max-content !important;
+}
+
+.stRadio > div {
+    display: flex !important;
+    gap: 0.5rem !important;
+    overflow-x: auto !important;
+    -webkit-overflow-scrolling: touch !important;
+    padding-bottom: 0.5rem !important;
+}
+
+.stRadio > div > label {
+    background: white !important;
+    color: var(--primary-purple) !important;
+    border: 2px solid var(--primary-purple) !important;
+    border-radius: var(--border-radius) !important;
+    padding: 0.75rem 1.25rem !important;
+    font-weight: 500 !important;
+    font-size: 0.9rem !important;
+    cursor: pointer !important;
+    transition: var(--transition) !important;
+    min-height: var(--touch-target-size) !important;
+    display: inline-flex !important;
+    align-items: center !important;
+    justify-content: center !important;
+    white-space: nowrap !important;
+    flex-shrink: 0 !important;
+}
+
+/* -----------------------------
+   MOBILE CHAT INTERFACE
+----------------------------- */
+.ai-chat-window {
+    position: fixed !important;
+    bottom: 0 !important;
+    left: 0 !important;
+    right: 0 !important;
+    width: 100% !important;
+    height: 80vh !important;
+    max-height: 600px !important;
+    background: white !important;
+    border-radius: 12px 12px 0 0 !important;
+    box-shadow: var(--shadow-lg) !important;
+    display: flex !important;
+    flex-direction: column !important;
+    overflow: hidden !important;
+    z-index: 999 !important;
+    transition: transform 0.3s ease !important;
+}
+
+.chat-header {
+    background: var(--primary-purple) !important;
+    color: white !important;
+    padding: 1rem !important;
+    display: flex !important;
+    justify-content: space-between !important;
+    align-items: center !important;
+    position: sticky !important;
+    top: 0 !important;
+    z-index: 10 !important;
+}
+
+.chat-body {
+    flex: 1 !important;
+    padding: 1rem !important;
+    overflow-y: auto !important;
+    -webkit-overflow-scrolling: touch !important;
+    background: #f8f9fa !important;
+}
+
+.chat-message {
+    margin-bottom: 1rem !important;
+    padding: 0.75rem !important;
+    border-radius: 8px !important;
+    max-width: 85% !important;
+    word-wrap: break-word !important;
+    animation: fadeIn 0.3s ease !important;
+}
+
+@keyframes fadeIn {
+    from { opacity: 0; transform: translateY(10px); }
+    to { opacity: 1; transform: translateY(0); }
+}
+
+/* Chat input area */
+.stTextInput input {
+    border: 2px solid #e0e0e0 !important;
+    border-radius: var(--border-radius) !important;
+    padding: 0.75rem !important;
+    font-size: 1rem !important;
+    transition: var(--transition) !important;
+}
+
+.stTextInput input:focus {
+    border-color: var(--primary-purple) !important;
+    box-shadow: 0 0 0 3px rgba(108, 74, 182, 0.1) !important;
+    outline: none !important;
+}
+
+/* -----------------------------
+   MOBILE CARDS & CONTAINERS
+----------------------------- */
+.card {
+    background: white !important;
+    border-radius: 12px !important;
+    padding: 1rem !important;
+    box-shadow: var(--shadow-sm) !important;
+    margin-bottom: 1rem !important;
+    border: 1px solid #f0f0f0 !important;
+}
+
+/* Touch-friendly expanders */
+.streamlit-expanderHeader {
+    background: #f8f9fa !important;
+    border-radius: var(--border-radius) !important;
+    padding: 1rem !important;
+    min-height: var(--touch-target-size) !important;
+    cursor: pointer !important;
+    -webkit-tap-highlight-color: rgba(108, 74, 182, 0.1) !important;
+}
+
+.streamlit-expanderHeader:active {
+    background: #edeafa !important;
+}
+
+/* -----------------------------
+   MOBILE FORMS
+----------------------------- */
+.stForm {
+    padding: 1rem !important;
+    background: #f8f9fa !important;
+    border-radius: var(--border-radius) !important;
+    margin-bottom: 1rem !important;
+}
+
+/* Touch-friendly select boxes */
+.stSelectbox > div > div {
+    min-height: var(--touch-target-size) !important;
+    border: 2px solid #e0e0e0 !important;
+    border-radius: var(--border-radius) !important;
+    padding: 0.75rem !important;
+    font-size: 1rem !important;
+}
+
+/* Touch-friendly checkboxes */
+.stCheckbox label {
+    padding: 0.75rem 0 !important;
+    cursor: pointer !important;
+    display: flex !important;
+    align-items: center !important;
+    min-height: var(--touch-target-size) !important;
+}
+
+.stCheckbox input[type="checkbox"] {
+    width: 24px !important;
+    height: 24px !important;
+    margin-right: 0.75rem !important;
+}
+
+/* -----------------------------
+   MOBILE SIDEBAR
+----------------------------- */
+.css-1d391kg {
+    padding: var(--mobile-padding) !important;
+    width: 80% !important;
+    max-width: 300px !important;
+}
+
+/* Sidebar toggle button */
+button[aria-label="Open sidebar"] {
+    position: fixed !important;
+    top: 1rem !important;
+    left: 1rem !important;
+    z-index: 100 !important;
+    min-width: var(--touch-target-size) !important;
+    min-height: var(--touch-target-size) !important;
+}
+
+/* -----------------------------
+   MOBILE EVENT INDICATOR
+----------------------------- */
+.event-mode-simple-indicator {
+    position: relative !important;
+    margin: 0.5rem 0 1rem !important;
+    background: var(--primary-purple) !important;
+    color: white !important;
+    padding: 0.75rem 1rem !important;
+    border-radius: var(--border-radius) !important;
+    font-size: 0.85rem !important;
+    font-weight: 500 !important;
+    text-align: center !important;
+    box-shadow: var(--shadow-sm) !important;
+}
+
+/* -----------------------------
+   MOBILE FLOATING CHAT BUTTON
+----------------------------- */
+.stButton:has([data-testid*="floating_chat_toggle"]) {
+    position: fixed !important;
+    bottom: 1.5rem !important;
+    right: 1.5rem !important;
+    z-index: 1000 !important;
+    width: 60px !important;
+    height: 60px !important;
+}
+
+.stButton:has([data-testid*="floating_chat_toggle"]) button {
+    width: 60px !important;
+    height: 60px !important;
+    border-radius: 50% !important;
+    font-size: 24px !important;
+    padding: 0 !important;
+    display: flex !important;
+    align-items: center !important;
+    justify-content: center !important;
+    box-shadow: 0 4px 12px rgba(108, 74, 182, 0.3) !important;
+}
+
+/* -----------------------------
+   MOBILE-SPECIFIC UTILITIES
+----------------------------- */
+/* Swipeable lists */
+.swipeable-list {
+    overflow-x: auto !important;
+    -webkit-overflow-scrolling: touch !important;
+    scroll-snap-type: x mandatory !important;
+}
+
+.swipeable-list > * {
+    scroll-snap-align: start !important;
+}
+
+/* Touch-friendly spacing */
+.stColumns {
+    gap: var(--mobile-padding) !important;
+}
+
+/* Responsive tables */
+.dataframe {
+    overflow-x: auto !important;
+    -webkit-overflow-scrolling: touch !important;
+    font-size: 0.875rem !important;
+}
+
+/* -----------------------------
+   TABLET STYLES (768px+)
+----------------------------- */
+@media (min-width: 768px) {
+    .main .block-container {
+        padding: 1rem 2rem !important;
+    }
+    
+    .ai-chat-window {
+        position: fixed !important;
+        bottom: 100px !important;
+        right: 2rem !important;
+        left: auto !important;
+        width: 400px !important;
+        height: 500px !important;
+        border-radius: 12px !important;
+    }
+    
+    .event-mode-simple-indicator {
+        position: fixed !important;
+        top: 1rem !important;
+        right: 1rem !important;
+        margin: 0 !important;
+    }
+    
+    .nav-tabs {
+        flex-wrap: wrap !important;
+        overflow-x: visible !important;
+    }
+}
+
+/* -----------------------------
+   DESKTOP STYLES (1024px+)
+----------------------------- */
+@media (min-width: 1024px) {
+    .main .block-container {
+        padding: 2rem 4rem !important;
+        max-width: 1200px !important;
+        margin: 0 auto !important;
+    }
+    
+    button, .stButton > button {
+        padding: 0.5rem 1rem !important;
+        font-size: 0.9rem !important;
+    }
+}
+
+/* -----------------------------
+   PERFORMANCE OPTIMIZATIONS
+----------------------------- */
+/* Reduce motion for users who prefer it */
+@media (prefers-reduced-motion: reduce) {
+    * {
+        animation: none !important;
+        transition: none !important;
+    }
+}
+
+/* Dark mode support */
+@media (prefers-color-scheme: dark) {
+    /* Add dark mode styles here if needed */
+}
+
+/* High contrast mode */
+@media (prefers-contrast: high) {
+    button, .stButton > button {
+        border: 2px solid currentColor !important;
+    }
+}
+
+/* -----------------------------
+   OFFLINE INDICATOR
+----------------------------- */
+.offline-indicator {
+    position: fixed !important;
+    top: 0 !important;
+    left: 0 !important;
+    right: 0 !important;
+    background: #ff6b6b !important;
+    color: white !important;
+    padding: 0.5rem !important;
+    text-align: center !important;
+    font-size: 0.875rem !important;
+    z-index: 9999 !important;
+    transform: translateY(-100%) !important;
+    transition: transform 0.3s ease !important;
+}
+
+.offline-indicator.show {
+    transform: translateY(0) !important;
+}
+
+/* -----------------------------
+   LOADING STATES
+----------------------------- */
+.stSpinner {
+    display: flex !important;
+    justify-content: center !important;
+    align-items: center !important;
+    min-height: 100px !important;
+}
+
+/* Custom loading animation */
+@keyframes pulse {
+    0% { opacity: 0.6; }
+    50% { opacity: 1; }
+    100% { opacity: 0.6; }
+}
+
+.loading {
+    animation: pulse 1.5s ease-in-out infinite !important;
+}
