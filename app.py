@@ -104,6 +104,8 @@ def main():
         initial_sidebar_state="collapsed"
     )
 
+    mobile_layout.apply_mobile_theme()
+
     # 💅 Apply complete theme system
     apply_theme()
 
@@ -134,6 +136,9 @@ def main():
     st.markdown("## 🌄 Mountain Medicine Catering")
     
     # Top navigation
+    if mobile_layout.is_mobile:
+    selected_tab = mobile_layout.render_mobile_navigation()
+else:
     selected_tab = render_top_navbar(list(TABS.keys()))
 
     # Sidebar for notifications and quick info
@@ -279,7 +284,10 @@ def main():
 # 📊 Enhanced Dashboard (PRESERVED AND ENHANCED)
 # ----------------------------
 def render_dashboard(user):
-    """Enhanced dashboard with better layout and mobile support"""
+    if mobile_layout.is_mobile:
+        mobile_layout.render_mobile_dashboard(user, get_active_event())
+        return
+    
     if PUBLIC_MODE:
         st.warning("Dashboard is private.")
         return
