@@ -13,10 +13,15 @@
     --shadow-md: 0 4px 12px rgba(0,0,0,0.15);
     --shadow-lg: 0 8px 24px rgba(0,0,0,0.2);
     --transition: all 0.2s ease;
+    
+    /* Mobile-specific variables */
+    --mobile-padding: 1rem;
+    --touch-target-size: 44px;
 }
 
 * {
     box-sizing: border-box;
+    -webkit-tap-highlight-color: transparent;
 }
 
 body, html {
@@ -26,134 +31,112 @@ body, html {
     scroll-behavior: smooth;
     margin: 0;
     padding: 0;
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
 }
 
 /* -----------------------------
-   REMOVE ALL TOP PADDING/GAPS
+   MOBILE-FIRST BASE STYLES
 ----------------------------- */
 .main .block-container {
-    padding-top: 0 !important;
-    padding-bottom: 1rem !important;
+    padding: 0 var(--mobile-padding) 1rem !important;
     max-width: 100% !important;
     margin-top: 0 !important;
 }
 
-.stApp > header {
-    display: none !important;
-}
-
-.stApp {
-    padding-top: 0 !important;
-    margin-top: 0 !important;
-}
-
-/* First element spacing */
-.main > div:first-child {
-    margin-top: 0 !important;
-    padding-top: 0 !important;
-}
-
-/* Remove all heading margins at top */
-h1:first-child, h2:first-child, h3:first-child {
-    margin-top: 0 !important;
-    padding-top: 0.5rem !important;
-}
-
 /* -----------------------------
-   EVENT MODE INDICATOR (Top Right)
+   TOUCH-FRIENDLY BUTTONS
 ----------------------------- */
-.event-mode-simple-indicator {
-    position: fixed !important;
-    top: 1rem !important;
-    right: 1rem !important;
-    background: var(--primary-purple) !important;
+button, .stButton > button {
+    background-color: var(--primary-purple) !important;
     color: white !important;
-    padding: 0.5rem 1rem !important;
-    border-radius: 20px !important;
-    font-size: 0.85rem !important;
+    border: none !important;
+    border-radius: var(--border-radius) !important;
+    padding: 0.75rem 1.5rem !important;
     font-weight: 500 !important;
-    box-shadow: var(--shadow-md) !important;
-    z-index: 1000 !important;
+    transition: var(--transition) !important;
+    cursor: pointer !important;
+    min-height: var(--touch-target-size) !important;
+    min-width: var(--touch-target-size) !important;
+    font-size: 1rem !important;
+    touch-action: manipulation !important;
+    -webkit-user-select: none !important;
+    user-select: none !important;
 }
 
-.event-mode-simple-indicator strong {
-    font-weight: 700 !important;
+button:hover, .stButton > button:hover {
+    background-color: var(--accent-purple) !important;
+    transform: translateY(-1px) !important;
+    box-shadow: var(--shadow-sm) !important;
+}
+
+button:active, .stButton > button:active {
+    transform: translateY(0) !important;
+    box-shadow: none !important;
 }
 
 /* -----------------------------
-   CLEAN NAVIGATION TABS
+   MOBILE NAVIGATION
 ----------------------------- */
 .nav-container {
     margin: 1rem 0 !important;
     padding: 0 !important;
+    overflow-x: auto !important;
+    -webkit-overflow-scrolling: touch !important;
 }
 
 .nav-tabs {
     display: flex !important;
     gap: 0.5rem !important;
-    flex-wrap: wrap !important;
-    justify-content: flex-start !important;
-    align-items: center !important;
+    padding-bottom: 0.5rem !important;
+    min-width: max-content !important;
 }
 
-.nav-tab {
+.stRadio > div {
+    display: flex !important;
+    gap: 0.5rem !important;
+    overflow-x: auto !important;
+    -webkit-overflow-scrolling: touch !important;
+    padding-bottom: 0.5rem !important;
+}
+
+.stRadio > div > label {
     background: white !important;
     color: var(--primary-purple) !important;
     border: 2px solid var(--primary-purple) !important;
     border-radius: var(--border-radius) !important;
-    padding: 0.5rem 1rem !important;
+    padding: 0.75rem 1.25rem !important;
     font-weight: 500 !important;
     font-size: 0.9rem !important;
     cursor: pointer !important;
     transition: var(--transition) !important;
-    text-align: center !important;
-    min-height: 40px !important;
+    min-height: var(--touch-target-size) !important;
     display: inline-flex !important;
     align-items: center !important;
     justify-content: center !important;
-}
-
-.nav-tab:hover {
-    background: var(--light-purple) !important;
-    color: white !important;
-    transform: translateY(-2px) !important;
-    box-shadow: var(--shadow-sm) !important;
-}
-
-.nav-tab.active {
-    background: var(--primary-purple) !important;
-    color: white !important;
-}
-
-/* Hide Streamlit's radio buttons */
-.stRadio {
-    display: none !important;
-}
-
-/* Remove checkmarks from tabs */
-[role="tab"]::before {
-    display: none !important;
+    white-space: nowrap !important;
+    flex-shrink: 0 !important;
 }
 
 /* -----------------------------
-   AI CHAT WINDOW (Bottom Right)
+   MOBILE CHAT INTERFACE
 ----------------------------- */
 .ai-chat-window {
     position: fixed !important;
-    bottom: 100px !important;
-    right: 2rem !important;
-    width: 350px !important;
-    max-width: calc(100vw - 4rem) !important;
-    height: 500px !important;
-    max-height: calc(100vh - 150px) !important;
+    bottom: 0 !important;
+    left: 0 !important;
+    right: 0 !important;
+    width: 100% !important;
+    height: 80vh !important;
+    max-height: 600px !important;
     background: white !important;
-    border-radius: 12px !important;
+    border-radius: 12px 12px 0 0 !important;
     box-shadow: var(--shadow-lg) !important;
     display: flex !important;
     flex-direction: column !important;
     overflow: hidden !important;
     z-index: 999 !important;
-    border: 1px solid #e0e0e0 !important;
+    transition: transform 0.3s ease !important;
 }
 
 .chat-header {
@@ -163,37 +146,16 @@ h1:first-child, h2:first-child, h3:first-child {
     display: flex !important;
     justify-content: space-between !important;
     align-items: center !important;
-}
-
-.chat-header h3 {
-    margin: 0 !important;
-    font-size: 1.1rem !important;
-}
-
-.close-button {
-    background: rgba(255,255,255,0.2) !important;
-    border: none !important;
-    color: white !important;
-    width: 32px !important;
-    height: 32px !important;
-    border-radius: 50% !important;
-    display: flex !important;
-    align-items: center !important;
-    justify-content: center !important;
-    cursor: pointer !important;
-    font-size: 1.2rem !important;
-    transition: var(--transition) !important;
-}
-
-.close-button:hover {
-    background: rgba(255,255,255,0.3) !important;
-    transform: rotate(90deg) !important;
+    position: sticky !important;
+    top: 0 !important;
+    z-index: 10 !important;
 }
 
 .chat-body {
     flex: 1 !important;
     padding: 1rem !important;
     overflow-y: auto !important;
+    -webkit-overflow-scrolling: touch !important;
     background: #f8f9fa !important;
 }
 
@@ -203,244 +165,58 @@ h1:first-child, h2:first-child, h3:first-child {
     border-radius: 8px !important;
     max-width: 85% !important;
     word-wrap: break-word !important;
+    animation: fadeIn 0.3s ease !important;
 }
 
-.chat-message.user {
-    background: var(--light-purple) !important;
-    color: white !important;
-    margin-left: auto !important;
-    text-align: right !important;
+@keyframes fadeIn {
+    from { opacity: 0; transform: translateY(10px); }
+    to { opacity: 1; transform: translateY(0); }
 }
 
-.chat-message.ai {
-    background: white !important;
-    color: #333 !important;
-    border: 1px solid #e0e0e0 !important;
-}
-
-.chat-message-center {
-    text-align: center !important;
-    color: #666 !important;
-    margin: 2rem 0 !important;
-}
-
-.chat-footer {
-    padding: 0.5rem 1rem !important;
-    border-top: 1px solid #e0e0e0 !important;
-    background: white !important;
-}
-
-.quick-actions {
-    display: flex !important;
-    gap: 0.5rem !important;
-    margin-bottom: 0.5rem !important;
-}
-
-.quick-action {
-    flex: 1 !important;
-    padding: 0.4rem !important;
-    background: var(--light-purple) !important;
-    color: white !important;
-    border: none !important;
-    border-radius: 6px !important;
-    font-size: 0.85rem !important;
-    cursor: pointer !important;
-    transition: var(--transition) !important;
-}
-
-.quick-action:hover {
-    background: var(--primary-purple) !important;
-}
-
-/* -----------------------------
-   SIDEBAR STYLING
------------------------------ */
-.sidebar .sidebar-content {
-    background: #f8f9fa !important;
-    padding: 1rem !important;
-}
-
-.sidebar button {
-    width: 100% !important;
-    margin-bottom: 0.5rem !important;
-}
-
-/* -----------------------------
-   BUTTONS & FORMS
------------------------------ */
-button, .stButton > button {
-    background-color: var(--primary-purple) !important;
-    color: white !important;
-    border: none !important;
+/* Chat input area */
+.stTextInput input {
+    border: 2px solid #e0e0e0 !important;
     border-radius: var(--border-radius) !important;
-    padding: 0.5rem 1rem !important;
-    font-weight: 500 !important;
+    padding: 0.75rem !important;
+    font-size: 1rem !important;
     transition: var(--transition) !important;
-    cursor: pointer !important;
-    min-height: 40px !important;
 }
 
-button:hover, .stButton > button:hover {
-    background-color: var(--accent-purple) !important;
-    transform: translateY(-1px) !important;
-    box-shadow: var(--shadow-sm) !important;
-}
-
-/* Leave Event Mode Button */
-button:has-text("Leave Event Mode") {
-    background: #e74c3c !important;
-    font-size: 0.9rem !important;
-    padding: 0.4rem 0.8rem !important;
-}
-
-button:has-text("Leave Event Mode"):hover {
-    background: #c0392b !important;
+.stTextInput input:focus {
+    border-color: var(--primary-purple) !important;
+    box-shadow: 0 0 0 3px rgba(108, 74, 182, 0.1) !important;
+    outline: none !important;
 }
 
 /* -----------------------------
-   STATUS INDICATORS
------------------------------ */
-/* Hide planning status completely */
-.status-planning {
-    display: none !important;
-}
-
-.status-active { 
-    background: #81c784 !important; 
-    color: #2e7d32 !important; 
-    padding: 0.3rem 0.6rem !important; 
-    border-radius: 12px !important; 
-    font-size: 0.75rem !important; 
-    font-weight: 600 !important;
-    display: inline-block !important;
-}
-
-.status-complete { 
-    background: #90a4ae !important; 
-    color: #37474f !important; 
-    padding: 0.3rem 0.6rem !important; 
-    border-radius: 12px !important; 
-    font-size: 0.75rem !important; 
-    font-weight: 600 !important;
-    display: inline-block !important;
-}
-
-/* -----------------------------
-   MOBILE RESPONSIVE (Mobile First)
------------------------------ */
-@media (max-width: 768px) {
-    /* Mobile padding */
-    .main .block-container {
-        padding-left: 0.5rem !important;
-        padding-right: 0.5rem !important;
-    }
-    
-    /* Mobile event indicator */
-    .event-mode-simple-indicator {
-        position: relative !important;
-        top: auto !important;
-        right: auto !important;
-        margin: 0.5rem 0 1rem !important;
-        display: block !important;
-        text-align: center !important;
-        font-size: 0.8rem !important;
-        border-radius: var(--border-radius) !important;
-    }
-    
-    /* Mobile navigation */
-    .nav-tabs {
-        flex-direction: column !important;
-        gap: 0.5rem !important;
-    }
-    
-    .nav-tab {
-        width: 100% !important;
-        justify-content: center !important;
-    }
-    
-    /* Mobile chat window */
-    .ai-chat-window {
-        width: 100% !important;
-        height: 80vh !important;
-        bottom: 0 !important;
-        right: 0 !important;
-        left: 0 !important;
-        border-radius: 12px 12px 0 0 !important;
-        max-width: 100% !important;
-    }
-    
-    /* Mobile chat toggle */
-    div[data-testid="stMarkdownContainer"]:has(.floating-chat-button-container) + div .stButton {
-        bottom: 1rem !important;
-        right: 1rem !important;
-    }
-    
-    /* Mobile sidebar */
-    .css-1d391kg {
-        padding: 1rem 0.5rem !important;
-    }
-}
-
-/* -----------------------------
-   UTILITY CLASSES
+   MOBILE CARDS & CONTAINERS
 ----------------------------- */
 .card {
     background: white !important;
     border-radius: 12px !important;
-    padding: 1.5rem !important;
+    padding: 1rem !important;
     box-shadow: var(--shadow-sm) !important;
     margin-bottom: 1rem !important;
     border: 1px solid #f0f0f0 !important;
 }
 
-.tag {
+/* Touch-friendly expanders */
+.streamlit-expanderHeader {
+    background: #f8f9fa !important;
+    border-radius: var(--border-radius) !important;
+    padding: 1rem !important;
+    min-height: var(--touch-target-size) !important;
+    cursor: pointer !important;
+    -webkit-tap-highlight-color: rgba(108, 74, 182, 0.1) !important;
+}
+
+.streamlit-expanderHeader:active {
     background: #edeafa !important;
-    color: var(--primary-purple) !important;
-    padding: 0.3rem 0.6rem !important;
-    border-radius: 20px !important;
-    font-size: 0.75rem !important;
-    display: inline-block !important;
-    margin: 0.2rem !important;
-    font-weight: 500 !important;
 }
 
 /* -----------------------------
-   CLEANUP & POLISH
+   MOBILE FORMS
 ----------------------------- */
-/* Hide Streamlit branding */
-#MainMenu {visibility: hidden;}
-footer {visibility: hidden;}
-header {visibility: hidden;}
-
-/* Remove decoration elements */
-[data-testid="stDecoration"] {
-    display: none !important;
-}
-
-/* Clean up spacing */
-.element-container {
-    margin: 0 !important;
-}
-
-.stColumns > div {
-    gap: 0.75rem !important;
-}
-
-/* Scrollbar styling */
-::-webkit-scrollbar {
-    width: 8px !important;
-}
-
-::-webkit-scrollbar-thumb {
-    background: var(--light-purple) !important;
-    border-radius: 4px !important;
-}
-
-::-webkit-scrollbar-thumb:hover {
-    background: var(--primary-purple) !important;
-}
-
-/* Form styling */
 .stForm {
     padding: 1rem !important;
     background: #f8f9fa !important;
@@ -448,37 +224,224 @@ header {visibility: hidden;}
     margin-bottom: 1rem !important;
 }
 
-/* Expander styling */
-.streamlit-expanderHeader {
-    background: #f8f9fa !important;
+/* Touch-friendly select boxes */
+.stSelectbox > div > div {
+    min-height: var(--touch-target-size) !important;
+    border: 2px solid #e0e0e0 !important;
     border-radius: var(--border-radius) !important;
     padding: 0.75rem !important;
+    font-size: 1rem !important;
 }
 
-.streamlit-expanderHeader:hover {
-    background: #edeafa !important;
+/* Touch-friendly checkboxes */
+.stCheckbox label {
+    padding: 0.75rem 0 !important;
+    cursor: pointer !important;
+    display: flex !important;
+    align-items: center !important;
+    min-height: var(--touch-target-size) !important;
 }
 
-/* Input styling */
-.stTextInput input {
-    border: 2px solid #e0e0e0 !important;
+.stCheckbox input[type="checkbox"] {
+    width: 24px !important;
+    height: 24px !important;
+    margin-right: 0.75rem !important;
+}
+
+/* -----------------------------
+   MOBILE SIDEBAR
+----------------------------- */
+.css-1d391kg {
+    padding: var(--mobile-padding) !important;
+    width: 80% !important;
+    max-width: 300px !important;
+}
+
+/* Sidebar toggle button */
+button[aria-label="Open sidebar"] {
+    position: fixed !important;
+    top: 1rem !important;
+    left: 1rem !important;
+    z-index: 100 !important;
+    min-width: var(--touch-target-size) !important;
+    min-height: var(--touch-target-size) !important;
+}
+
+/* -----------------------------
+   MOBILE EVENT INDICATOR
+----------------------------- */
+.event-mode-simple-indicator {
+    position: relative !important;
+    margin: 0.5rem 0 1rem !important;
+    background: var(--primary-purple) !important;
+    color: white !important;
+    padding: 0.75rem 1rem !important;
     border-radius: var(--border-radius) !important;
+    font-size: 0.85rem !important;
+    font-weight: 500 !important;
+    text-align: center !important;
+    box-shadow: var(--shadow-sm) !important;
+}
+
+/* -----------------------------
+   MOBILE FLOATING CHAT BUTTON
+----------------------------- */
+.stButton:has([data-testid*="floating_chat_toggle"]) {
+    position: fixed !important;
+    bottom: 1.5rem !important;
+    right: 1.5rem !important;
+    z-index: 1000 !important;
+    width: 60px !important;
+    height: 60px !important;
+}
+
+.stButton:has([data-testid*="floating_chat_toggle"]) button {
+    width: 60px !important;
+    height: 60px !important;
+    border-radius: 50% !important;
+    font-size: 24px !important;
+    padding: 0 !important;
+    display: flex !important;
+    align-items: center !important;
+    justify-content: center !important;
+    box-shadow: 0 4px 12px rgba(108, 74, 182, 0.3) !important;
+}
+
+/* -----------------------------
+   MOBILE-SPECIFIC UTILITIES
+----------------------------- */
+/* Swipeable lists */
+.swipeable-list {
+    overflow-x: auto !important;
+    -webkit-overflow-scrolling: touch !important;
+    scroll-snap-type: x mandatory !important;
+}
+
+.swipeable-list > * {
+    scroll-snap-align: start !important;
+}
+
+/* Touch-friendly spacing */
+.stColumns {
+    gap: var(--mobile-padding) !important;
+}
+
+/* Responsive tables */
+.dataframe {
+    overflow-x: auto !important;
+    -webkit-overflow-scrolling: touch !important;
+    font-size: 0.875rem !important;
+}
+
+/* -----------------------------
+   TABLET STYLES (768px+)
+----------------------------- */
+@media (min-width: 768px) {
+    .main .block-container {
+        padding: 1rem 2rem !important;
+    }
+    
+    .ai-chat-window {
+        position: fixed !important;
+        bottom: 100px !important;
+        right: 2rem !important;
+        left: auto !important;
+        width: 400px !important;
+        height: 500px !important;
+        border-radius: 12px !important;
+    }
+    
+    .event-mode-simple-indicator {
+        position: fixed !important;
+        top: 1rem !important;
+        right: 1rem !important;
+        margin: 0 !important;
+    }
+    
+    .nav-tabs {
+        flex-wrap: wrap !important;
+        overflow-x: visible !important;
+    }
+}
+
+/* -----------------------------
+   DESKTOP STYLES (1024px+)
+----------------------------- */
+@media (min-width: 1024px) {
+    .main .block-container {
+        padding: 2rem 4rem !important;
+        max-width: 1200px !important;
+        margin: 0 auto !important;
+    }
+    
+    button, .stButton > button {
+        padding: 0.5rem 1rem !important;
+        font-size: 0.9rem !important;
+    }
+}
+
+/* -----------------------------
+   PERFORMANCE OPTIMIZATIONS
+----------------------------- */
+/* Reduce motion for users who prefer it */
+@media (prefers-reduced-motion: reduce) {
+    * {
+        animation: none !important;
+        transition: none !important;
+    }
+}
+
+/* Dark mode support */
+@media (prefers-color-scheme: dark) {
+    /* Add dark mode styles here if needed */
+}
+
+/* High contrast mode */
+@media (prefers-contrast: high) {
+    button, .stButton > button {
+        border: 2px solid currentColor !important;
+    }
+}
+
+/* -----------------------------
+   OFFLINE INDICATOR
+----------------------------- */
+.offline-indicator {
+    position: fixed !important;
+    top: 0 !important;
+    left: 0 !important;
+    right: 0 !important;
+    background: #ff6b6b !important;
+    color: white !important;
     padding: 0.5rem !important;
-    transition: var(--transition) !important;
+    text-align: center !important;
+    font-size: 0.875rem !important;
+    z-index: 9999 !important;
+    transform: translateY(-100%) !important;
+    transition: transform 0.3s ease !important;
 }
 
-.stTextInput input:focus {
-    border-color: var(--primary-purple) !important;
-    box-shadow: 0 0 0 3px rgba(108, 74, 182, 0.1) !important;
+.offline-indicator.show {
+    transform: translateY(0) !important;
 }
 
-/* Select box styling */
-.stSelectbox > div > div {
-    border: 2px solid #e0e0e0 !important;
-    border-radius: var(--border-radius) !important;
-    transition: var(--transition) !important;
+/* -----------------------------
+   LOADING STATES
+----------------------------- */
+.stSpinner {
+    display: flex !important;
+    justify-content: center !important;
+    align-items: center !important;
+    min-height: 100px !important;
 }
 
-.stSelectbox > div > div:focus-within {
-    border-color: var(--primary-purple) !important;
+/* Custom loading animation */
+@keyframes pulse {
+    0% { opacity: 0.6; }
+    50% { opacity: 1; }
+    100% { opacity: 0.6; }
+}
+
+.loading {
+    animation: pulse 1.5s ease-in-out infinite !important;
 }
