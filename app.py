@@ -32,13 +32,7 @@ TABS = {
     "Upload": "files",
     "Receipts": "receipts",
     "Post-Event": "post_event",
-    "Explore Tags": "tags",
-    # Keep these for direct navigation
-    "Admin Panel": "admin_panel",
-    "Suggestions": "suggestions",
-    "Bulk Suggestions": "bulk_suggestions",
-    "Audit Logs": "audit_logs",
-    "PDF Export": "pdf_export"
+    "Explore Tags": "tags"
 }
 
 
