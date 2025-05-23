@@ -85,53 +85,392 @@ def render_floating_ai_chat():
     if st.session_state.chat_window_open:
         render_chat_window()
 
+# Complete updated section for layout.py to replace the existing render_chat_bubble function
+
 def render_chat_bubble():
-    """Render the floating chat bubble in bottom right"""
-    # Create a placeholder for the button
-    placeholder = st.empty()
+    """Render the floating chat bubble with full drag functionality"""
+    # Initialize position in session state if not exists
+    if "chat_button_position" not in st.session_state:
+        st.session_state.chat_button_position = {"bottom": 30, "right": 30}
     
-    # Use custom HTML/CSS to position the button
-    st.markdown("""
+    # Chat bubble with working toggle
+    if st.button("💬", key="floating_chat_toggle", 
+                 help="Toggle AI Assistant - Drag to move",
+                 use_container_width=False):
+        st.session_state.chat_window_open = not st.session_state.chat_window_open
+        st.rerun()
+    
+    # Get current position from session state
+    bottom = st.session_state.chat_button_position.get("bottom", 30)
+    right = st.session_state.chat_button_position.get("right", 30)
+    
+    # Position the button using CSS and add draggable functionality
+    st.markdown(f"""
     <style>
-    /* Hide the duplicate chat button in top left */
-    .stButton:has(button[title="Toggle AI Assistant"]):first-of-type {
-        display: none !important;
-    }
-    
-    /* Style the chat button in bottom right */
-    div[data-testid="stMarkdownContainer"]:has(.floating-chat-button-container) + div .stButton {
+    /* Draggable chat button */
+    .stButton:has([data-testid*="floating_chat_toggle"]) {{
         position: fixed !important;
-        bottom: 2rem !important;
-        right: 2rem !important;
-        z-index: 999 !important;
+        bottom: {bottom}px !important;
+        right: {right}px !important;
+        z-index: 1000 !important;
         width: 60px !important;
         height: 60px !important;
-    }
+        transition: none !important;
+    }}
     
-    div[data-testid="stMarkdownContainer"]:has(.floating-chat-button-container) + div .stButton button {
+    .stButton:has([data-testid*="floating_chat_toggle"]) button {{
         width: 60px !important;
         height: 60px !important;
         border-radius: 50% !important;
         font-size: 24px !important;
         background: var(--primary-purple, #6C4AB6) !important;
         box-shadow: 0 4px 12px rgba(108, 74, 182, 0.3) !important;
-        padding: 0 !important;
-    }
+        cursor: move !important;
+        position: relative !important;
+        overflow: visible !important;
+    }}
     
-    div[data-testid="stMarkdownContainer"]:has(.floating-chat-button-container) + div .stButton button:hover {
+    .stButton:has([data-testid*="floating_chat_toggle"]) button:hover {{
         transform: scale(1.1) !important;
         background: var(--accent-purple, #563a9d) !important;
-    }
+    }}
+    
+    .stButton:has([data-testid*="floating_chat_toggle"]).dragging button {{
+        opacity: 0.8 !important;
+        transform: scale(1.15) !important;
+        cursor: grabbing !important;
+    }}
+    
+    /* Drag handle indicator */
+    .stButton:has([data-testid*="floating_chat_toggle"]) button::after {{
+        content: '⋮⋮';
+        position: absolute;
+        bottom: -5px;
+        left: 50%;
+        transform: translateX(-50%);
+        font-size: 10px;
+        color: rgba(255, 255, 255, 0.5);
+        letter-spacing: -2px;
+    }}
+    
+    /* Prevent text selection during drag */
+    body.dragging {{
+        user-select: none !important;
+        -webkit-user-select: none !important;
+        -moz-user-select: none !important;
+        -ms-user-select: none !important;
+    }}
     </style>
+    
+    <script>
+    (function() {{
+        let dragButton = null;
+        let isDragging = false;
+        let startX, startY;
+        let startBottom, startRight;
+        let dragTimeout;
+        
+        // Wait for the button to be rendered
+        const initDraggable = () => {{
+            const button = document.querySelector('[data-testid*="floating_chat_toggle"]');
+            if (button && button !== dragButton) {{
+                dragButton = button;
+                const container = button.closest('.stButton');
+                if (container) {{
+                    setupDraggable(container, button);
+                }}
+            }}
+        }};
+        
+        // Check periodically for the button
+        setInterval(initDraggable, 500);
+        
+        function setupDraggable(container, button) {{
+            // Remove any existing listeners
+            button.removeEventListener('mousedown', handleMouseDown);
+            button.removeEventListener('touchstart', handleTouchStart);
+            
+            // Add new listeners
+            button.addEventListener('mousedown', handleMouseDown);
+            button.addEventListener('touchstart', handleTouchStart, {{ passive: false }});
+            
+            function handleMouseDown(e) {{
+                // Only drag on direct button click, not on any child elements
+                if (e.target !== button && !button.contains(e.target)) return;
+                
+                startDrag(e.clientX, e.clientY);
+                
+                document.addEventListener('mousemove', handleMouseMove);
+                document.addEventListener('mouseup', handleMouseUp);
+                
+                // Prevent click event after drag
+                dragTimeout = setTimeout(() => {{
+                    e.preventDefault();
+                    e.stopPropagation();
+                }}, 150);
+            }}
+            
+            function handleTouchStart(e) {{
+                if (e.touches.length !== 1) return;
+                
+                const touch = e.touches[0];
+                startDrag(touch.clientX, touch.clientY);
+                
+                document.addEventListener('touchmove', handleTouchMove, {{ passive: false }});
+                document.addEventListener('touchend', handleTouchEnd);
+                
+                // Prevent default touch behavior
+                e.preventDefault();
+            }}
+            
+            function startDrag(clientX, clientY) {{
+                isDragging = true;
+                startX = clientX;
+                startY = clientY;
+                
+                const rect = container.getBoundingClientRect();
+                startBottom = window.innerHeight - rect.bottom;
+                startRight = window.innerWidth - rect.right;
+                
+                container.classList.add('dragging');
+                document.body.classList.add('dragging');
+            }}
+            
+            function handleMouseMove(e) {{
+                if (!isDragging) return;
+                performDrag(e.clientX, e.clientY);
+            }}
+            
+            function handleTouchMove(e) {{
+                if (!isDragging || e.touches.length !== 1) return;
+                const touch = e.touches[0];
+                performDrag(touch.clientX, touch.clientY);
+                e.preventDefault();
+            }}
+            
+            function performDrag(clientX, clientY) {{
+                const deltaX = clientX - startX;
+                const deltaY = clientY - startY;
+                
+                let newRight = startRight - deltaX;
+                let newBottom = startBottom - deltaY;
+                
+                // Keep button on screen with padding
+                const padding = 10;
+                const buttonSize = 60;
+                
+                newRight = Math.max(padding, Math.min(window.innerWidth - buttonSize - padding, newRight));
+                newBottom = Math.max(padding, Math.min(window.innerHeight - buttonSize - padding, newBottom));
+                
+                // Apply new position
+                container.style.right = newRight + 'px';
+                container.style.bottom = newBottom + 'px';
+                container.style.left = 'auto';
+                container.style.top = 'auto';
+            }}
+            
+            function handleMouseUp(e) {{
+                endDrag();
+                document.removeEventListener('mousemove', handleMouseMove);
+                document.removeEventListener('mouseup', handleMouseUp);
+                
+                // Clear drag timeout
+                if (dragTimeout) {{
+                    clearTimeout(dragTimeout);
+                    dragTimeout = null;
+                }}
+            }}
+            
+            function handleTouchEnd(e) {{
+                endDrag();
+                document.removeEventListener('touchmove', handleTouchMove);
+                document.removeEventListener('touchend', handleTouchEnd);
+            }}
+            
+            function endDrag() {{
+                if (!isDragging) return;
+                
+                isDragging = false;
+                container.classList.remove('dragging');
+                document.body.classList.remove('dragging');
+                
+                // Get final position
+                const rect = container.getBoundingClientRect();
+                const finalBottom = window.innerHeight - rect.bottom;
+                const finalRight = window.innerWidth - rect.right;
+                
+                // Save position to Streamlit
+                const positionData = {{
+                    bottom: Math.round(finalBottom),
+                    right: Math.round(finalRight)
+                }};
+                
+                // Try to update Streamlit session state
+                if (window.parent && window.parent.postMessage) {{
+                    window.parent.postMessage({{
+                        isStreamlitMessage: true,
+                        type: 'streamlit:componentMessage',
+                        args: {{
+                            key: 'chat_position_update',
+                            value: positionData
+                        }}
+                    }}, '*');
+                }}
+                
+                // Also try direct update (for some Streamlit versions)
+                try {{
+                    window.parent.streamlit.setComponentValue(positionData);
+                }} catch (e) {{
+                    console.log('Position update via direct method failed, using postMessage');
+                }}
+            }}
+        }}
+    }})();
+    </script>
     """, unsafe_allow_html=True)
     
-    # Marker for CSS targeting
-    st.markdown('<div class="floating-chat-button-container"></div>', unsafe_allow_html=True)
+    # Hidden component to receive position updates
+    # This is a workaround since Streamlit doesn't directly support postMessage updates
+    position_receiver = st.empty()
+    with position_receiver:
+        position_update = st.text_input(
+            "position_update", 
+            value="", 
+            key="chat_position_receiver",
+            label_visibility="hidden"
+        )
+        
+        if position_update:
+            try:
+                import json
+                new_pos = json.loads(position_update)
+                if isinstance(new_pos, dict) and "bottom" in new_pos and "right" in new_pos:
+                    st.session_state.chat_button_position = new_pos
+                    st.rerun()
+            except:
+                pass
+
+
+# Alternative approach using Streamlit Components (if you have streamlit-components installed)
+def render_fully_draggable_chat():
+    """Alternative implementation using custom component approach"""
+    # This would be even more robust but requires additional setup
     
-    # The actual button
-    if st.button("💬", key="floating_chat_toggle", help="Toggle AI Assistant"):
-        st.session_state.chat_window_open = not st.session_state.chat_window_open
-        st.rerun()
+    chat_html = f"""
+    <div id="draggable-chat-container">
+        <button id="chat-bubble" class="chat-bubble">
+            💬
+        </button>
+    </div>
+    
+    <style>
+    #draggable-chat-container {{
+        position: fixed;
+        bottom: {st.session_state.get('chat_bottom', 30)}px;
+        right: {st.session_state.get('chat_right', 30)}px;
+        z-index: 1000;
+    }}
+    
+    .chat-bubble {{
+        width: 60px;
+        height: 60px;
+        border-radius: 50%;
+        background: #6C4AB6;
+        color: white;
+        border: none;
+        font-size: 24px;
+        cursor: move;
+        box-shadow: 0 4px 12px rgba(108, 74, 182, 0.3);
+        transition: transform 0.2s ease;
+    }}
+    
+    .chat-bubble:hover {{
+        transform: scale(1.1);
+        background: #563a9d;
+    }}
+    
+    .chat-bubble:active {{
+        cursor: grabbing;
+        transform: scale(1.15);
+        opacity: 0.8;
+    }}
+    </style>
+    
+    <script>
+    // Make the chat bubble draggable
+    const makeDraggable = (element) => {{
+        let pos1 = 0, pos2 = 0, pos3 = 0, pos4 = 0;
+        element.onmousedown = dragMouseDown;
+        
+        function dragMouseDown(e) {{
+            e = e || window.event;
+            e.preventDefault();
+            pos3 = e.clientX;
+            pos4 = e.clientY;
+            document.onmouseup = closeDragElement;
+            document.onmousemove = elementDrag;
+        }}
+        
+        function elementDrag(e) {{
+            e = e || window.event;
+            e.preventDefault();
+            pos1 = pos3 - e.clientX;
+            pos2 = pos4 - e.clientY;
+            pos3 = e.clientX;
+            pos4 = e.clientY;
+            
+            const container = element.parentElement;
+            const newTop = container.offsetTop - pos2;
+            const newLeft = container.offsetLeft - pos1;
+            
+            // Constrain to viewport
+            const maxTop = window.innerHeight - element.offsetHeight - 10;
+            const maxLeft = window.innerWidth - element.offsetWidth - 10;
+            
+            container.style.top = Math.max(10, Math.min(maxTop, newTop)) + "px";
+            container.style.left = Math.max(10, Math.min(maxLeft, newLeft)) + "px";
+            container.style.bottom = "auto";
+            container.style.right = "auto";
+        }}
+        
+        function closeDragElement() {{
+            document.onmouseup = null;
+            document.onmousemove = null;
+            
+            // Send final position to Streamlit
+            const container = element.parentElement;
+            const bottom = window.innerHeight - container.offsetTop - element.offsetHeight;
+            const right = window.innerWidth - container.offsetLeft - element.offsetWidth;
+            
+            // Update position
+            window.parent.postMessage({{
+                type: 'streamlit:chat_position',
+                bottom: bottom,
+                right: right
+            }}, '*');
+        }}
+    }};
+    
+    // Initialize draggable
+    document.addEventListener('DOMContentLoaded', () => {{
+        const chatBubble = document.getElementById('chat-bubble');
+        if (chatBubble) {{
+            makeDraggable(chatBubble);
+            
+            // Handle click to toggle chat
+            chatBubble.addEventListener('click', (e) => {{
+                if (!e.defaultPrevented) {{
+                    window.parent.postMessage({{
+                        type: 'streamlit:toggle_chat'
+                    }}, '*');
+                }}
+            }});
+        }}
+    }});
+    </script>
+    """
+    
+    st.components.v1.html(chat_html, height=0)
 
 def render_chat_window():
     """Render the chat window when open"""
