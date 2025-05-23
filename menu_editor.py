@@ -3,6 +3,8 @@ from firebase_admin import firestore
 from auth import require_login, get_user_role
 from utils import format_date, suggest_edit_box, get_scoped_query, is_event_scoped, get_event_scope_message, get_active_event_id, generate_id
 from datetime import datetime
+from ingredients import parse_recipe_ingredients, update_recipe_with_parsed_ingredients
+from allergies import render_allergy_warning, get_event_allergies
 
 db = firestore.client()
 
@@ -79,6 +81,10 @@ def _display_menu_items(menus: list, user: dict, role: str) -> None:
             if not is_event_scoped() and m.get("event_id"):
                 st.caption(f"Event ID: {m.get('event_id')}")
             
+            # Check for allergy warnings
+            if m.get("event_id"):
+                render_allergy_warning(m.get("id"), m.get("event_id"))
+            
             locked = _is_locked(m.get("event_id"))
 
             st.markdown("**Description:**")
@@ -105,11 +111,39 @@ def _display_menu_items(menus: list, user: dict, role: str) -> None:
                         st.rerun()
 
             st.markdown("**Ingredients:**")
+            ingredients_text = m.get("ingredients", "No ingredients listed")
+            
+            # Show parsed ingredients if available
+            if m.get("ingredients_parsed") and m.get("parsed_ingredients"):
+                st.markdown("**📊 Parsed Ingredients:**")
+                for ping in m.get("parsed_ingredients", []):
+                    cols = st.columns([1, 1, 3])
+                    with cols[0]:
+                        st.write(ping.get('quantity', '-'))
+                    with cols[1]:
+                        st.write(ping.get('unit', '-'))
+                    with cols[2]:
+                        st.write(ping.get('name', '-'))
+                
+                # Button to re-parse
+                if role in ["admin", "manager"]:
+                    if st.button(f"🔄 Re-parse Ingredients", key=f"reparse_{m['id']}"):
+                        _parse_menu_ingredients(m["id"], ingredients_text)
+                        st.rerun()
+            else:
+                # Show raw ingredients text
+                st.text(ingredients_text)
+                
+                # Parse button for admin/manager
+                if role in ["admin", "manager"] and ingredients_text != "No ingredients listed":
+                    if st.button(f"🔍 Parse Ingredients", key=f"parse_{m['id']}"):
+                        _parse_menu_ingredients(m["id"], ingredients_text)
+                        st.rerun()
+            
             if locked:
-                st.write(m.get("ingredients", "No ingredients listed"))
                 suggest_edit_box(
                     field_name="Ingredients",
-                    current_value=m.get("ingredients", ""),
+                    current_value=ingredients_text,
                     user=user,
                     target_id=m["id"],
                     doc_type="menu_item"
@@ -117,12 +151,15 @@ def _display_menu_items(menus: list, user: dict, role: str) -> None:
             else:
                 new_ingredients = st.text_area(
                     "Edit Ingredients",
-                    value=m.get("ingredients", ""),
+                    value=ingredients_text,
                     key=f"ingredients_{m['id']}"
                 )
-                if new_ingredients != m.get("ingredients", ""):
+                if new_ingredients != ingredients_text:
                     if st.button(f"Save Ingredients", key=f"save_ingredients_{m['id']}"):
                         _update_menu_item(m["id"], {"ingredients": new_ingredients})
+                        # Re-parse if ingredients changed
+                        if m.get("ingredients_parsed"):
+                            _parse_menu_ingredients(m["id"], new_ingredients)
                         st.success("Ingredients updated!")
                         st.rerun()
 
@@ -159,7 +196,7 @@ def _display_menu_items(menus: list, user: dict, role: str) -> None:
                         st.rerun()
 
             # Show feedback if event is complete
-            if m.get("event_id") and _event_is_complete(m["event_id"]):
+            if m.get("event_id") and _event_is_complete(m.get("event_id")):
                 _render_feedback(m)
 
 # ----------------------------
@@ -177,7 +214,7 @@ def _show_create_menu_form(user: dict) -> None:
             ["Appetizer", "Main Course", "Side Dish", "Dessert", "Beverage", "Other"]
         )
         description = st.text_area("Description", placeholder="Describe the dish...")
-        ingredients = st.text_area("Ingredients", placeholder="List ingredients...")
+        ingredients = st.text_area("Ingredients", placeholder="List ingredients, one per line...")
         tags = st.text_input("Tags (comma-separated)", placeholder="e.g., gluten-free, vegetarian")
         
         # If in event mode, auto-assign to current event
@@ -191,6 +228,9 @@ def _show_create_menu_form(user: dict) -> None:
             event_options = ["No Event"] + [f"{e['name']} ({e['id']})" for e in events]
             selected_event = st.selectbox("Assign to Event", event_options)
             event_id = None if selected_event == "No Event" else selected_event.split("(")[-1].rstrip(")")
+        
+        # Option to parse ingredients
+        parse_ingredients = st.checkbox("Parse ingredients after creation", value=True)
         
         submitted = st.form_submit_button("Create Menu Item")
         
@@ -207,11 +247,17 @@ def _show_create_menu_form(user: dict) -> None:
                     "tags": [tag.strip() for tag in tags.split(",") if tag.strip()],
                     "event_id": event_id,
                     "created_by": user["id"],
-                    "created_at": datetime.utcnow()
+                    "created_at": datetime.utcnow(),
+                    "ingredients_parsed": False
                 }
                 
                 if _create_menu_item(menu_data):
                     st.success(f"Menu item '{name}' created!")
+                    
+                    # Parse ingredients if requested
+                    if parse_ingredients and ingredients:
+                        _parse_menu_ingredients(menu_data["id"], ingredients)
+                    
                     st.rerun()
 
 # ----------------------------
@@ -303,6 +349,39 @@ def _delete_menu_item(menu_id: str) -> bool:
         return True
     except Exception as e:
         st.error(f"Failed to delete menu item: {e}")
+        return False
+
+def _parse_menu_ingredients(menu_id: str, ingredients_text: str) -> bool:
+    """Parse ingredients for a menu item"""
+    try:
+        with st.spinner("Parsing ingredients..."):
+            parsed = parse_recipe_ingredients(ingredients_text)
+            
+            if parsed:
+                # Update menu item with parsed data
+                ingredient_ids = list(set(ing['ingredient_id'] for ing in parsed))
+                
+                db.collection("menus").document(menu_id).update({
+                    "parsed_ingredients": parsed,
+                    "ingredient_ids": ingredient_ids,
+                    "ingredients_parsed": True,
+                    "parsed_at": datetime.utcnow()
+                })
+                
+                # Update ingredient usage counts
+                for ing_id in ingredient_ids:
+                    db.collection("ingredients").document(ing_id).update({
+                        "usage_count": firestore.Increment(1)
+                    })
+                
+                st.success(f"✅ Parsed {len(parsed)} ingredients!")
+                return True
+            else:
+                st.warning("No ingredients could be parsed")
+                return False
+                
+    except Exception as e:
+        st.error(f"Failed to parse ingredients: {e}")
         return False
 
 # ----------------------------
