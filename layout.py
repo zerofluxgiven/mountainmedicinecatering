@@ -472,52 +472,250 @@ def render_fully_draggable_chat():
     
     st.components.v1.html(chat_html, height=0)
 
+# Updated render_chat_window function for layout.py
+# Replace the existing render_chat_window function with this:
+
 def render_chat_window():
-    """Render the chat window when open"""
-    # Create chat window with better styling
-    chat_html = f"""
-    <div class="ai-chat-window">
-        <div class="chat-header">
-            <h3>🤖 AI Assistant</h3>
-            <button class="close-button" onclick="
-                const event = new CustomEvent('streamlit:setComponentValue', {{
-                    detail: {{key: 'close_chat', value: true}}
-                }});
-                window.parent.dispatchEvent(event);
-            ">✕</button>
-        </div>
-        <div class="chat-body" id="chatBody">
-            {"".join(render_chat_messages())}
-        </div>
-        <div class="chat-footer">
-            <div class="quick-actions">
-                <button class="quick-action" onclick="sendQuickMessage('shopping')">🛒 Shopping</button>
-                <button class="quick-action" onclick="sendQuickMessage('menu')">📋 Menu</button>
-                <button class="quick-action" onclick="sendQuickMessage('timeline')">⏰ Timeline</button>
-            </div>
-        </div>
-    </div>
-    """
+    """Render the chat window when open with proper input functionality"""
+    # Create a unique container for the chat
+    chat_container = st.container()
     
-    st.markdown(chat_html, unsafe_allow_html=True)
-    
-    # Handle close button
-    if st.session_state.get("close_chat"):
-        st.session_state.chat_window_open = False
-        st.session_state.close_chat = False
-        st.rerun()
-    
-    # Chat input
-    with st.form("chat_input_form", clear_on_submit=True):
-        user_input = st.text_input("Ask me anything...", placeholder="Type your message here", key="chat_input")
-        col1, col2 = st.columns([4, 1])
-        with col2:
-            send_button = st.form_submit_button("Send", use_container_width=True)
+    with chat_container:
+        # Use columns to create the chat layout
+        chat_col = st.columns([1])[0]
         
-        if send_button and user_input.strip():
-            _add_message("user", user_input.strip())
-            _get_ai_response(user_input.strip())
-            st.rerun()
+        with chat_col:
+            # Create the chat interface with custom HTML/CSS
+            st.markdown("""
+            <div class="ai-chat-window" id="chatWindow">
+                <div class="chat-header">
+                    <h3>🤖 AI Assistant</h3>
+                    <button class="close-button" onclick="document.getElementById('chatWindow').style.display='none';">✕</button>
+                </div>
+                <div class="chat-body" id="chatBody">
+                    <div class="chat-messages-container">
+            """, unsafe_allow_html=True)
+            
+            # Display chat messages
+            if not st.session_state.get("chat_history"):
+                st.markdown('<div class="chat-message-center">👋 Hi! How can I help with your event?</div>', unsafe_allow_html=True)
+            else:
+                for msg in st.session_state.chat_history[-10:]:  # Show last 10 messages
+                    sender_class = "user" if msg.get("sender") == "user" else "ai"
+                    sender_label = "You" if msg.get("sender") == "user" else "AI"
+                    content = msg.get("content", "").replace("\n", "<br>")
+                    
+                    st.markdown(f'''
+                    <div class="chat-message {sender_class}">
+                        <strong>{sender_label}:</strong> {content}
+                    </div>
+                    ''', unsafe_allow_html=True)
+            
+            st.markdown("""
+                    </div>
+                </div>
+            </div>
+            """, unsafe_allow_html=True)
+            
+            # Quick action buttons
+            st.markdown("**Quick Actions:**")
+            col1, col2, col3 = st.columns(3)
+            
+            with col1:
+                if st.button("🛒 Shopping List", key="chat_shopping", use_container_width=True):
+                    _process_chat_input("Generate a shopping list for the active event")
+                    st.rerun()
+            
+            with col2:
+                if st.button("📋 Menu Ideas", key="chat_menu", use_container_width=True):
+                    _process_chat_input("Suggest menu items for the active event")
+                    st.rerun()
+            
+            with col3:
+                if st.button("⏰ Timeline", key="chat_timeline", use_container_width=True):
+                    _process_chat_input("Create a timeline for event preparation")
+                    st.rerun()
+            
+            # Chat input form
+            with st.form("chat_form", clear_on_submit=True):
+                user_input = st.text_input(
+                    "Type your message:", 
+                    placeholder="Ask me anything about your event...",
+                    key="chat_message_input"
+                )
+                col1, col2 = st.columns([4, 1])
+                
+                with col2:
+                    submitted = st.form_submit_button("Send", type="primary", use_container_width=True)
+                
+                if submitted and user_input:
+                    _process_chat_input(user_input)
+                    st.rerun()
+
+def _process_chat_input(message: str):
+    """Process chat input and get AI response"""
+    # Add user message
+    if "chat_history" not in st.session_state:
+        st.session_state.chat_history = []
+    
+    st.session_state.chat_history.append({
+        "sender": "user",
+        "content": message,
+        "timestamp": datetime.now()
+    })
+    
+    # Get AI response
+    with st.spinner("🤖 Thinking..."):
+        # For now, use the existing response logic
+        # This will be replaced with real OpenAI integration
+        response = _get_ai_response_improved(message)
+        
+        st.session_state.chat_history.append({
+            "sender": "ai",
+            "content": response,
+            "timestamp": datetime.now()
+        })
+
+def _get_ai_response_improved(message: str) -> str:
+    """Improved AI response with context awareness"""
+    from utils import get_active_event
+    
+    # Get context
+    active_event = get_active_event()
+    event_context = ""
+    
+    if active_event:
+        event_context = f"Currently planning: {active_event.get('name', 'Unknown Event')} with {active_event.get('guest_count', 0)} guests."
+    
+    # Enhanced responses based on keywords
+    message_lower = message.lower()
+    
+    # Shopping list
+    if any(word in message_lower for word in ['shopping', 'grocery', 'ingredients', 'buy']):
+        if active_event:
+            return f"""Here's a shopping list for {active_event.get('name', 'your event')}:
+
+**Produce:**
+• Fresh vegetables (for {active_event.get('guest_count', 20)} people)
+• Salad greens
+• Fresh herbs (basil, cilantro, parsley)
+• Seasonal fruits
+
+**Proteins:**
+• Chicken breasts (2 per person)
+• Fish fillets
+• Vegetarian options (tofu/tempeh)
+
+**Staples:**
+• Rice/pasta (1/2 cup dry per person)
+• Cooking oil
+• Seasonings and spices
+
+**Beverages:**
+• Water (1 gallon per 4 people)
+• Assorted beverages
+
+Would you like me to adjust quantities or add specific items?"""
+        else:
+            return "I'd be happy to create a shopping list! First, please activate an event so I know how many people you're serving."
+    
+    # Menu suggestions
+    elif any(word in message_lower for word in ['menu', 'food', 'meal', 'recipe']):
+        if active_event:
+            dietary = active_event.get('dietary_restrictions', '')
+            return f"""Here are menu suggestions for {active_event.get('name', 'your event')}:
+
+**Appetizers:**
+• Seasonal vegetable crudité with herb dip
+• Stuffed mushrooms
+• Bruschetta trio
+
+**Main Courses:**
+• Herb-crusted chicken with lemon
+• Grilled vegetable stack (vegetarian)
+• Pan-seared fish with seasonal salsa
+
+**Sides:**
+• Wild rice pilaf
+• Roasted seasonal vegetables
+• Fresh garden salad
+
+**Dessert:**
+• Fruit tart
+• Chocolate mousse cups
+
+{f'Note: Accounting for dietary restrictions: {dietary}' if dietary else ''}
+
+Would you like detailed recipes for any of these?"""
+        else:
+            return "I can suggest menus! Please activate an event first so I can tailor suggestions to your guest count and preferences."
+    
+    # Timeline
+    elif any(word in message_lower for word in ['timeline', 'schedule', 'when', 'timing']):
+        if active_event:
+            from datetime import datetime, timedelta
+            try:
+                event_date = datetime.strptime(active_event.get('start_date', ''), '%Y-%m-%d')
+                return f"""Here's a suggested timeline for {active_event.get('name', 'your event')}:
+
+**2 Weeks Before:**
+• Finalize menu and guest count
+• Order special equipment
+• Create shopping lists
+
+**1 Week Before:**
+• Shop for non-perishables
+• Confirm staff assignments
+• Review event flow
+
+**2 Days Before:**
+• Shop for fresh ingredients
+• Begin prep work
+• Set up equipment
+
+**1 Day Before:**
+• Complete vegetable prep
+• Marinate proteins
+• Organize service items
+
+**Day Of Event:**
+• 6 hours before: Start cooking
+• 4 hours before: Final prep
+• 2 hours before: Set up service area
+• 1 hour before: Final touches
+• Service time: Execute and enjoy!
+
+Need a more detailed timeline for any phase?"""
+            except:
+                return "I'll create a timeline once you set the event date in the event details."
+        else:
+            return "I'd be happy to create a timeline! Please activate an event first."
+    
+    # Default contextual response
+    else:
+        if active_event:
+            return f"""I'm here to help with {active_event.get('name', 'your event')}! {event_context}
+
+I can help you with:
+• Creating shopping lists
+• Planning menus
+• Building timelines
+• Managing tasks
+• Calculating quantities
+• Suggesting recipes
+
+What would you like to work on?"""
+        else:
+            return """I'm your catering assistant! I can help with event planning, menus, shopping lists, and more.
+
+To get started, please activate an event from the Events tab. Once you have an active event, I can provide specific recommendations for:
+• Shopping lists with quantities
+• Menu suggestions
+• Preparation timelines
+• Task management
+• And much more!
+
+What would you like to know about?"""
 
 def render_chat_messages():
     """Render chat messages as HTML"""
