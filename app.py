@@ -19,6 +19,7 @@ from bulk_suggestions import bulk_suggestions_ui
 from audit import audit_log_ui
 from tag_merging import tag_merging_ui
 from admin_panel import admin_panel_ui
+from utils import format_date, get_active_event, session_get  # Add session_get here
 
 # ⚙️ Config
 PUBLIC_MODE = False  # Set to True for guest access
