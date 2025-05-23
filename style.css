@@ -1,466 +1,432 @@
-/* Streamlined style.css - Compact Layout with Toggle & Dropdown */
+/* Complete Style Redesign - Mobile First, Clean & Modern */
 
 /* -----------------------------
-   Base Styling & Mobile First
+   CSS Variables & Base
 ----------------------------- */
-body, html {
-    font-family: 'Inter', sans-serif;
-    background-color: #ffffff;
-    color: #000000;
-    scroll-behavior: smooth;
-}
-
-/* Mobile-first responsive breakpoints */
 :root {
     --primary-purple: #6C4AB6;
     --light-purple: #B8A4D4;
     --accent-purple: #563a9d;
     --dark-purple: #4a3280;
     --border-radius: 8px;
-    --mobile-breakpoint: 768px;
-    --tablet-breakpoint: 1024px;
+    --shadow-sm: 0 2px 4px rgba(0,0,0,0.1);
+    --shadow-md: 0 4px 12px rgba(0,0,0,0.15);
+    --shadow-lg: 0 8px 24px rgba(0,0,0,0.2);
+    --transition: all 0.2s ease;
 }
 
-h1, h2, h3 {
-    font-weight: 700;
+* {
+    box-sizing: border-box;
+}
+
+body, html {
+    font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+    background-color: #ffffff;
+    color: #000000;
+    scroll-behavior: smooth;
+    margin: 0;
+    padding: 0;
 }
 
 /* -----------------------------
-   REMOVE EXCESSIVE WHITE SPACE
+   REMOVE ALL TOP PADDING/GAPS
 ----------------------------- */
-
-/* Remove ALL top padding from main container */
 .main .block-container {
     padding-top: 0 !important;
     padding-bottom: 1rem !important;
     max-width: 100% !important;
+    margin-top: 0 !important;
 }
 
-/* Remove streamlit default padding */
 .stApp > header {
-    height: 0 !important;
-    min-height: 0 !important;
     display: none !important;
 }
 
-/* Tighten title spacing */
-h1, h2 {
-    margin-top: 0.5rem !important;
-    margin-bottom: 0.5rem !important;
-}
-
-/* Remove empty space from top */
 .stApp {
     padding-top: 0 !important;
+    margin-top: 0 !important;
 }
 
-/* Remove default streamlit spacing */
-.block-container {
+/* First element spacing */
+.main > div:first-child {
+    margin-top: 0 !important;
     padding-top: 0 !important;
 }
 
+/* Remove all heading margins at top */
+h1:first-child, h2:first-child, h3:first-child {
+    margin-top: 0 !important;
+    padding-top: 0.5rem !important;
+}
+
 /* -----------------------------
-   EVENT MODE TOGGLE BUTTON
+   EVENT MODE INDICATOR (Top Right)
 ----------------------------- */
-
-.event-toggle-container {
-    position: relative !important;
-    display: inline-block !important;
-    margin: 0.5rem 0 !important;
-}
-
-.event-toggle-button {
-    padding: 0.75rem 1.5rem !important;
-    border-radius: 8px !important;
-    border: none !important;
-    font-weight: 600 !important;
-    font-size: 0.95rem !important;
-    cursor: pointer !important;
-    transition: all 0.2s ease !important;
-    position: relative !important;
-    min-width: 220px !important;
-    text-align: left !important;
-}
-
-/* Active state - lighter purple (pressed look) */
-.event-toggle-button.active {
-    background: var(--light-purple) !important;
-    color: white !important;
-    box-shadow: inset 0 2px 4px rgba(0,0,0,0.2) !important;
-}
-
-.event-toggle-button.active:hover {
-    background: #a896c8 !important;
-}
-
-/* Inactive state - darker purple */
-.event-toggle-button.inactive {
+.event-mode-simple-indicator {
+    position: fixed !important;
+    top: 1rem !important;
+    right: 1rem !important;
     background: var(--primary-purple) !important;
     color: white !important;
-    box-shadow: 0 2px 4px rgba(0,0,0,0.1) !important;
-}
-
-.event-toggle-button.inactive:hover {
-    background: var(--accent-purple) !important;
-}
-
-/* Recent event hint (50% opacity) */
-.recent-event-hint {
-    display: block !important;
+    padding: 0.5rem 1rem !important;
+    border-radius: 20px !important;
     font-size: 0.85rem !important;
-    opacity: 0.5 !important;
-    margin-top: 0.2rem !important;
+    font-weight: 500 !important;
+    box-shadow: var(--shadow-md) !important;
+    z-index: 1000 !important;
 }
 
-/* Toggle hint text */
-.toggle-hint {
-    font-size: 0.65rem !important;
-    color: #666 !important;
-    position: absolute !important;
-    bottom: -15px !important;
-    left: 0 !important;
-    font-style: italic !important;
+.event-mode-simple-indicator strong {
+    font-weight: 700 !important;
 }
 
-/* Hide the actual streamlit button */
-#toggle_event_mode, #activate_event_mode {
+/* -----------------------------
+   CLEAN NAVIGATION TABS
+----------------------------- */
+.nav-container {
+    margin: 1rem 0 !important;
+    padding: 0 !important;
+}
+
+.nav-tabs {
+    display: flex !important;
+    gap: 0.5rem !important;
+    flex-wrap: wrap !important;
+    justify-content: flex-start !important;
+    align-items: center !important;
+}
+
+.nav-tab {
+    background: white !important;
+    color: var(--primary-purple) !important;
+    border: 2px solid var(--primary-purple) !important;
+    border-radius: var(--border-radius) !important;
+    padding: 0.5rem 1rem !important;
+    font-weight: 500 !important;
+    font-size: 0.9rem !important;
+    cursor: pointer !important;
+    transition: var(--transition) !important;
+    text-align: center !important;
+    min-height: 40px !important;
+    display: inline-flex !important;
+    align-items: center !important;
+    justify-content: center !important;
+}
+
+.nav-tab:hover {
+    background: var(--light-purple) !important;
+    color: white !important;
+    transform: translateY(-2px) !important;
+    box-shadow: var(--shadow-sm) !important;
+}
+
+.nav-tab.active {
+    background: var(--primary-purple) !important;
+    color: white !important;
+}
+
+/* Hide Streamlit's radio buttons */
+.stRadio {
+    display: none !important;
+}
+
+/* Remove checkmarks from tabs */
+[role="tab"]::before {
     display: none !important;
 }
 
 /* -----------------------------
-   USER HEADER WITH DROPDOWN
+   AI CHAT WINDOW (Bottom Right)
 ----------------------------- */
-
-.user-header-dropdown {
+.ai-chat-window {
     position: fixed !important;
-    top: 0.5rem !important;
-    right: 1rem !important;
-    z-index: 1001 !important;
-}
-
-.user-info-trigger {
-    background: rgba(255, 255, 255, 0.95) !important;
-    backdrop-filter: blur(8px) !important;
-    padding: 0.5rem 1rem !important;
-    border-radius: var(--border-radius) !important;
-    box-shadow: 0 2px 8px rgba(0,0,0,0.1) !important;
-    display: flex !important;
-    align-items: center !important;
-    gap: 0.5rem !important;
-    cursor: pointer !important;
-    transition: all 0.2s ease !important;
-}
-
-.user-info-trigger:hover {
-    background: rgba(255, 255, 255, 1) !important;
-    box-shadow: 0 4px 12px rgba(0,0,0,0.15) !important;
-}
-
-.user-name {
-    font-weight: 600 !important;
-    color: var(--primary-purple) !important;
-}
-
-.user-role {
-    background: var(--light-purple) !important;
-    color: white !important;
-    padding: 0.2rem 0.5rem !important;
+    bottom: 100px !important;
+    right: 2rem !important;
+    width: 350px !important;
+    max-width: calc(100vw - 4rem) !important;
+    height: 500px !important;
+    max-height: calc(100vh - 150px) !important;
+    background: white !important;
     border-radius: 12px !important;
-    font-size: 0.75rem !important;
-    font-weight: 500 !important;
-}
-
-.dropdown-arrow {
-    font-size: 0.7rem !important;
-    color: var(--primary-purple) !important;
-    transition: transform 0.2s ease !important;
-}
-
-.user-header-dropdown:hover .dropdown-arrow {
-    transform: rotate(180deg) !important;
-}
-
-/* Admin dropdown menu */
-.admin-dropdown-menu {
-    position: absolute !important;
-    top: 100% !important;
-    right: 0 !important;
-    background: white !important;
-    border-radius: var(--border-radius) !important;
-    box-shadow: 0 8px 24px rgba(0,0,0,0.15) !important;
-    padding: 0.5rem 0 !important;
-    min-width: 200px !important;
-    opacity: 0 !important;
-    visibility: hidden !important;
-    transform: translateY(-10px) !important;
-    transition: all 0.2s ease !important;
-    margin-top: 0.5rem !important;
-}
-
-.user-header-dropdown:hover .admin-dropdown-menu {
-    opacity: 1 !important;
-    visibility: visible !important;
-    transform: translateY(0) !important;
-}
-
-.admin-dropdown-menu a {
-    display: block !important;
-    padding: 0.6rem 1rem !important;
-    color: #333 !important;
-    text-decoration: none !important;
-    transition: all 0.2s ease !important;
-    cursor: pointer !important;
-    font-size: 0.9rem !important;
-}
-
-.admin-dropdown-menu a:hover {
-    background: var(--light-purple) !important;
-    color: white !important;
-}
-
-/* -----------------------------
-   STREAMLINED NAVIGATION
------------------------------ */
-
-/* Make navigation more compact */
-.stTabs {
-    position: sticky !important;
-    top: 0 !important;
-    background: white !important;
-    z-index: 100 !important;
-    padding: 0.3rem 0 !important;
-    margin-bottom: 0.5rem !important;
-    border-bottom: 1px solid #eee !important;
-}
-
-.stTabs [role="tablist"] {
+    box-shadow: var(--shadow-lg) !important;
     display: flex !important;
-    flex-wrap: wrap !important;
-    gap: 0.2rem !important;
-    border: none !important;
+    flex-direction: column !important;
+    overflow: hidden !important;
+    z-index: 999 !important;
+    border: 1px solid #e0e0e0 !important;
 }
 
-.stTabs [role="tab"] {
-    background-color: var(--light-purple) !important;
+.chat-header {
+    background: var(--primary-purple) !important;
     color: white !important;
+    padding: 1rem !important;
+    display: flex !important;
+    justify-content: space-between !important;
+    align-items: center !important;
+}
+
+.chat-header h3 {
+    margin: 0 !important;
+    font-size: 1.1rem !important;
+}
+
+.close-button {
+    background: rgba(255,255,255,0.2) !important;
     border: none !important;
-    border-radius: var(--border-radius) !important;
-    padding: 0.35rem 0.7rem !important;
-    transition: all 0.2s ease !important;
-    font-weight: 500 !important;
-    cursor: pointer !important;
-    min-height: 32px !important;
+    color: white !important;
+    width: 32px !important;
+    height: 32px !important;
+    border-radius: 50% !important;
     display: flex !important;
     align-items: center !important;
+    justify-content: center !important;
+    cursor: pointer !important;
+    font-size: 1.2rem !important;
+    transition: var(--transition) !important;
+}
+
+.close-button:hover {
+    background: rgba(255,255,255,0.3) !important;
+    transform: rotate(90deg) !important;
+}
+
+.chat-body {
+    flex: 1 !important;
+    padding: 1rem !important;
+    overflow-y: auto !important;
+    background: #f8f9fa !important;
+}
+
+.chat-message {
+    margin-bottom: 1rem !important;
+    padding: 0.75rem !important;
+    border-radius: 8px !important;
+    max-width: 85% !important;
+    word-wrap: break-word !important;
+}
+
+.chat-message.user {
+    background: var(--light-purple) !important;
+    color: white !important;
+    margin-left: auto !important;
+    text-align: right !important;
+}
+
+.chat-message.ai {
+    background: white !important;
+    color: #333 !important;
+    border: 1px solid #e0e0e0 !important;
+}
+
+.chat-message-center {
+    text-align: center !important;
+    color: #666 !important;
+    margin: 2rem 0 !important;
+}
+
+.chat-footer {
+    padding: 0.5rem 1rem !important;
+    border-top: 1px solid #e0e0e0 !important;
+    background: white !important;
+}
+
+.quick-actions {
+    display: flex !important;
+    gap: 0.5rem !important;
+    margin-bottom: 0.5rem !important;
+}
+
+.quick-action {
+    flex: 1 !important;
+    padding: 0.4rem !important;
+    background: var(--light-purple) !important;
+    color: white !important;
+    border: none !important;
+    border-radius: 6px !important;
     font-size: 0.85rem !important;
+    cursor: pointer !important;
+    transition: var(--transition) !important;
+}
+
+.quick-action:hover {
+    background: var(--primary-purple) !important;
 }
 
 /* -----------------------------
-   Purple Button Theme System
+   SIDEBAR STYLING
 ----------------------------- */
+.sidebar .sidebar-content {
+    background: #f8f9fa !important;
+    padding: 1rem !important;
+}
 
-/* All buttons use purple theme */
-button, .stButton > button, .stDownloadButton > button {
+.sidebar button {
+    width: 100% !important;
+    margin-bottom: 0.5rem !important;
+}
+
+/* -----------------------------
+   BUTTONS & FORMS
+----------------------------- */
+button, .stButton > button {
     background-color: var(--primary-purple) !important;
     color: white !important;
     border: none !important;
     border-radius: var(--border-radius) !important;
     padding: 0.5rem 1rem !important;
     font-weight: 500 !important;
-    transition: all 0.2s ease !important;
-    min-height: 44px !important;
+    transition: var(--transition) !important;
     cursor: pointer !important;
+    min-height: 40px !important;
 }
 
-button:hover, .stButton > button:hover, .stDownloadButton > button:hover {
+button:hover, .stButton > button:hover {
     background-color: var(--accent-purple) !important;
     transform: translateY(-1px) !important;
+    box-shadow: var(--shadow-sm) !important;
 }
 
-button:disabled, .stButton > button:disabled {
-    background-color: var(--light-purple) !important;
-    cursor: not-allowed !important;
-    transform: none !important;
+/* Leave Event Mode Button */
+button:has-text("Leave Event Mode") {
+    background: #e74c3c !important;
+    font-size: 0.9rem !important;
+    padding: 0.4rem 0.8rem !important;
 }
 
-/* -----------------------------
-   Floating AI Chat System
------------------------------ */
-.chat-bubble {
-    position: fixed !important;
-    bottom: 2rem !important;
-    right: 2rem !important;
-    width: 60px !important;
-    height: 60px !important;
-    background: var(--primary-purple) !important;
-    border-radius: 50% !important;
-    display: flex !important;
-    align-items: center !important;
-    justify-content: center !important;
-    cursor: pointer !important;
-    z-index: 1000 !important;
-    box-shadow: 0 4px 12px rgba(108, 74, 182, 0.3) !important;
-    transition: all 0.3s ease !important;
-}
-
-.chat-bubble:hover {
-    background: var(--accent-purple) !important;
-    transform: scale(1.1) !important;
+button:has-text("Leave Event Mode"):hover {
+    background: #c0392b !important;
 }
 
 /* -----------------------------
-   Status Indicators - NOT BUTTONS
+   STATUS INDICATORS
 ----------------------------- */
-.status-planning { 
-    background: #ffd54f !important; 
-    color: #f57f17 !important; 
-    padding: 0.2rem 0.5rem !important; 
-    border-radius: 12px !important; 
-    font-size: 0.75rem !important; 
-    font-weight: 500 !important;
-    display: inline-block !important;
-    cursor: default !important;
+/* Hide planning status completely */
+.status-planning {
+    display: none !important;
 }
 
 .status-active { 
     background: #81c784 !important; 
     color: #2e7d32 !important; 
-    padding: 0.2rem 0.5rem !important; 
+    padding: 0.3rem 0.6rem !important; 
     border-radius: 12px !important; 
     font-size: 0.75rem !important; 
-    font-weight: 500 !important;
+    font-weight: 600 !important;
     display: inline-block !important;
-    cursor: default !important;
 }
 
 .status-complete { 
     background: #90a4ae !important; 
     color: #37474f !important; 
-    padding: 0.2rem 0.5rem !important; 
+    padding: 0.3rem 0.6rem !important; 
     border-radius: 12px !important; 
     font-size: 0.75rem !important; 
-    font-weight: 500 !important;
+    font-weight: 600 !important;
     display: inline-block !important;
-    cursor: default !important;
 }
 
 /* -----------------------------
-   Mobile Responsive Design
+   MOBILE RESPONSIVE (Mobile First)
 ----------------------------- */
 @media (max-width: 768px) {
-    /* Adjust event toggle for mobile */
-    .event-toggle-button {
-        min-width: 180px !important;
-        font-size: 0.85rem !important;
-        padding: 0.6rem 1rem !important;
+    /* Mobile padding */
+    .main .block-container {
+        padding-left: 0.5rem !important;
+        padding-right: 0.5rem !important;
     }
     
-    /* Adjust user header for mobile */
-    .user-header-dropdown {
+    /* Mobile event indicator */
+    .event-mode-simple-indicator {
         position: relative !important;
         top: auto !important;
         right: auto !important;
-        margin: 0.5rem 0 !important;
+        margin: 0.5rem 0 1rem !important;
+        display: block !important;
+        text-align: center !important;
+        font-size: 0.8rem !important;
+        border-radius: var(--border-radius) !important;
     }
     
-    /* Stack navigation tabs vertically on mobile */
-    .stTabs [role="tablist"] {
+    /* Mobile navigation */
+    .nav-tabs {
         flex-direction: column !important;
+        gap: 0.5rem !important;
     }
     
-    .stTabs [role="tab"] {
+    .nav-tab {
         width: 100% !important;
         justify-content: center !important;
     }
     
-    /* Reduce mobile padding */
-    .main .block-container {
-        padding-top: 0 !important;
-        padding-left: 0.5rem !important;
-        padding-right: 0.5rem !important;
+    /* Mobile chat window */
+    .ai-chat-window {
+        width: 100% !important;
+        height: 80vh !important;
+        bottom: 0 !important;
+        right: 0 !important;
+        left: 0 !important;
+        border-radius: 12px 12px 0 0 !important;
+        max-width: 100% !important;
+    }
+    
+    /* Mobile chat toggle */
+    div[data-testid="stMarkdownContainer"]:has(.floating-chat-button-container) + div .stButton {
+        bottom: 1rem !important;
+        right: 1rem !important;
+    }
+    
+    /* Mobile sidebar */
+    .css-1d391kg {
+        padding: 1rem 0.5rem !important;
     }
 }
 
 /* -----------------------------
-   Remove Empty Space Elements
------------------------------ */
-
-/* Remove streamlit's default margins */
-.element-container {
-    margin: 0 !important;
-}
-
-/* Remove extra spacing from columns */
-.stColumns > div {
-    gap: 0.5rem !important;
-}
-
-/* Tighten form spacing */
-.stForm {
-    padding: 0 !important;
-}
-
-/* Remove padding from expanders */
-.streamlit-expanderHeader {
-    padding: 0.5rem !important;
-}
-
-/* -----------------------------
-   Cleanup Misc Elements
------------------------------ */
-
-/* Hide any empty buttons or elements */
-button:empty {
-    display: none !important;
-}
-
-.stButton:has(button:empty) {
-    display: none !important;
-}
-
-/* Remove mysterious spacing elements */
-[data-testid="stDecoration"] {
-    display: none !important;
-}
-
-/* Remove top toolbar spacing */
-[data-testid="stToolbar"] {
-    display: none !important;
-}
-
-/* Hide streamlit menu and footer */
-#MainMenu {visibility: hidden;}
-footer {visibility: hidden;}
-
-/* -----------------------------
-   Card Styling Enhanced
+   UTILITY CLASSES
 ----------------------------- */
 .card {
-    background: #ffffff !important;
+    background: white !important;
     border-radius: 12px !important;
-    padding: 1rem !important;
-    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.05) !important;
-    margin-bottom: 0.5rem !important;
+    padding: 1.5rem !important;
+    box-shadow: var(--shadow-sm) !important;
+    margin-bottom: 1rem !important;
     border: 1px solid #f0f0f0 !important;
 }
 
-/* -----------------------------
-   Tag Styling Enhanced
------------------------------ */
 .tag {
     background: #edeafa !important;
     color: var(--primary-purple) !important;
-    padding: 0.2rem 0.5rem !important;
+    padding: 0.3rem 0.6rem !important;
     border-radius: 20px !important;
     font-size: 0.75rem !important;
     display: inline-block !important;
-    margin: 0.1rem !important;
+    margin: 0.2rem !important;
     font-weight: 500 !important;
 }
 
 /* -----------------------------
-   Scrollbar Styling
+   CLEANUP & POLISH
 ----------------------------- */
+/* Hide Streamlit branding */
+#MainMenu {visibility: hidden;}
+footer {visibility: hidden;}
+header {visibility: hidden;}
+
+/* Remove decoration elements */
+[data-testid="stDecoration"] {
+    display: none !important;
+}
+
+/* Clean up spacing */
+.element-container {
+    margin: 0 !important;
+}
+
+.stColumns > div {
+    gap: 0.75rem !important;
+}
+
+/* Scrollbar styling */
 ::-webkit-scrollbar {
     width: 8px !important;
 }
@@ -472,4 +438,47 @@ footer {visibility: hidden;}
 
 ::-webkit-scrollbar-thumb:hover {
     background: var(--primary-purple) !important;
+}
+
+/* Form styling */
+.stForm {
+    padding: 1rem !important;
+    background: #f8f9fa !important;
+    border-radius: var(--border-radius) !important;
+    margin-bottom: 1rem !important;
+}
+
+/* Expander styling */
+.streamlit-expanderHeader {
+    background: #f8f9fa !important;
+    border-radius: var(--border-radius) !important;
+    padding: 0.75rem !important;
+}
+
+.streamlit-expanderHeader:hover {
+    background: #edeafa !important;
+}
+
+/* Input styling */
+.stTextInput input {
+    border: 2px solid #e0e0e0 !important;
+    border-radius: var(--border-radius) !important;
+    padding: 0.5rem !important;
+    transition: var(--transition) !important;
+}
+
+.stTextInput input:focus {
+    border-color: var(--primary-purple) !important;
+    box-shadow: 0 0 0 3px rgba(108, 74, 182, 0.1) !important;
+}
+
+/* Select box styling */
+.stSelectbox > div > div {
+    border: 2px solid #e0e0e0 !important;
+    border-radius: var(--border-radius) !important;
+    transition: var(--transition) !important;
+}
+
+.stSelectbox > div > div:focus-within {
+    border-color: var(--primary-purple) !important;
 }
