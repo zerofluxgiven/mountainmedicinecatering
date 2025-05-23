@@ -1,7 +1,7 @@
 import streamlit as st
 from firebase_admin import storage
 from auth import get_user_role, get_user_id
-from utils import generate_id, get_active_event_id
+from utils import generate_id, get_active_event_id, get_scoped_query, is_event_scoped, get_event_scope_message
 from datetime import datetime
 import tempfile
 import os
@@ -12,12 +12,16 @@ from db_client import db
 # ----------------------------
 
 def list_files(include_deleted=False):
-    """List files from Firestore metadata"""
+    """List files with proper event scoping"""
     try:
-        ref = db.collection("files").order_by("created_at", direction=db.query.DESCENDING)
+        # Use scoped query
+        query = get_scoped_query("files")
+        query = query.order_by("created_at", direction=db.query.DESCENDING)
+        
         if not include_deleted:
-            ref = ref.where("deleted", "==", False)
-        docs = ref.stream()
+            query = query.where("deleted", "==", False)
+            
+        docs = query.stream()
         return [doc.to_dict() | {"id": doc.id} for doc in docs]
     except Exception as e:
         st.error(f"⚠️ Could not list files: {e}")
@@ -220,7 +224,10 @@ def restore_file(file_id):
 # ----------------------------
 
 def file_manager_ui(user):
-    st.subheader("File Manager")
+    st.subheader("📁 File Manager")
+    
+    # Show current scope
+    st.info(get_event_scope_message())
 
     if not user:
         st.warning("Please log in to manage files.")
@@ -255,7 +262,13 @@ def file_manager_ui(user):
         
         # Enhanced event association with autocomplete
         st.markdown("#### Link to Event")
-        selected_event_id = render_event_autocomplete()
+        # If in event mode, auto-select current event
+        if is_event_scoped():
+            active_event_id = get_active_event_id()
+            st.info(f"File will be linked to the current event")
+            selected_event_id = active_event_id
+        else:
+            selected_event_id = render_event_autocomplete()
         
         # Enhanced tag suggestions and input
         suggested_tags = suggest_tags_for_file(uploaded_file.name, selected_event_id)
@@ -336,7 +349,11 @@ def file_manager_ui(user):
     with col2:
         search_term = st.text_input("Search files", placeholder="Search by filename or tags")
     with col3:
-        event_filter = st.selectbox("Filter by event", ["All events"] + _get_event_filter_options())
+        # Only show event filter if not in event mode
+        if not is_event_scoped():
+            event_filter = st.selectbox("Filter by event", ["All events"] + _get_event_filter_options())
+        else:
+            event_filter = None
 
     files = list_files(include_deleted=show_deleted)
     
@@ -347,7 +364,7 @@ def file_manager_ui(user):
                 search_lower in f.get('filename', '').lower() or 
                 any(search_lower in tag.lower() for tag in f.get('tags', []))]
     
-    if event_filter != "All events":
+    if event_filter and event_filter != "All events":
         if event_filter == "No event linked":
             files = [f for f in files if not f.get('event_id')]
         else:
@@ -356,10 +373,43 @@ def file_manager_ui(user):
             files = [f for f in files if f.get('event_id') == event_id]
     
     if not files:
-        st.info("No files found." + (" Try adjusting your search or filters." if search_term or event_filter != "All events" else ""))
+        if is_event_scoped():
+            st.info("No files found for this event. Upload your first file above!")
+        else:
+            st.info("No files found." + (" Try adjusting your search or filters." if search_term or (event_filter and event_filter != "All events") else ""))
         return
 
-    # Display files with enhanced styling
+    # Group files by event if not in event mode
+    if not is_event_scoped():
+        st.markdown(f"### All Files ({len(files)} total)")
+        
+        # Group by event
+        files_by_event = {}
+        for file in files:
+            event_id = file.get("event_id", "No Event")
+            if event_id not in files_by_event:
+                files_by_event[event_id] = []
+            files_by_event[event_id].append(file)
+        
+        # Display grouped files
+        for event_id, event_files in files_by_event.items():
+            if event_id != "No Event":
+                event_info = _get_event_info(event_id)
+                if event_info:
+                    st.markdown(f"#### 🎪 {event_info['name']}")
+                else:
+                    st.markdown(f"#### 🎪 Event ID: {event_id}")
+            else:
+                st.markdown("#### 📁 Unassigned Files")
+            
+            _display_files(event_files, role, user_id)
+    else:
+        # In event mode, just show the files
+        st.markdown(f"### Event Files ({len(files)} files)")
+        _display_files(files, role, user_id)
+
+def _display_files(files, role, user_id):
+    """Display a list of files"""
     for file_data in files:
         with st.container():
             # Enhanced file header with status indicators
@@ -386,16 +436,17 @@ def file_manager_ui(user):
                         st.markdown(f"**📊 Size:** {size_mb:.2f} MB")
                 
                 with detail_col2:
-                    # Event linking with enhanced display
-                    if file_data.get('event_id'):
-                        event_info = _get_event_info(file_data['event_id'])
-                        if event_info:
-                            st.markdown(f"**🎪 Event:** {event_info['name']}")
-                            st.markdown(f"**📍 Location:** {event_info.get('location', 'Unknown')}")
+                    # Only show event info if not in event mode
+                    if not is_event_scoped():
+                        if file_data.get('event_id'):
+                            event_info = _get_event_info(file_data['event_id'])
+                            if event_info:
+                                st.markdown(f"**🎪 Event:** {event_info['name']}")
+                                st.markdown(f"**📍 Location:** {event_info.get('location', 'Unknown')}")
+                            else:
+                                st.markdown(f"**🎪 Event:** `{file_data['event_id']}` (not found)")
                         else:
-                            st.markdown(f"**🎪 Event:** `{file_data['event_id']}` (not found)")
-                    else:
-                        st.markdown("**🎪 Event:** Not linked")
+                            st.markdown("**🎪 Event:** Not linked")
                 
                 # Enhanced tags display
                 tags = file_data.get('tags', [])
@@ -526,35 +577,43 @@ def _add_tag_to_file(file_id, new_tag):
 def show_file_analytics():
     """Display file upload analytics"""
     try:
-        files = list_files(include_deleted=False)
+        # Get both scoped and all files for comparison
+        scoped_files = list_files(include_deleted=False)
         
-        if not files:
+        if not scoped_files and is_event_scoped():
+            st.info("No files uploaded for this event yet.")
+            return
+        elif not scoped_files:
             st.info("No files uploaded yet.")
             return
         
         st.markdown("### File Analytics")
         
+        # Show scope-aware metrics
+        if is_event_scoped():
+            st.info(f"Showing analytics for current event only")
+        
         col1, col2, col3, col4 = st.columns(4)
         
         with col1:
-            st.metric("Total Files", len(files))
+            st.metric("Total Files", len(scoped_files))
         
         with col2:
-            linked_files = len([f for f in files if f.get('event_id')])
+            linked_files = len([f for f in scoped_files if f.get('event_id')])
             st.metric("Event-Linked Files", linked_files)
         
         with col3:
-            total_size = sum(f.get('file_size', 0) for f in files)
+            total_size = sum(f.get('file_size', 0) for f in scoped_files)
             size_mb = total_size / (1024 * 1024)
             st.metric("Total Storage", f"{size_mb:.1f} MB")
         
         with col4:
-            unique_uploaders = len(set(f.get('uploaded_by') for f in files if f.get('uploaded_by')))
+            unique_uploaders = len(set(f.get('uploaded_by') for f in scoped_files if f.get('uploaded_by')))
             st.metric("Active Contributors", unique_uploaders)
         
         # File type breakdown
         file_types = {}
-        for file in files:
+        for file in scoped_files:
             filename = file.get('filename', '')
             ext = filename.split('.')[-1].lower() if '.' in filename else 'unknown'
             file_types[ext] = file_types.get(ext, 0) + 1
@@ -562,7 +621,7 @@ def show_file_analytics():
         if file_types:
             st.markdown("#### File Types")
             for file_type, count in sorted(file_types.items(), key=lambda x: x[1], reverse=True):
-                percentage = (count / len(files)) * 100
+                percentage = (count / len(scoped_files)) * 100
                 st.write(f"**{file_type.upper()}:** {count} files ({percentage:.1f}%)")
         
     except Exception as e:
