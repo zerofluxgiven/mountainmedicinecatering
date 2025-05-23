@@ -41,6 +41,40 @@ TABS = {
     "PDF Export": "pdf_export"
 }
 
+
+# 2. Add this function before main() to handle event mode persistence:
+def initialize_event_mode_state():
+    """Initialize event mode state for new users"""
+    user = session_get("user")
+    if not user:
+        return
+        
+    user_id = user.get("id")
+    if not user_id:
+        return
+        
+    # Check if this is a new session for this user
+    session_key = f"initialized_{user_id}"
+    if session_key not in st.session_state:
+        st.session_state[session_key] = True
+        
+        # For new users, ensure event mode is OFF
+        if "active_event_id" not in st.session_state:
+            st.session_state["active_event_id"] = None
+            st.session_state["active_event"] = None
+            
+        # Try to restore last active event from Firestore user preferences
+        try:
+            from db_client import db
+            user_doc = db.collection("users").document(user_id).get()
+            if user_doc.exists:
+                user_data = user_doc.to_dict()
+                last_event = user_data.get("last_active_event")
+                if last_event:
+                    st.session_state["recent_event_id"] = last_event
+        except Exception:
+            pass
+
 # ----------------------------
 # 🚀 Main App
 # ----------------------------
@@ -57,7 +91,7 @@ def main():
     st.set_page_config(
         page_title="Mountain Medicine Catering", 
         layout="wide",
-        initial_sidebar_state="expanded"  # <-- CHANGED TO expanded
+        initial_sidebar_state="collapsed"  # <-- CHANGED TO expanded
     )
 
     # 💅 Apply complete theme system
