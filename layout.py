@@ -228,53 +228,84 @@ def _get_ai_response(message: str):
 # ----------------------------
 # 🧭 Purple Tab Navigation
 # ----------------------------
+# Updated render_top_navbar function for layout.py
+# Replace the existing render_top_navbar function with this:
+
 def render_top_navbar(tabs):
-    """Render clean purple-themed navigation tabs"""
+    """Render clean purple-themed navigation tabs using Streamlit native components"""
     current_tab = st.session_state.get("top_nav", tabs[0])
     
     if current_tab not in tabs:
         current_tab = tabs[0]
         st.session_state["top_nav"] = current_tab
     
-    # Create clean navigation without radio buttons
-    nav_html = f"""
-    <div class="nav-container">
-        <div class="nav-tabs">
-    """
+    # Filter out admin tabs if they're in the main navigation
+    main_tabs = [tab for tab in tabs if tab not in ["Admin Panel", "Suggestions", "Bulk Suggestions", "Audit Logs", "PDF Export"]]
     
-    for i, tab in enumerate(tabs):
-        active_class = "active" if tab == current_tab else ""
-        nav_html += f'''
-            <button class="nav-tab {active_class}" onclick="
-                const event = new CustomEvent('streamlit:setComponentValue', {{
-                    detail: {{key: 'nav_selection', value: '{tab}'}}
-                }});
-                window.parent.dispatchEvent(event);
-            ">{tab}</button>
-        '''
-    
-    nav_html += """
-        </div>
-    </div>
-    """
-    
-    st.markdown(nav_html, unsafe_allow_html=True)
-    
-    # Handle navigation selection
-    if st.session_state.get("nav_selection"):
-        st.session_state["top_nav"] = st.session_state["nav_selection"]
-        st.session_state["nav_selection"] = None
-        st.rerun()
-    
-    # Use streamlit's native tabs as fallback
+    # Use Streamlit's native tab component styled with CSS
     selected = st.radio(
         "Navigation",
-        tabs,
-        index=tabs.index(current_tab),
+        main_tabs,
+        index=main_tabs.index(current_tab) if current_tab in main_tabs else 0,
         key="top_nav",
         horizontal=True,
         label_visibility="collapsed"
     )
+    
+    # Apply custom styling to make tabs look like purple buttons
+    st.markdown("""
+    <style>
+    /* Style the radio buttons as navigation tabs */
+    .stRadio > div {
+        display: flex !important;
+        gap: 0.5rem !important;
+        flex-wrap: wrap !important;
+        background: none !important;
+    }
+    
+    .stRadio > div > label {
+        background: white !important;
+        color: var(--primary-purple, #6C4AB6) !important;
+        border: 2px solid var(--primary-purple, #6C4AB6) !important;
+        border-radius: 8px !important;
+        padding: 0.5rem 1rem !important;
+        font-weight: 500 !important;
+        font-size: 0.9rem !important;
+        cursor: pointer !important;
+        transition: all 0.2s ease !important;
+        min-height: 40px !important;
+        display: flex !important;
+        align-items: center !important;
+        justify-content: center !important;
+        margin-right: 0 !important;
+    }
+    
+    .stRadio > div > label:hover {
+        background: var(--light-purple, #B8A4D4) !important;
+        color: white !important;
+        transform: translateY(-2px) !important;
+        box-shadow: 0 2px 4px rgba(0,0,0,0.1) !important;
+    }
+    
+    .stRadio > div > label[data-baseweb="radio"] > div:first-child {
+        display: none !important;
+    }
+    
+    .stRadio > div > label[aria-checked="true"] {
+        background: var(--primary-purple, #6C4AB6) !important;
+        color: white !important;
+    }
+    
+    /* Hide the circle indicators */
+    .stRadio input[type="radio"] {
+        display: none !important;
+    }
+    
+    .stRadio label div:first-of-type {
+        display: none !important;
+    }
+    </style>
+    """, unsafe_allow_html=True)
     
     return selected
 
