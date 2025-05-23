@@ -3,8 +3,11 @@ from firebase_admin import storage
 from auth import get_user_role, get_user_id
 from utils import generate_id, get_active_event_id, get_scoped_query, is_event_scoped, get_event_scope_message
 from datetime import datetime
+from PIL import Image
 import tempfile
 import os
+import base64
+import io
 from db_client import db
 
 # ----------------------------
