@@ -3,7 +3,7 @@ from floating_ai_chat import integrate_floating_chat
 from notifications import notifications_sidebar
 from datetime import datetime
 from auth import load_user_session, get_user_role
-from utils import format_date, get_active_event
+from utils import format_date, get_active_event, session_get
 from layout import apply_theme, render_top_navbar, render_enhanced_sidebar, render_leave_event_button
 from ui_components import show_event_mode_banner
 from landing import show as show_landing
@@ -19,25 +19,27 @@ from bulk_suggestions import bulk_suggestions_ui
 from audit import audit_log_ui
 from tag_merging import tag_merging_ui
 from admin_panel import admin_panel_ui
-from utils import format_date, get_active_event, session_get  # Add session_get here
+from ingredients import ingredient_catalogue_ui
+from allergies import allergy_management_ui
 
 # ⚙️ Config
 PUBLIC_MODE = False  # Set to True for guest access
 
-# 📂 Updated Tab Routing (removed Assistant tab)
+# 📂 Updated Tab Routing with Ingredients and Allergies
 TABS = {
     "Dashboard": "dashboard",
     "Events": "events", 
     "Event Planner": "event_planner",
     "Recipes": "recipes",
+    "Ingredients": "ingredients",
+    "Allergies": "allergies",
     "Upload": "files",
     "Receipts": "receipts",
     "Post-Event": "post_event",
     "Explore Tags": "tags"
 }
 
-
-# 2. Add this function before main() to handle event mode persistence:
+# Add this function before main() to handle event mode persistence:
 def initialize_event_mode_state():
     """Initialize event mode state for new users"""
     user = session_get("user")
@@ -86,7 +88,7 @@ def main():
     st.set_page_config(
         page_title="Mountain Medicine Catering", 
         layout="wide",
-        initial_sidebar_state="collapsed"  # <-- CHANGED TO expanded
+        initial_sidebar_state="collapsed"
     )
 
     # 💅 Apply complete theme system
@@ -119,8 +121,6 @@ def main():
 
     # 🧭 Main navigation
     st.markdown("## 🌄 Mountain Medicine Catering")
-    # Event Mode banner
-    # show_event_mode_banner()
     
     # Top navigation
     selected_tab = render_top_navbar(list(TABS.keys()))
@@ -140,11 +140,6 @@ def main():
                 st.write(f"**{active_event.get('name', 'Unknown')}**")
                 st.caption(f"📍 {active_event.get('location', 'Unknown')}")
                 st.caption(f"👥 {active_event.get('guest_count', 0)} guests")
-
-    # -----------------------------------
-    # 🔀 Enhanced Tab Routing Logic
-    # -----------------------------------
-# Replace the tab routing section in app.py (starting around line 194) with this:
 
     # -----------------------------------
     # 🔀 Enhanced Tab Routing Logic
@@ -177,6 +172,20 @@ def main():
             st.warning("Please log in to view recipes.")
         else:
             menu_editor_ui(user)
+
+    elif selected_tab == "Ingredients":
+        # Ingredients catalogue accessible to logged-in users
+        if not user:
+            st.warning("Please log in to view ingredients.")
+        else:
+            ingredient_catalogue_ui(user)
+
+    elif selected_tab == "Allergies":
+        # Allergies require login
+        if not user:
+            st.warning("Please log in to manage allergies.")
+        else:
+            allergy_management_ui(user)
 
     elif selected_tab == "Upload":
         # File upload requires login
