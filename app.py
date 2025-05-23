@@ -116,6 +116,9 @@ def main():
         show_login_form()
         return
 
+    # Initialize event mode state for the user
+    initialize_event_mode_state()
+
     # 🧭 Enhanced sidebar with admin tools
     render_enhanced_sidebar()
 
