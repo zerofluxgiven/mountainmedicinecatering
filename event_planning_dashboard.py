@@ -131,6 +131,10 @@ def event_planning_dashboard_ui(event_id):
     with st.expander("✅ Tasks & Checklist", expanded=False):
         _render_task_list_editor(event_id)
 
+    # Allergies Section
+    with st.expander("🚨 Allergies & Dietary Restrictions", expanded=False):
+        _render_allergies_section(event_id, user)
+
     # File Uploads Section
     with st.expander("📎 Event Files", expanded=False):
         _render_file_upload_section(event_id, user)
@@ -307,6 +311,81 @@ def _render_task_list_editor(event_id):
                 })
                 st.success(f"Added task: {task_label}")
                 st.rerun()
+
+# ----------------------------
+# 🚨 Allergies Section
+# ----------------------------
+def _render_allergies_section(event_id, user):
+    """Render allergies management within event planning"""
+    from allergies import get_event_allergies, add_allergy_to_event, delete_allergy
+    
+    st.subheader("Allergy Management")
+    
+    # Get existing allergies
+    allergies = get_event_allergies(event_id)
+    
+    if allergies:
+        st.markdown(f"#### {len(allergies)} People with Allergies")
+        
+        for allergy in allergies:
+            col1, col2, col3 = st.columns([3, 1, 1])
+            
+            with col1:
+                st.write(f"**{allergy.get('person_name', 'Unknown')}**")
+                allergens = ", ".join(allergy.get('allergies', []))
+                st.caption(f"Allergies: {allergens}")
+                st.caption(f"Severity: {allergy.get('severity', 'Unknown')}")
+            
+            with col2:
+                if allergy.get('notes'):
+                    st.caption(f"Notes: {allergy.get('notes')}")
+            
+            with col3:
+                if st.button("🗑️", key=f"del_allergy_{allergy['id']}"):
+                    if delete_allergy(event_id, allergy['id']):
+                        st.success("Allergy removed")
+                        st.rerun()
+    else:
+        st.info("No allergies recorded yet")
+    
+    # Quick add allergy form
+    st.markdown("#### Quick Add Allergy")
+    with st.form(f"quick_allergy_{event_id}"):
+        col1, col2 = st.columns(2)
+        
+        with col1:
+            person_name = st.text_input("Person's Name")
+            severity = st.selectbox("Severity", ["Mild", "Moderate", "Severe", "Life-threatening"])
+        
+        with col2:
+            allergies_text = st.text_input("Allergies (comma-separated)")
+            notes = st.text_input("Notes (optional)")
+        
+        if st.form_submit_button("Add Allergy"):
+            if person_name and allergies_text:
+                allergy_list = [a.strip() for a in allergies_text.split(',') if a.strip()]
+                
+                allergy_data = {
+                    'person_name': person_name,
+                    'allergies': allergy_list,
+                    'severity': severity,
+                    'notes': notes,
+                    'ingredient_ids': [],  # Would need ingredient search for full functionality
+                    'tags': [],
+                    'created_by': user['id']
+                }
+                
+                if add_allergy_to_event(event_id, allergy_data):
+                    st.success(f"Added allergy info for {person_name}")
+                    st.rerun()
+            else:
+                st.error("Please provide name and allergies")
+    
+    # Link to full allergy management
+    if st.button("🔍 Advanced Allergy Management"):
+        st.session_state["active_event_id"] = event_id
+        st.session_state["top_nav"] = "Allergies"
+        st.rerun()
 
 # ----------------------------
 # 📎 File Upload Section
