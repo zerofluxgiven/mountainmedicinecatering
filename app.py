@@ -104,7 +104,7 @@ def main():
         initial_sidebar_state="collapsed"
     )
 
-    mobile_layout.apply_mobile_theme()
+        mobile_layout.apply_mobile_theme()
 
     # 💅 Apply complete theme system
     apply_theme()
