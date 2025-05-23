@@ -7,7 +7,7 @@ from utils import format_date, get_active_event
 from layout import apply_theme
 from layout import render_top_navbar
 #from layout import render_user_header
-from layout import render_global_event_controls
+#from layout import render_global_event_controls
 from ui_components import show_event_mode_banner
 from landing import show as show_landing
 from events import enhanced_event_ui
