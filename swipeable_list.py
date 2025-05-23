@@ -1,1 +1,1 @@
-# swipeable_list placeholder
+# swipeable_list.py content

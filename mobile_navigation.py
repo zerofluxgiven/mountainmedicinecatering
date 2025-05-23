@@ -1,1 +1,1 @@
-# mobile_navigation placeholder
+# mobile_navigation.py content

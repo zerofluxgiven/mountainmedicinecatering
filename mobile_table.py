@@ -1,1 +1,1 @@
-# mobile_table placeholder
+# mobile_table.py content

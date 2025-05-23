@@ -1,1 +1,1 @@
-# mobile_card placeholder
+# mobile_card.py content
