@@ -6,7 +6,7 @@ from auth import load_user_session, get_user_role
 from utils import format_date, get_active_event
 from layout import apply_theme
 from layout import render_top_navbar
-from layout import render_user_header
+#from layout import render_user_header
 from layout import render_global_event_controls
 from ui_components import show_event_mode_banner
 from landing import show as show_landing
@@ -83,7 +83,7 @@ def main():
     render_streamlined_header()
 
     # 🧭 Header with user info and global controls
-    render_user_header()
+    #render_user_header()
     render_global_event_controls() # - This is already called in apply_theme()
 
     # 💬 Floating AI Assistant
