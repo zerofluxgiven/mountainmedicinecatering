@@ -12,6 +12,23 @@ from firebase_admin import firestore
 # 🔥 Get All Events
 # ----------------------------
 
+def save_user_event_preference(user_id: str, event_id: str = None):
+    """Save user's last active event to their profile"""
+    try:
+        db.collection("users").document(user_id).update({
+            "last_active_event": event_id,
+            "last_event_update": datetime.utcnow()
+        })
+    except Exception:
+        # If user doesn't exist, create the preference
+        try:
+            db.collection("users").document(user_id).set({
+                "last_active_event": event_id,
+                "last_event_update": datetime.utcnow()
+            }, merge=True)
+        except Exception as e:
+            st.warning(f"Could not save event preference: {e}")
+
 def get_all_events() -> list[dict]:
     """Fetch all events from Firestore, sorted by start date."""
     try:
@@ -34,6 +51,11 @@ def activate_event(event_id: str) -> None:
         # Ensure session state is updated
         st.session_state["active_event"] = event_id
         st.session_state["active_event_id"] = event_id
+
+        # Save user preference
+        user = st.session_state.get("user")
+        if user and user.get("id"):
+            save_user_event_preference(user["id"], event_id)
         
         # Update event status to 'active' if it's still in 'planning'
         event_ref = db.collection("events").document(event_id)
@@ -59,10 +81,47 @@ def deactivate_event_mode() -> None:
             
         # Force synchronization with app state
         st.session_state["active_event"] = None
+
+        # Clear user preference
+        user = st.session_state.get("user")
+        if user and user.get("id"):
+            save_user_event_preference(user["id"], None)
         
         st.success("✅ Event Mode deactivated")
     except Exception as e:
         st.error(f"❌ Could not deactivate Event Mode: {e}")
+
+def complete_event_and_end_sessions(event_id: str) -> bool:
+    """Complete an event and clear all user sessions"""
+    try:
+        # Update event status to complete
+        update_event(event_id, {"status": "complete"})
+        
+        # Clear global active event
+        db.collection("config").document("global").update({"active_event": None})
+        
+        # Clear all user preferences for this event
+        users_with_event = db.collection("users").where("last_active_event", "==", event_id).stream()
+        batch = db.batch()
+        for user_doc in users_with_event:
+            user_ref = db.collection("users").document(user_doc.id)
+            batch.update(user_ref, {
+                "last_active_event": None,
+                "last_event_update": datetime.utcnow()
+            })
+        batch.commit()
+        
+        # Clear current session
+        if st.session_state.get("active_event_id") == event_id:
+            st.session_state["active_event_id"] = None
+            st.session_state["active_event"] = None
+        
+        st.success("✅ Event completed and all sessions ended")
+        return True
+        
+    except Exception as e:
+        st.error(f"❌ Failed to complete event: {e}")
+        return False
 
 # ----------------------------
 # 📅 Create New Event
