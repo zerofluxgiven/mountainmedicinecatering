@@ -4,10 +4,7 @@ from notifications import notifications_sidebar
 from datetime import datetime
 from auth import load_user_session, get_user_role
 from utils import format_date, get_active_event
-from layout import apply_theme
-from layout import render_top_navbar
-#from layout import render_user_header
-#from layout import render_global_event_controls
+from layout import apply_theme, render_top_navbar, render_enhanced_sidebar, render_leave_event_button
 from ui_components import show_event_mode_banner
 from landing import show as show_landing
 from events import enhanced_event_ui
@@ -35,7 +32,13 @@ TABS = {
     "Upload": "files",
     "Receipts": "receipts",
     "Post-Event": "post_event",
-    "Explore Tags": "tags"
+    "Explore Tags": "tags",
+    # Keep these for direct navigation
+    "Admin Panel": "admin_panel",
+    "Suggestions": "suggestions",
+    "Bulk Suggestions": "bulk_suggestions",
+    "Audit Logs": "audit_logs",
+    "PDF Export": "pdf_export"
 }
 
 # ----------------------------
@@ -54,7 +57,7 @@ def main():
     st.set_page_config(
         page_title="Mountain Medicine Catering", 
         layout="wide",
-        initial_sidebar_state="collapsed"  # Start with collapsed sidebar for mobile
+        initial_sidebar_state="expanded"  # <-- CHANGED TO expanded
     )
 
     # 💅 Apply complete theme system
@@ -78,20 +81,12 @@ def main():
         st.markdown("## 🌄 Mountain Medicine Catering")
         show_login_form()
         return
-        
-    from layout import render_streamlined_header
-    render_streamlined_header()
 
-    # 🧭 Header with user info and global controls
-    #render_user_header()
-    #render_global_event_controls() # - This is already called in apply_theme()
-
-    # 💬 Floating AI Assistant
-    integrate_floating_chat()
+    # 🧭 Enhanced sidebar with admin tools
+    render_enhanced_sidebar()
 
     # 🧭 Main navigation
     st.markdown("## 🌄 Mountain Medicine Catering")
-    
     # Event Mode banner
     # show_event_mode_banner()
     
@@ -121,6 +116,8 @@ def main():
         render_dashboard(user)
 
     elif selected_tab == "Events":
+        # Add leave event mode button at top of events page
+        render_leave_event_button("main")
         enhanced_event_ui(user)  # Use enhanced version with filters
 
     elif selected_tab == "Event Planner":
