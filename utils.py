@@ -16,6 +16,112 @@ def get_db():
 # 💾 Session Helpers
 # ----------------------------
 
+# Add these helper functions to your utils.py or create a new event_scoping.py file
+
+def get_scoped_query(collection_name: str, base_query=None):
+    """
+    Returns a Firestore query that's scoped to the active event if event mode is on.
+    If no event mode is active, returns all data.
+    """
+    from db_client import db
+    
+    # Start with base query or create new one
+    if base_query is None:
+        query = db.collection(collection_name)
+    else:
+        query = base_query
+    
+    # Check if event mode is active
+    active_event_id = get_active_event_id()
+    
+    if active_event_id:
+        # Event mode is ON - scope to active event
+        query = query.where("event_id", "==", active_event_id)
+    
+    # If event mode is OFF, return unscoped query (all data)
+    return query
+
+def is_event_scoped():
+    """Check if event mode is currently active"""
+    return get_active_event_id() is not None
+
+def get_event_scope_message():
+    """Get a message about current event scope for UI display"""
+    active_event_id = get_active_event_id()
+    
+    if active_event_id:
+        event = get_event_by_id(active_event_id)
+        if event:
+            return f"🔍 Viewing data for: **{event.get('name', 'Unknown Event')}**"
+        return "🔍 Event mode active (unknown event)"
+    
+    return "👁️ Viewing all data (no event filter)"
+
+# Example usage in your components:
+
+# In menu_editor_ui function:
+def menu_editor_ui_scoped(user: dict) -> None:
+    """Example of how to update menu_editor_ui with proper scoping"""
+    st.title("🍽️ Menu Editor")
+    
+    # Show current scope
+    st.info(get_event_scope_message())
+    
+    role = get_user_role(user)
+    
+    # Use scoped query
+    query = get_scoped_query("menus")
+    
+    try:
+        menus = [doc.to_dict() for doc in query.stream()]
+    except Exception as e:
+        st.error(f"⚠️ Failed to load menus: {e}")
+        return
+    
+    if not menus:
+        if is_event_scoped():
+            st.info("No menu items found for this event.")
+            if st.button("Create Menu Item"):
+                # Add menu item creation for this event
+                pass
+        else:
+            st.info("No menu items found. Create your first menu item!")
+        return
+    
+    # Rest of the function continues as normal...
+
+# In file_manager_ui function:
+def file_manager_ui_scoped(user):
+    """Example of how to update file_manager_ui with proper scoping"""
+    st.subheader("📁 File Manager")
+    
+    # Show current scope
+    st.info(get_event_scope_message())
+    
+    if not user:
+        st.warning("Please log in to manage files.")
+        return
+    
+    role = get_user_role(user)
+    user_id = get_user_id(user)
+    
+    # File upload section (always available)
+    st.markdown("### Upload New File")
+    # ... upload code ...
+    
+    # Show existing files with proper scoping
+    st.markdown("### Uploaded Files")
+    
+    # Get files based on current scope
+    if is_event_scoped():
+        # Show only files for active event
+        files = list_files_for_event(get_active_event_id(), include_deleted=show_deleted)
+    else:
+        # Show all files
+        files = list_files(include_deleted=show_deleted)
+    
+    # ... rest of file display code ...
+
 def session_get(key, default=None):
     return st.session_state.get(key, default)
 
