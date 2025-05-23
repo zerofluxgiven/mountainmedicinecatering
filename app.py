@@ -144,49 +144,69 @@ def main():
     # -----------------------------------
     # 🔀 Enhanced Tab Routing Logic
     # -----------------------------------
+# Replace the tab routing section in app.py (starting around line 194) with this:
+
+    # -----------------------------------
+    # 🔀 Enhanced Tab Routing Logic
+    # -----------------------------------
     if selected_tab == "Dashboard":
-        render_dashboard(user)
+        # Dashboard should be accessible to logged-in users regardless of PUBLIC_MODE
+        if not user:
+            st.warning("Please log in to view the dashboard.")
+        else:
+            render_dashboard(user)
 
     elif selected_tab == "Events":
-        # Add leave event mode button at top of events page
-        render_leave_event_button("main")
-        enhanced_event_ui(user)  # Use enhanced version with filters
+        # Events tab should always be accessible to logged-in users
+        if not user:
+            st.warning("Please log in to view events.")
+        else:
+            render_leave_event_button("main")
+            enhanced_event_ui(user)
 
     elif selected_tab == "Event Planner":
-        render_event_planner(user)
+        # Event planner requires login
+        if not user:
+            st.warning("Please log in to use the event planner.")
+        else:
+            render_event_planner(user)
 
     elif selected_tab == "Recipes":
-        menu_editor_ui(user)
+        # Recipes/Menu editor accessible to logged-in users
+        if not user:
+            st.warning("Please log in to view recipes.")
+        else:
+            menu_editor_ui(user)
 
     elif selected_tab == "Upload":
-        render_upload_tab(user)
+        # File upload requires login
+        if not user:
+            st.warning("Please log in to upload files.")
+        else:
+            render_upload_tab(user)
 
     elif selected_tab == "Receipts":
-        receipt_upload_ui(user)
+        # Receipts require login
+        if not user:
+            st.warning("Please log in to manage receipts.")
+        else:
+            receipt_upload_ui(user)
 
     elif selected_tab == "Post-Event":
-        post_event_ui(user)
-
-    elif selected_tab == "Suggestions":
-        event_modifications_ui(user)
-
-    elif selected_tab == "Bulk Suggestions":
-        bulk_suggestions_ui()
-
-    elif selected_tab == "PDF Export":
-        pdf_export_ui()
-
-    elif selected_tab == "Audit Logs":
-        audit_log_ui(user)
+        # Post-event requires login and appropriate role
+        if not user:
+            st.warning("Please log in to access post-event features.")
+        else:
+            post_event_ui(user)
 
     elif selected_tab == "Explore Tags":
-        if user:
-            tag_merging_ui()
+        # Tags can be viewed by logged-in users
+        if not user:
+            st.warning("Please log in to explore tags.")
         else:
-            st.info("🔒 Login required to manage tags.")
+            tag_merging_ui()
 
-    elif selected_tab == "Admin Panel":
-        render_admin_panel(user)
+    # Note: Admin tabs are now handled through the sidebar enhanced menu
 
 # ----------------------------
 # 📊 Enhanced Dashboard
