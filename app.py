@@ -2,12 +2,12 @@ import streamlit as st
 from floating_ai_chat import integrate_floating_chat
 from notifications import notifications_sidebar
 from datetime import datetime
-from auth import load_user_session, get_user_role
+from auth import load_user_session, get_user_role, show_login_form
 from utils import format_date, get_active_event, session_get
 from layout import apply_theme, render_top_navbar, render_enhanced_sidebar, render_leave_event_button
-from ui_components import show_event_mode_banner
+from ui_components import show_event_mode_banner, inject_layout_fixes
 from landing import show as show_landing
-from events import enhanced_event_ui
+from events import enhanced_event_ui, get_all_events
 from post_event import post_event_ui
 from file_storage import file_manager_ui, show_file_analytics
 from receipts import receipt_upload_ui
@@ -21,11 +21,15 @@ from tag_merging import tag_merging_ui
 from admin_panel import admin_panel_ui
 from ingredients import ingredient_catalogue_ui
 from allergies import allergy_management_ui
+from packing import packing_ui
+from ai_chat import ai_chat_ui
+from recipes import recipes_page
+from admin_utilities import admin_utilities_ui
 
 # ⚙️ Config
 PUBLIC_MODE = False  # Set to True for guest access
 
-# 📂 Updated Tab Routing with Ingredients and Allergies
+# 📂 Updated Tab Routing with all your original tabs
 TABS = {
     "Dashboard": "dashboard",
     "Events": "events", 
@@ -35,8 +39,15 @@ TABS = {
     "Allergies": "allergies",
     "Upload": "files",
     "Receipts": "receipts",
+    "Packing": "packing",
     "Post-Event": "post_event",
-    "Explore Tags": "tags"
+    "Suggestions": "suggestions",
+    "Bulk Suggestions": "bulk_suggestions", 
+    "PDF Export": "pdf_export",
+    "Audit Logs": "audit_logs",
+    "Explore Tags": "tags",
+    "Admin Panel": "admin",
+    "Assistant": "assistant"
 }
 
 # Add this function before main() to handle event mode persistence:
@@ -95,7 +106,6 @@ def main():
     apply_theme()
 
     # 🔧 Fix layout issues
-    from ui_components import inject_layout_fixes
     inject_layout_fixes()
 
     # 🔐 Auth
@@ -108,7 +118,6 @@ def main():
 
     # Show login form if no user and not in public mode
     if not user and not PUBLIC_MODE:
-        from auth import show_login_form
         st.markdown("## 🌄 Mountain Medicine Catering")
         show_login_form()
         return
@@ -142,7 +151,7 @@ def main():
                 st.caption(f"👥 {active_event.get('guest_count', 0)} guests")
 
     # -----------------------------------
-    # 🔀 Enhanced Tab Routing Logic
+    # 🔀 Enhanced Tab Routing Logic (PRESERVED FROM YOUR ORIGINAL)
     # -----------------------------------
     if selected_tab == "Dashboard":
         # Dashboard should be accessible to logged-in users regardless of PUBLIC_MODE
@@ -201,12 +210,47 @@ def main():
         else:
             receipt_upload_ui(user)
 
+    elif selected_tab == "Packing":
+        # Packing requires login
+        if not user:
+            st.warning("Please log in to manage packing.")
+        else:
+            packing_ui()
+
     elif selected_tab == "Post-Event":
         # Post-event requires login and appropriate role
         if not user:
             st.warning("Please log in to access post-event features.")
         else:
             post_event_ui(user)
+
+    elif selected_tab == "Suggestions":
+        # Suggestions require manager+ role
+        if not user:
+            st.warning("Please log in to view suggestions.")
+        else:
+            event_modifications_ui(user)
+
+    elif selected_tab == "Bulk Suggestions":
+        # Bulk suggestions require admin role
+        if not user:
+            st.warning("Please log in to access bulk suggestions.")
+        else:
+            bulk_suggestions_ui()
+
+    elif selected_tab == "PDF Export":
+        # PDF export requires login
+        if not user:
+            st.warning("Please log in to export PDFs.")
+        else:
+            pdf_export_ui()
+
+    elif selected_tab == "Audit Logs":
+        # Audit logs require login
+        if not user:
+            st.warning("Please log in to view audit logs.")
+        else:
+            audit_log_ui(user)
 
     elif selected_tab == "Explore Tags":
         # Tags can be viewed by logged-in users
@@ -215,10 +259,22 @@ def main():
         else:
             tag_merging_ui()
 
-    # Note: Admin tabs are now handled through the sidebar enhanced menu
+    elif selected_tab == "Admin Panel":
+        # Admin panel requires admin role
+        if not user:
+            st.warning("Please log in to access admin features.")
+        else:
+            render_admin_panel(user)
+
+    elif selected_tab == "Assistant":
+        # Assistant requires login
+        if not user:
+            st.warning("Please log in to use the assistant.")
+        else:
+            ai_chat_ui()
 
 # ----------------------------
-# 📊 Enhanced Dashboard
+# 📊 Enhanced Dashboard (PRESERVED AND ENHANCED)
 # ----------------------------
 def render_dashboard(user):
     """Enhanced dashboard with better layout and mobile support"""
@@ -260,7 +316,13 @@ def render_dashboard(user):
         with col2:
             st.metric("🧑‍🍳 Staff", event.get("staff_count", "-"))
         with col3:
-            menu_count = len(event.get("menu", []))
+            # Try to get menu count
+            try:
+                from db_client import db
+                menu_docs = list(db.collection("menus").where("event_id", "==", event["id"]).stream())
+                menu_count = len(menu_docs)
+            except:
+                menu_count = len(event.get("menu", []))
             st.metric("🍽️ Menu Items", menu_count)
         with col4:
             status = event.get("status", "planning")
@@ -285,7 +347,7 @@ def render_dashboard(user):
 
         # Quick access buttons
         st.markdown("### 🚀 Quick Actions")
-        action_cols = st.columns(3)
+        action_cols = st.columns(4)
         
         with action_cols[0]:
             if st.button("📋 View Menu", use_container_width=True):
@@ -298,10 +360,13 @@ def render_dashboard(user):
                 st.rerun()
         
         with action_cols[2]:
-            if st.button("🛒 Shopping Lists", use_container_width=True):
-                # Quick AI prompt for shopping list
-                st.session_state.ai_quick_prompt = "Generate a shopping list for the active event"
-                st.session_state.chat_open = True
+            if st.button("📦 Packing", use_container_width=True):
+                st.session_state["top_nav"] = "Packing"
+                st.rerun()
+        
+        with action_cols[3]:
+            if st.button("🤖 AI Assistant", use_container_width=True):
+                st.session_state["top_nav"] = "Assistant"
                 st.rerun()
 
     else:
@@ -325,8 +390,40 @@ def render_dashboard(user):
                 st.session_state["top_nav"] = "Events"
                 st.rerun()
 
+        # Show recent events for quick access
+        try:
+            recent_events = get_all_events()
+            if recent_events:
+                recent_active = [e for e in recent_events if not e.get("deleted")][:3]
+                
+                if recent_active:
+                    st.markdown("### 📅 Recent Events")
+                    for event in recent_active:
+                        col1, col2, col3 = st.columns([3, 1, 1])
+                        
+                        with col1:
+                            st.write(f"**{event.get('name', 'Unnamed')}**")
+                            st.caption(f"{event.get('location', 'Unknown')} • {event.get('guest_count', 0)} guests")
+                        
+                        with col2:
+                            status = event.get('status', 'planning')
+                            if status == 'active':
+                                st.success(status.title())
+                            elif status == 'complete':
+                                st.info(status.title())
+                            else:
+                                st.warning(status.title())
+                        
+                        with col3:
+                            if st.button("Activate", key=f"quick_activate_{event['id']}"):
+                                from events import activate_event
+                                activate_event(event['id'])
+                                st.rerun()
+        except Exception as e:
+            st.error(f"Could not load recent events: {e}")
+
 # ----------------------------
-# 📅 Event Planner Tab
+# 📅 Event Planner Tab (PRESERVED)
 # ----------------------------
 def render_event_planner(user):
     """Render event planner with proper checks"""
@@ -341,7 +438,6 @@ def render_event_planner(user):
         
         # Show recent events for quick access
         try:
-            from events import get_all_events
             events = get_all_events()
             recent_events = [e for e in events if not e.get("deleted")][:5]
             
@@ -359,7 +455,7 @@ def render_event_planner(user):
             st.error(f"Could not load recent events: {e}")
 
 # ----------------------------
-# 📁 Enhanced Upload Tab
+# 📁 Enhanced Upload Tab (PRESERVED)
 # ----------------------------
 def render_upload_tab(user):
     """Enhanced upload tab with analytics"""
@@ -377,7 +473,7 @@ def render_upload_tab(user):
         show_file_analytics()
 
 # ----------------------------
-# 🔐 Admin Panel Tab
+# 🔐 Admin Panel Tab (PRESERVED)
 # ----------------------------
 def render_admin_panel(user):
     """Render admin panel with proper permission checks"""
@@ -394,7 +490,7 @@ def render_admin_panel(user):
     admin_panel_ui()
 
 # ----------------------------
-# 📱 Mobile Detection and Optimization
+# 📱 Mobile Detection and Optimization (PRESERVED)
 # ----------------------------
 def detect_mobile():
     """Detect if user is on mobile device"""
@@ -426,7 +522,7 @@ def optimize_for_mobile():
         st.markdown(mobile_css, unsafe_allow_html=True)
 
 # ----------------------------
-# 🧪 Error Handling
+# 🧪 Error Handling (PRESERVED)
 # ----------------------------
 def handle_app_errors():
     """Global error handling for the app"""
@@ -451,7 +547,7 @@ def handle_app_errors():
             pass  # Don't fail on error logging
 
 # ----------------------------
-# 🎯 Performance Monitoring
+# 🎯 Performance Monitoring (PRESERVED)
 # ----------------------------
 def monitor_performance():
     """Simple performance monitoring"""
@@ -477,7 +573,7 @@ def monitor_performance():
                 pass
 
 # ----------------------------
-# 🏃 App Entry Point
+# 🏃 App Entry Point (PRESERVED)
 # ----------------------------
 if __name__ == "__main__":
     # Apply mobile optimizations
