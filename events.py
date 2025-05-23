@@ -336,13 +336,10 @@ def event_ui(user: dict | None) -> None:
                 # Status progression buttons (only if not using smart button for status)
                 current_status = event.get('status', 'planning')
                 
-                if current_status == 'active':
-                    if st.button("Complete Event", key=f"complete_{event['id']}"):
-                        if update_event(event["id"], {"status": "complete"}):
-                            st.success("Event completed")
-                            st.rerun()
-                elif current_status == 'complete':
-                    st.info("Event completed")
+                   if current_status == 'active':
+                        if st.button("Complete Event", key=f"complete_{event['id']}"):
+                            if complete_event_and_end_sessions(event["id"]):
+                                st.rerun()
 
     # Show event mode banner (empty function now)
     show_event_mode_banner()
