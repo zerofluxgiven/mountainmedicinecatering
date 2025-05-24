@@ -135,13 +135,14 @@ def main():
     # 🧭 Main navigation
     st.markdown("## 🌄 Mountain Medicine Catering")
     
+    
     # Top navigation
     if mobile_layout.is_mobile:
         selected_tab = mobile_layout.render_mobile_navigation()
-        else:
-            selected_tab = render_top_navbar(list(TABS.keys()))
+    else:
+        selected_tab = render_top_navbar(list(TABS.keys()))
 
-    # Sidebar for notifications and quick info
+# Sidebar for notifications and quick info
     if user:
         with st.sidebar:
             st.write(f"👤 **{user.get('name', 'User')}**")
