@@ -67,7 +67,7 @@ def menu_editor_ui_scoped(user: dict) -> None:
     # Show current scope
     st.info(get_event_scope_message())
     
-    role = get_user_role(user)
+   # role = get_user_role(user)
     
     # Use scoped query
     query = get_scoped_query("menus")
