@@ -1,4 +1,3 @@
-cat > mobile_helpers.py << 'EOF'
 import streamlit as st
 from mobile_components import mobile_safe_columns, detect_mobile
 from mobile_layout import mobile_layout
@@ -26,4 +25,3 @@ def safe_file_uploader(label, **kwargs):
         return mobile_layout.handle_mobile_file_upload()
     else:
         return st.file_uploader(label, **kwargs)
-EOF

@@ -75,9 +75,13 @@ def render_mobile_navigation():
     nav_items = ["Dashboard", "Events", "Recipes", "Chat", "Profile"]
     selected = st.selectbox("📱 Mobile Nav", nav_items, key="mobile_nav")
     st.session_state.mobile_tab = selected
-    
-    
-    class MobileLayout:
+    return selected
+
+
+# -----------------------------
+# The MobileLayout class that app.py expects
+# -----------------------------
+class MobileLayout:
     def __init__(self):
         self._is_mobile = None
     
@@ -139,3 +143,7 @@ def render_mobile_navigation():
             st.checkbox("Inventory checked")
         else:
             st.info("No active event selected.")
+
+
+# Create the instance that app.py expects
+mobile_layout = MobileLayout()
