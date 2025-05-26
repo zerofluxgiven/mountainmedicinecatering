@@ -11,7 +11,7 @@ import json
 import re
 
 from mobile_helpers import safe_columns, safe_file_uploader
-from mobile_components import render_mobile_navigation
+from mobile_layout import render_mobile_navigation
 
 db = firestore.client()
 
