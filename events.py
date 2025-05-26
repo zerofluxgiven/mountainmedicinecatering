@@ -311,7 +311,7 @@ def event_ui(user: dict | None) -> None:
             with col2:
                 if st.button("Edit", key=f"edit_{event['id']}"):
                     st.session_state["editing_event_id"] = event["id"]
-                    st.session_state["top_nav"] = "Event Planner"
+                    st.query_params["tab"] = "Event Planner"
                     st.rerun()
             
             with col3:
