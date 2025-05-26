@@ -99,7 +99,7 @@ def main():
 
     # Configure page
     def main():
-    st.set_page_config(
+        st.set_page_config(
         page_title="Mountain Medicine Catering", 
         layout="wide",
         initial_sidebar_state="collapsed"
