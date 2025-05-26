@@ -824,9 +824,6 @@ def render_top_navbar(tabs):
         box-shadow: 0 2px 4px rgba(0,0,0,0.1) !important;
     }
     
-    .stRadio > div > label[data-baseweb="radio"] > div:first-child {
-        display: none !important;
-    }
     
     .stRadio > div > label[aria-checked="true"] {
         background: var(--primary-purple, #6C4AB6) !important;
@@ -838,9 +835,6 @@ def render_top_navbar(tabs):
         display: none !important;
     }
     
-    .stRadio label div:first-of-type {
-        display: none !important;
-    }
     </style>
     """, unsafe_allow_html=True)
     
