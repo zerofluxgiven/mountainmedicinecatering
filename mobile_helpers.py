@@ -3,11 +3,10 @@ from mobile_components import mobile_safe_columns, detect_mobile
 from mobile_layout import mobile_layout
 
 def safe_columns(spec, gap="small", key=None):
-    """Wrapper that automatically handles mobile/desktop columns"""
     if detect_mobile():
         return mobile_safe_columns(spec, gap)
     else:
-        return st.columns(spec, gap=gap, key=key)
+        return st.columns(spec, gap=gap, key=key)  # ✅ Calls streamlit's columns
 
 def safe_dataframe(data, use_container_width=True, **kwargs):
     """Wrapper that automatically converts tables to cards on mobile"""
