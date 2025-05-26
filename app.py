@@ -4,7 +4,7 @@ from mobile_components import detect_mobile, mobile_safe_columns
 from floating_ai_chat import integrate_floating_chat
 from notifications import notifications_sidebar
 from datetime import datetime
-from auth import load_user_session, get_user_role, show_login_form
+from auth import load_user_session, get_user_role, show_login_form, initialize_auth_system
 from utils import format_date, get_active_event, session_get
 from layout import apply_theme, render_top_navbar, render_enhanced_sidebar, render_leave_event_button
 from ui_components import show_event_mode_banner, inject_layout_fixes
@@ -98,12 +98,17 @@ def main():
         st.stop()
 
     # Configure page
+    def main():
     st.set_page_config(
         page_title="Mountain Medicine Catering", 
         layout="wide",
         initial_sidebar_state="collapsed"
     )
-
+    
+    # ✅ ADD THIS LINE - Initialize auth system
+    initialize_auth_system()
+    
+    # Your existing code continues here...
     mobile_layout.apply_mobile_theme()
 
     # 💅 Apply complete theme system
