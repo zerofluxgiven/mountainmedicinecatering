@@ -98,7 +98,7 @@ def main():
         st.stop()
 
     # Configure page
-    def main():
+
         st.set_page_config(
         page_title="Mountain Medicine Catering", 
         layout="wide",
