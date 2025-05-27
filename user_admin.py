@@ -2,7 +2,7 @@ import streamlit as st
 from datetime import datetime, timedelta
 from utils import format_timestamp
 from notifications import send_notification
-from auth import require_role
+from auth import require_role, sync_firebase_users, delete_firebase_user
 from db_client import db  # ✅ Fixed: Use centralized database client
 
 # ----------------------------
@@ -10,9 +10,17 @@ from db_client import db  # ✅ Fixed: Use centralized database client
 # ----------------------------
 @require_role("admin")
 def user_admin_ui():
-    """Main user administration interface"""
+    """Main user administration interface with Firebase integration"""
     st.title("👥 User Admin Panel")
-    st.caption("View users, update roles, and monitor activity across the app.")
+    st.caption("View users, update roles, and monitor activity across the app with Firebase authentication.")
+
+    # Sync Firebase users first
+    try:
+        synced_count = sync_firebase_users()
+        if synced_count > 0:
+            st.success(f"✅ Synced {synced_count} Firebase users to Firestore")
+    except Exception as e:
+        st.warning(f"Could not sync Firebase users: {e}")
 
     # Get all users
     try:
@@ -61,18 +69,18 @@ def user_admin_ui():
         admin_count = len([u for u in users if u.get("role") == "admin"])
         st.metric("Admins", admin_count)
     with col3:
-        manager_count = len([u for u in users if u.get("role") == "manager"])
-        st.metric("Managers", manager_count)
+        verified_count = len([u for u in users if u.get("email_verified", False)])
+        st.metric("Verified", verified_count)
     with col4:
-        user_count = len([u for u in users if u.get("role") in ["user", "viewer"]])
-        st.metric("Regular Users", user_count)
+        active_count = len([u for u in users if u.get("active", True)])
+        st.metric("Active Users", active_count)
 
     st.markdown("---")
     st.markdown(f"### 👥 Users ({len(filtered_users)} shown)")
 
     # Available roles
-    roles = ["viewer", "user", "manager", "admin"]
-    current_admin = st.session_state.get("user", {}).get("id")
+    roles = ['viewer', 'user', 'manager', 'admin']
+    current_admin = st.session_state.get("firebase_user", {}).get("id")
 
     # Display users
     for user in sorted(filtered_users, key=lambda x: x.get("name", "").lower()):
@@ -86,6 +94,12 @@ def user_admin_ui():
                 st.markdown(f"**Email:** {user.get('email', 'Not provided')}")
                 st.markdown(f"**Name:** {user.get('name', 'Not provided')}")
                 
+                # Email verification status
+                if user.get('email_verified', False):
+                    st.markdown("**Email:** ✅ Verified")
+                else:
+                    st.markdown("**Email:** ⚠️ Unverified")
+                
                 # Join date
                 created_at = user.get('created_at')
                 if created_at:
@@ -98,14 +112,16 @@ def user_admin_ui():
                 current_role = user.get("role", "viewer")
                 st.markdown(f"**Current Role:** `{current_role}`")
                 
-                # Activity metrics (if available)
-                events_participated = user.get('events_participated', [])
-                recipes_contributed = user.get('recipes', [])
-                hours_logged = user.get('hours_logged', 0)
+                # Last login
+                last_login = user.get('last_login')
+                if last_login:
+                    st.markdown(f"**Last Login:** {format_timestamp(last_login)}")
                 
-                st.markdown(f"**Events Participated:** {len(events_participated)}")
-                st.markdown(f"**Recipes Contributed:** {len(recipes_contributed)}")
-                st.markdown(f"**Hours Logged:** {hours_logged}")
+                # Account status
+                if user.get('active', True):
+                    st.markdown("**Status:** 🟢 Active")
+                else:
+                    st.markdown("**Status:** 🔴 Inactive")
 
             # Role management
             st.markdown("---")
@@ -166,14 +182,14 @@ def user_admin_ui():
                                 )
                                 
                                 st.success(f"✅ Role updated to **{new_role}**")
-                                st.rerun()  # ✅ Fixed: was st.experimental_rerun()
+                                st.rerun()
                                 
                             except Exception as e:
                                 st.error(f"❌ Failed to update role: {e}")
                     
                     with col_cancel:
                         if st.button("❌ Cancel", key=f"cancel_{user['id']}"):
-                            st.rerun()  # ✅ Fixed: was st.experimental_rerun()
+                            st.rerun()
             else:
                 # Show current role as read-only
                 st.info(f"Current role: **{current_role}** (cannot be changed)")
@@ -182,7 +198,7 @@ def user_admin_ui():
             st.markdown("---")
             st.markdown("**⚙️ User Actions**")
             
-            col_actions = st.columns(3)
+            col_actions = st.columns(4)
             
             with col_actions[0]:
                 if st.button("📧 Send Message", key=f"msg_{user['id']}"):
@@ -194,46 +210,40 @@ def user_admin_ui():
                     show_user_activity(user)
             
             with col_actions[2]:
-                # Only allow deletion of non-admin users by other admins
+                # Email verification action
+                if not user.get('email_verified', False):
+                    if st.button("📧 Resend Verification", key=f"verify_{user['id']}"):
+                        try:
+                            from firebase_admin import auth as firebase_auth
+                            verification_link = firebase_auth.generate_email_verification_link(user.get('email'))
+                            st.success("✅ Verification email sent!")
+                            st.info("Email verification link generated (integrate with email service)")
+                        except Exception as e:
+                            st.error(f"Failed to send verification: {e}")
+            
+            with col_actions[3]:
+                # Delete user action (only for non-admins, not current user)
                 if (current_role != "admin" and 
-                    user.get('id') != current_admin and 
-                    st.button("🗑️ Deactivate", key=f"deactivate_{user['id']}")):
+                    user.get('id') != current_admin):
                     
-                    # ✅ Fixed: Use Streamlit's confirm dialog properly
-                    if 'confirm_deactivation' not in st.session_state:
-                        st.session_state.confirm_deactivation = {}
-                    
-                    confirm_key = f"confirm_{user['id']}"
-                    if confirm_key not in st.session_state.confirm_deactivation:
-                        st.session_state.confirm_deactivation[confirm_key] = False
-                    
-                    if not st.session_state.confirm_deactivation[confirm_key]:
-                        if st.button(f"⚠️ Confirm Deactivation", key=f"confirm_btn_{user['id']}", type="secondary"):
-                            st.session_state.confirm_deactivation[confirm_key] = True
+                    confirm_key = f"confirm_delete_{user['id']}"
+                    if not st.session_state.get(confirm_key, False):
+                        if st.button("🗑️ Delete User", key=f"delete_{user['id']}", type="secondary"):
+                            st.session_state[confirm_key] = True
                             st.rerun()
                     else:
-                        st.warning(f"Are you sure you want to deactivate {user.get('name', 'Unknown')}?")
+                        st.warning("⚠️ This will permanently delete the user from Firebase!")
                         col_yes, col_no = st.columns(2)
+                        
                         with col_yes:
-                            if st.button("✅ Yes, Deactivate", key=f"yes_{user['id']}", type="primary"):
-                                try:
-                                    # Mark user as inactive instead of deleting
-                                    db.collection("users").document(user["id"]).update({
-                                        "active": False,
-                                        "deactivated_at": datetime.utcnow(),
-                                        "deactivated_by": current_admin
-                                    })
-                                    
-                                    st.success("User deactivated")
-                                    st.session_state.confirm_deactivation[confirm_key] = False
+                            if st.button("✅ Confirm Delete", key=f"confirm_yes_{user['id']}", type="primary"):
+                                if delete_firebase_user(user['id']):
+                                    st.success("✅ User deleted from Firebase and Firestore")
                                     st.rerun()
-                                    
-                                except Exception as e:
-                                    st.error(f"Failed to deactivate user: {e}")
                         
                         with col_no:
-                            if st.button("❌ Cancel", key=f"no_{user['id']}"):
-                                st.session_state.confirm_deactivation[confirm_key] = False
+                            if st.button("❌ Cancel", key=f"confirm_no_{user['id']}"):
+                                st.session_state[confirm_key] = False
                                 st.rerun()
 
 # ----------------------------
@@ -255,6 +265,9 @@ def show_user_activity(user):
         # Get user's files
         files_uploaded = list(db.collection("files").where("uploaded_by", "==", user_id).stream())
         
+        # Get user's active sessions
+        active_sessions = list(db.collection("active_sessions").where("user_id", "==", user_id).where("active", "==", True).stream())
+        
         # Get user's logs (with proper ordering and fallback)
         try:
             user_logs = list(db.collection("logs").where("user_id", "==", user_id)
@@ -274,7 +287,23 @@ def show_user_activity(user):
         with col3:
             st.metric("Files Uploaded", len(files_uploaded))
         with col4:
-            st.metric("Recent Actions", len(user_logs))
+            st.metric("Active Sessions", len(active_sessions))
+        
+        # Show Firebase-specific info
+        st.markdown("#### 🔐 Firebase Account Info")
+        try:
+            from firebase_admin import auth as firebase_auth
+            firebase_user = firebase_auth.get_user(user_id)
+            
+            col1, col2 = st.columns(2)
+            with col1:
+                st.write(f"**Firebase UID:** `{firebase_user.uid}`")
+                st.write(f"**Email Verified:** {'✅ Yes' if firebase_user.email_verified else '❌ No'}")
+            with col2:
+                st.write(f"**Account Created:** {format_timestamp(datetime.fromtimestamp(firebase_user.user_metadata.creation_timestamp / 1000))}")
+                st.write(f"**Last Sign In:** {format_timestamp(datetime.fromtimestamp(firebase_user.user_metadata.last_sign_in_timestamp / 1000)) if firebase_user.user_metadata.last_sign_in_timestamp else 'Never'}")
+        except Exception as e:
+            st.warning(f"Could not load Firebase user data: {e}")
         
         # Show recent activity
         if user_logs:
@@ -291,6 +320,25 @@ def show_user_activity(user):
             for event_doc in events_created:
                 event_data = event_doc.to_dict()
                 st.write(f"• **{event_data.get('name', 'Unnamed')}** - {event_data.get('status', 'unknown')} status")
+        
+        # Show active sessions
+        if active_sessions:
+            st.markdown("#### 📱 Active Sessions")
+            for session_doc in active_sessions:
+                session_data = session_doc.to_dict()
+                created_at = format_timestamp(session_data.get('created_at'))
+                expires_at = format_timestamp(session_data.get('expires_at'))
+                st.write(f"• Session created: {created_at}, expires: {expires_at}")
+                
+                # Option to revoke session
+                if st.button(f"🚪 Revoke Session", key=f"revoke_{session_doc.id}"):
+                    try:
+                        from firebase_auth_ui import auth_manager
+                        auth_manager._revoke_session(session_doc.id)
+                        st.success("Session revoked")
+                        st.rerun()
+                    except Exception as e:
+                        st.error(f"Failed to revoke session: {e}")
         
     except Exception as e:
         st.error(f"Could not load user activity: {e}")
@@ -311,7 +359,7 @@ def advanced_user_search():
         
         with col2:
             role_search = st.multiselect("Roles:", ["admin", "manager", "user", "viewer"])
-            min_events = st.number_input("Min events created:", min_value=0, value=0)
+            verified_only = st.checkbox("Email verified only")
         
         with col3:
             joined_after = st.date_input("Joined after:", value=None)
@@ -328,8 +376,8 @@ def advanced_user_search():
                 filters['email_contains'] = email_search
             if role_search:
                 filters['roles'] = role_search
-            if min_events > 0:
-                filters['min_events'] = min_events
+            if verified_only:
+                filters['verified_only'] = verified_only
             if joined_after:
                 filters['joined_after'] = joined_after
             if joined_before:
@@ -357,10 +405,32 @@ def show_user_analytics():
         
         # Role distribution
         role_counts = {}
+        verified_count = 0
+        active_count = 0
+        
         for user in users:
             role = user.get("role", "viewer")
             role_counts[role] = role_counts.get(role, 0) + 1
+            
+            if user.get("email_verified", False):
+                verified_count += 1
+            if user.get("active", True):
+                active_count += 1
         
+        st.markdown("#### 👥 User Overview")
+        col1, col2, col3, col4 = st.columns(4)
+        
+        with col1:
+            st.metric("Total Users", len(users))
+        with col2:
+            st.metric("Verified Users", verified_count, f"{(verified_count/len(users)*100):.1f}%")
+        with col3:
+            st.metric("Active Users", active_count, f"{(active_count/len(users)*100):.1f}%")
+        with col4:
+            admin_count = role_counts.get("admin", 0)
+            st.metric("Admins", admin_count)
+        
+        # Role distribution chart
         st.markdown("#### 👥 Role Distribution")
         col1, col2 = st.columns(2)
         
@@ -398,44 +468,6 @@ def show_user_analytics():
             else:
                 st.info("No registration date data available")
         
-        # Activity metrics
-        st.markdown("#### 📊 Activity Overview")
-        
-        # Calculate active users (users who have created events or uploaded files)
-        active_users = 0
-        total_events = 0
-        total_files = 0
-        
-        try:
-            events = list(db.collection("events").stream())
-            files = list(db.collection("files").stream())
-            
-            total_events = len(events)
-            total_files = len(files)
-            
-            active_user_ids = set()
-            for event in events:
-                event_data = event.to_dict()
-                if event_data.get('created_by'):
-                    active_user_ids.add(event_data['created_by'])
-            
-            for file in files:
-                file_data = file.to_dict()
-                if file_data.get('uploaded_by'):
-                    active_user_ids.add(file_data['uploaded_by'])
-            
-            active_users = len(active_user_ids)
-        except Exception as e:
-            st.warning(f"Could not calculate activity metrics: {e}")
-        
-        col1, col2, col3 = st.columns(3)
-        with col1:
-            st.metric("Active Users", active_users, f"{(active_users/len(users)*100):.1f}% of total" if users else "0%")
-        with col2:
-            st.metric("Total Events", total_events)
-        with col3:
-            st.metric("Total Files", total_files)
-        
     except Exception as e:
         st.error(f"Could not generate user analytics: {e}")
 
@@ -462,9 +494,12 @@ def user_management_tools():
                 except Exception as e:
                     st.error(f"Failed to send announcements: {e}")
         
-        if st.button("🧹 Clean Inactive Users"):
-            st.info("This would identify and help manage inactive user accounts")
-            # TODO: Implement inactive user cleanup
+        if st.button("🔄 Sync Firebase Users"):
+            try:
+                synced_count = sync_firebase_users()
+                st.success(f"✅ Synced {synced_count} Firebase users")
+            except Exception as e:
+                st.error(f"Sync failed: {e}")
     
     with col2:
         st.markdown("#### 📊 Export Options")
@@ -479,13 +514,15 @@ def user_management_tools():
                         'Name': user.get('name', ''),
                         'Email': user.get('email', ''),
                         'Role': user.get('role', 'viewer'),
+                        'Verified': user.get('email_verified', False),
+                        'Active': user.get('active', True),
                         'Created': format_timestamp(user.get('created_at', ''))
                     })
                 
                 # Convert to CSV format (simplified)
-                csv_content = "ID,Name,Email,Role,Created\n"
+                csv_content = "ID,Name,Email,Role,Verified,Active,Created\n"
                 for user in user_data:
-                    csv_content += f"{user['ID']},{user['Name']},{user['Email']},{user['Role']},{user['Created']}\n"
+                    csv_content += f"{user['ID']},{user['Name']},{user['Email']},{user['Role']},{user['Verified']},{user['Active']},{user['Created']}\n"
                 
                 st.download_button(
                     label="📥 Download CSV",
@@ -496,10 +533,6 @@ def user_management_tools():
                 
             except Exception as e:
                 st.error(f"Failed to export user list: {e}")
-        
-        if st.button("📈 Generate User Report"):
-            st.info("This would generate a comprehensive user activity report")
-            # TODO: Implement detailed user reporting
 
 # Enhanced user admin UI with analytics
 def enhanced_user_admin_ui():
