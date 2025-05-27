@@ -1,11 +1,9 @@
 import streamlit as st
-import streamlit.components.v1 as components
 from mobile_layout import mobile_layout
 from mobile_components import detect_mobile, mobile_safe_columns
 from floating_ai_chat import integrate_floating_chat
 from notifications import notifications_sidebar
 from datetime import datetime
-from firebase_auth_ui import firebase_auth_ui, get_current_user, get_user_role, is_user_logged_in
 from utils import format_date, get_active_event, session_get
 from layout import apply_theme, render_top_navbar, render_enhanced_sidebar, render_leave_event_button
 from ui_components import show_event_mode_banner, inject_layout_fixes
@@ -56,7 +54,7 @@ TABS = {
 # Add this function before main() to handle event mode persistence:
 def initialize_event_mode_state():
     """Initialize event mode state for new users"""
-    user = get_current_user()
+    user = session_get("user")
     if not user:
         return
         
@@ -105,21 +103,13 @@ def main():
         initial_sidebar_state="collapsed"
     )
     
-    # Handle browser auth data messages
-    if 'browser_auth_data' not in st.session_state:
-        components.html('''
-        <script>
-        window.addEventListener('message', function(event) {
-            if (event.data.type === 'auth_session_data') {
-                window.parent.postMessage({
-                    type: 'streamlit:setComponentValue',
-                    key: 'browser_auth_data',
-                    value: event.data.data
-                }, '*');
-            }
-        });
-        </script>
-        ''', height=0)
+    # ✅ ADD THIS LINE - Initialize auth system
+    try:
+        from auth import load_user_session, get_user_role, show_login_form, initialize_auth_system
+        initialize_auth_system()
+    except Exception as e:
+        st.error(f"❌ Failed to initialize authentication: {e}")
+        st.stop()
     
     # Your existing code continues here...
     mobile_layout.apply_mobile_theme()
@@ -130,8 +120,11 @@ def main():
     # 🔧 Fix layout issues
     inject_layout_fixes()
 
-    # 🔐 Auth - Updated to use Firebase
-    user = get_current_user()
+    # 💬 Integrate floating chat
+    integrate_floating_chat()
+
+    # 🔐 Auth
+    user = load_user_session()
 
     # 🪧 Public mode
     if PUBLIC_MODE and not user:
@@ -141,7 +134,7 @@ def main():
     # Show login form if no user and not in public mode
     if not user and not PUBLIC_MODE:
         st.markdown("## 🌄 Mountain Medicine Catering")
-        firebase_auth_ui()
+        show_login_form()
         return
 
     # Initialize event mode state for the user
@@ -152,7 +145,13 @@ def main():
 
     # 🧭 Main navigation
     st.markdown("## 🌄 Mountain Medicine Catering")
-    
+
+    if user:
+        st.sidebar.write(f"👤 Logged in as **{user.get('name', 'User')}**")
+        notifications_sidebar(user)
+    else:
+        st.sidebar.write("👀 Viewing as guest")
+
     # Top navigation
     if mobile_layout.is_mobile:
         selected_tab = mobile_layout.render_mobile_navigation()
@@ -182,7 +181,6 @@ def main():
         # Dashboard should be accessible to logged-in users regardless of PUBLIC_MODE
         if not user:
             st.warning("Please log in to view the dashboard.")
-            firebase_auth_ui()
         else:
             render_dashboard(user)
 
@@ -190,7 +188,6 @@ def main():
         # Events tab should always be accessible to logged-in users
         if not user:
             st.warning("Please log in to view events.")
-            firebase_auth_ui()
         else:
             render_leave_event_button("main")
             enhanced_event_ui(user)
@@ -199,7 +196,6 @@ def main():
         # Event planner requires login
         if not user:
             st.warning("Please log in to use the event planner.")
-            firebase_auth_ui()
         else:
             render_event_planner(user)
 
@@ -207,7 +203,6 @@ def main():
         # Recipes/Menu editor accessible to logged-in users
         if not user:
             st.warning("Please log in to view recipes.")
-            firebase_auth_ui()
         else:
             menu_editor_ui(user)
 
@@ -215,7 +210,6 @@ def main():
         # Ingredients catalogue accessible to logged-in users
         if not user:
             st.warning("Please log in to view ingredients.")
-            firebase_auth_ui()
         else:
             ingredient_catalogue_ui(user)
 
@@ -223,7 +217,6 @@ def main():
         # Allergies require login
         if not user:
             st.warning("Please log in to manage allergies.")
-            firebase_auth_ui()
         else:
             allergy_management_ui(user)
 
@@ -231,7 +224,6 @@ def main():
         # File upload requires login
         if not user:
             st.warning("Please log in to upload files.")
-            firebase_auth_ui()
         else:
             render_upload_tab(user)
 
@@ -239,7 +231,6 @@ def main():
         # Receipts require login
         if not user:
             st.warning("Please log in to manage receipts.")
-            firebase_auth_ui()
         else:
             receipt_upload_ui(user)
 
@@ -247,7 +238,6 @@ def main():
         # Packing requires login
         if not user:
             st.warning("Please log in to manage packing.")
-            firebase_auth_ui()
         else:
             packing_ui()
 
@@ -255,7 +245,6 @@ def main():
         # Post-event requires login and appropriate role
         if not user:
             st.warning("Please log in to access post-event features.")
-            firebase_auth_ui()
         else:
             post_event_ui(user)
 
@@ -263,7 +252,6 @@ def main():
         # Suggestions require manager+ role
         if not user:
             st.warning("Please log in to view suggestions.")
-            firebase_auth_ui()
         else:
             event_modifications_ui(user)
 
@@ -271,7 +259,6 @@ def main():
         # Bulk suggestions require admin role
         if not user:
             st.warning("Please log in to access bulk suggestions.")
-            firebase_auth_ui()
         else:
             bulk_suggestions_ui()
 
@@ -279,7 +266,6 @@ def main():
         # PDF export requires login
         if not user:
             st.warning("Please log in to export PDFs.")
-            firebase_auth_ui()
         else:
             pdf_export_ui()
 
@@ -287,7 +273,6 @@ def main():
         # Audit logs require login
         if not user:
             st.warning("Please log in to view audit logs.")
-            firebase_auth_ui()
         else:
             audit_log_ui(user)
 
@@ -295,7 +280,6 @@ def main():
         # Tags can be viewed by logged-in users
         if not user:
             st.warning("Please log in to explore tags.")
-            firebase_auth_ui()
         else:
             tag_merging_ui()
 
@@ -303,7 +287,6 @@ def main():
         # Admin panel requires admin role
         if not user:
             st.warning("Please log in to access admin features.")
-            firebase_auth_ui()
         else:
             render_admin_panel(user)
 
@@ -311,7 +294,6 @@ def main():
         # Assistant requires login
         if not user:
             st.warning("Please log in to use the assistant.")
-            firebase_auth_ui()
         else:
             ai_chat_ui()
 
