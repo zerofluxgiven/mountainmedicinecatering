@@ -1,7 +1,7 @@
 import streamlit as st
 from auth import require_role
 from file_storage import save_uploaded_file
-from utils import session_get
+from utils import session_get, format_date
 from mobile_helpers import safe_file_uploader
 from mobile_components import render_mobile_navigation
 from events import get_all_events
@@ -18,7 +18,7 @@ def upload_ui(event_id: str = None):
 
     events = get_all_events()
     event_options = {
-        f"{e['name']} ({e['start_date']}) - {e['status']}": e['id']
+        f"{e.get('name', 'Unnamed')} ({format_date(e.get('start_date'))}) - {e.get('status', 'planning')}": e['id']
         for e in events if not e.get("deleted", False)
     }
     eid_label = st.selectbox("Select Event (optional)", ["None"] + list(event_options.keys()))
