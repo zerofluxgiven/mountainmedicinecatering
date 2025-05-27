@@ -344,9 +344,6 @@ def event_ui(user: dict | None) -> None:
                          if complete_event_and_end_sessions(event["id"]):
                               st.rerun()
 
-    # Show event mode banner (empty function now)
-    show_event_mode_banner()
-
 # ----------------------------
 # 📊 Event Statistics
 # ----------------------------
