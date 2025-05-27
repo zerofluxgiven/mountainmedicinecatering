@@ -206,6 +206,7 @@ def delete_event(event_id: str) -> bool:
 # 🎛 Enhanced Events Tab UI
 # ----------------------------
 
+
 def event_ui(user: dict | None) -> None:
     """Enhanced Events tab UI with smart context buttons."""
     st.markdown("## 📅 All Events")
