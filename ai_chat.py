@@ -4,6 +4,8 @@ from auth import get_user_role
 from db_client import db
 from utils import format_date, generate_id, get_active_event, get_active_event_id
 import json
+from google.cloud.firestore_v1.base_query import FieldFilter
+from firebase_admin import firestore
 
 # Initialize OpenAI client
 try:
@@ -401,7 +403,7 @@ def show_ai_usage_analytics():
     
     try:
         # Get usage logs
-        logs = list(db.collection("ai_logs").order_by("created_at", direction=db.query.DESCENDING).limit(100).stream())
+        logs = list(db.collection("ai_logs").order_by("created_at", direction=firestore.Query.DESCENDING).limit(100).stream())
         
         if not logs:
             st.info("No AI usage data yet.")
