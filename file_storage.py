@@ -7,6 +7,8 @@ import tempfile
 import os
 from db_client import db
 from google.cloud.firestore_v1.base_query import FieldFilter
+from google.cloud.firestore_v1.base_query import FieldFilter
+from firebase_admin import firestore
 
 # ----------------------------
 # 🔍 List Uploaded Files
@@ -17,10 +19,10 @@ def list_files(include_deleted=False):
     try:
         # Use scoped query
         query = get_scoped_query("files")
-        query = query.order_by("created_at", direction=db.query.DESCENDING)
+        query = query.order_by("created_at", direction=firestore.Query.DESCENDING)
         
         if not include_deleted:
-            query = query.where("deleted", "==", False)
+            query = query.where(filter=FieldFilter("deleted", "==", False))
             
         docs = query.stream()
         return [doc.to_dict() | {"id": doc.id} for doc in docs]
@@ -489,7 +491,7 @@ def _display_files(files, role, user_id):
 def _get_event_filter_options():
     """Get event options for filtering"""
     try:
-        events_docs = db.collection("events").where("deleted", "==", False).stream()
+        events_docs = db.collection("events").where(filter=FieldFilter("deleted", "==", False)).stream()
         events = [doc.to_dict() | {"id": doc.id} for doc in events_docs]
         
         options = ["No event linked"]
