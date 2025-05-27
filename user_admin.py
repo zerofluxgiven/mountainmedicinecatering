@@ -4,6 +4,7 @@ from utils import format_timestamp
 from notifications import send_notification
 from auth import require_role, sync_firebase_users, delete_firebase_user
 from db_client import db  # ✅ Fixed: Use centralized database client
+from google.cloud.firestore_v1.base_query import FieldFilter
 
 # ----------------------------
 # 👤 User Admin Panel (Admin Only)
@@ -270,9 +271,9 @@ def show_user_activity(user):
         
         # Get user's logs (with proper ordering and fallback)
         try:
-            user_logs = list(db.collection("logs").where("user_id", "==", user_id)
-                            .order_by("timestamp", direction=db.query.DESCENDING)
-                            .limit(10).stream())
+            user_logs = list(db.collection("logs").where(filter=FieldFilter("user_id", "==", user_id))
+                .order_by("timestamp", direction=firestore.Query.DESCENDING)
+                .limit(10).stream())
         except Exception:
             # Fallback if ordering fails (no index)
             user_logs = list(db.collection("logs").where("user_id", "==", user_id).limit(10).stream())
