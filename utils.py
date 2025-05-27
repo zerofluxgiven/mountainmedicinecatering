@@ -144,9 +144,9 @@ def format_date(ts):
     if not ts:
         return "Unknown"
     if isinstance(ts, datetime):
-        return ts.strftime("%b %d, %Y %H:%M")
+        return ts.strftime("%d/%m/%y")  # ← New format
     try:
-        return ts.to_datetime().strftime("%b %d, %Y %H:%M")  # Firestore timestamps
+        return ts.to_datetime().strftime("%d/%m/%y")  # ← New format
     except (AttributeError, Exception):
         return str(ts)
 
