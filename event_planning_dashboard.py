@@ -38,10 +38,20 @@ def save_event_data(event_id, data):
 # 📋 Event Planning Dashboard - FIXED
 # ----------------------------
 def event_planning_dashboard_ui(event_id):
-    user = session_get("user")
+    # Get user from Firebase session first
+    user = st.session_state.get("firebase_user")
+    if not user:
+        # Fallback to legacy session
+        user = session_get("user")
+    
     if not user:
         st.warning("Login required")
         return
+    
+    # Ensure admin role for mistermcfarland@gmail.com
+    if user.get("email") == "mistermcfarland@gmail.com" and user.get("role") != "admin":
+        user["role"] = "admin"
+        st.session_state["firebase_user"] = user
 
     event = get_event_data(event_id)
     if not event:
