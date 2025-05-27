@@ -314,8 +314,11 @@ def event_ui(user: dict | None) -> None:
             with col2:
                 if st.button("Edit", key=f"edit_{event['id']}"):
                     st.session_state["editing_event_id"] = event["id"]
-                    st.session_state["top_nav"] = "event_planner"  
-                    st.rerun()
+                    if "top_nav" not in st.session_state:
+                        st.session_state["top_nav"] = "event_planner"
+                    else:
+                        st.session_state["next_nav"] = "event_planner"
+                    st.rerun()  
                         
             with col3:
                 # Only allow deletion by creator or admin
