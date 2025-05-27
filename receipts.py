@@ -9,6 +9,8 @@ import base64
 import io
 import json
 import re
+from google.cloud.firestore_v1.base_query import FieldFilter
+from firebase_admin import firestore
 
 from mobile_helpers import safe_columns, safe_file_uploader
 from mobile_layout import render_mobile_navigation
@@ -419,7 +421,7 @@ def _view_receipts_section(user: dict) -> None:
 
     try:
         query = get_scoped_query("receipts")
-        query = query.order_by("uploaded_at", direction=db.query.DESCENDING)
+        query = query.order_by("uploaded_at", direction=firestore.Query.DESCENDING)
         receipts = [doc.to_dict() for doc in query.stream()]
     except Exception as e:
         st.error(f"Failed to load receipts: {e}")
