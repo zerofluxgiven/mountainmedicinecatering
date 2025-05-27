@@ -3,6 +3,7 @@
 from typing import List, Dict, Optional
 import streamlit as st
 from db_client import db  # ✅ Fixed: Use centralized database client instead of firebase_admin
+from firebase_admin import firestore
 
 TAGS_COLLECTION = "tags"
 
