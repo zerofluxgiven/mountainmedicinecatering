@@ -7,6 +7,8 @@ from auth import require_login, get_user_role
 from datetime import datetime
 from typing import List, Dict, Optional
 import re
+from google.cloud.firestore_v1.base_query import FieldFilter
+from firebase_admin import firestore
 
 db = firestore.client()
 
@@ -242,7 +244,7 @@ def _browse_ingredients_tab():
         if selected_category == "All":
             query = db.collection("ingredients").order_by("usage_count", direction=firestore.Query.DESCENDING)
         else:
-            query = db.collection("ingredients").where("category", "==", selected_category)
+            query = db.collection("ingredients").where(filter=FieldFilter("category", "==", selected_category))
         
         ingredients = [doc.to_dict() for doc in query.stream()]
         
