@@ -82,7 +82,6 @@ def save_file_metadata(file_id, filename, file_url, tags, user_id, event_id=None
 # ----------------------------
 # 🎯 Event Autocomplete Component
 # ----------------------------
-
 def render_event_autocomplete(default_event_id=None):
     """Render autocomplete event selector with search"""
     # Get all events for autocomplete
@@ -124,6 +123,7 @@ def render_event_autocomplete(default_event_id=None):
         event_options,
         index=default_index,
         help="Select an event to associate this file with. Start typing to search events."
+    
     )
     
     # Return selected event ID
