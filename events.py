@@ -32,7 +32,7 @@ def save_user_event_preference(user_id: str, event_id: str = None):
 def get_all_events() -> list[dict]:
     """Fetch all events from Firestore, sorted by start date."""
     try:
-        docs = db.collection("events").order_by("start_date").stream()
+        docs = db.collection("events").order_by("start_date", direction=firestore.Query.ASCENDING).stream()
         return [{"id": doc.id, **doc.to_dict()} for doc in docs]
     except Exception as e:
         st.error(f"⚠️ Failed to fetch events: {e}")
