@@ -95,6 +95,39 @@ def main():
     except Exception as e:
         st.error(f"❌ Failed to initialize Firebase: {e}")
         st.stop()
+                # Ensure admin user exists with correct role
+    try:
+        from db_client import db
+        admin_email = "mistermcfarland@gmail.com"
+    
+        # Check all users and find the admin
+        users = db.collection("users").where("email", "==", admin_email).stream()
+        admin_found = False
+    
+        for user_doc in users:
+            user_data = user_doc.to_dict()
+            if user_data.get("role") != "admin":
+                # Update to admin role
+                db.collection("users").document(user_doc.id).update({"role": "admin"})
+                st.success("✅ Admin role updated for mistermcfarland@gmail.com")
+            admin_found = True
+    
+        if not admin_found:
+            # If you're logged in but no user record exists, create one
+            current_user = st.session_state.get("firebase_user")
+            if current_user and current_user.get("email") == admin_email:
+                db.collection("users").document(current_user["id"]).set({
+                    "id": current_user["id"],
+                    "email": admin_email,
+                    "name": current_user.get("name", "Admin"),
+                    "role": "admin",
+                    "created_at": datetime.utcnow(),
+                    "active": True,
+                    "email_verified": True
+                }, merge=True)
+                st.success("✅ Admin user created")
+    except Exception as e:
+        st.warning(f"Could not verify admin role: {e}")
 
     # Configure page
     st.set_page_config(
@@ -103,39 +136,7 @@ def main():
         initial_sidebar_state="collapsed"
     )
 
-        # Ensure admin user exists with correct role
-try:
-    from db_client import db
-    admin_email = "mistermcfarland@gmail.com"
-    
-    # Check all users and find the admin
-    users = db.collection("users").where("email", "==", admin_email).stream()
-    admin_found = False
-    
-    for user_doc in users:
-        user_data = user_doc.to_dict()
-        if user_data.get("role") != "admin":
-            # Update to admin role
-            db.collection("users").document(user_doc.id).update({"role": "admin"})
-            st.success("✅ Admin role updated for mistermcfarland@gmail.com")
-        admin_found = True
-    
-    if not admin_found:
-        # If you're logged in but no user record exists, create one
-        current_user = st.session_state.get("firebase_user")
-        if current_user and current_user.get("email") == admin_email:
-            db.collection("users").document(current_user["id"]).set({
-                "id": current_user["id"],
-                "email": admin_email,
-                "name": current_user.get("name", "Admin"),
-                "role": "admin",
-                "created_at": datetime.utcnow(),
-                "active": True,
-                "email_verified": True
-            }, merge=True)
-            st.success("✅ Admin user created")
-except Exception as e:
-    st.warning(f"Could not verify admin role: {e}")
+
     
     # ✅ ADD THIS LINE - Initialize auth system
     try:
