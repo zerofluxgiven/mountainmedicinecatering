@@ -2,12 +2,12 @@ import streamlit as st
 from mobile_components import mobile_safe_columns, detect_mobile
 from mobile_layout import mobile_layout
 
-def safe_columns(spec, gap="small", key=None):
+def safe_columns(spec, gap="small"):
     """Create columns that work on both desktop and mobile"""
     if detect_mobile():
         return mobile_safe_columns(spec, gap)
     else:
-        return st.columns(spec, gap=gap, key=key)  # ✅ FIXED: Direct st.columns call
+        return st.columns(spec, gap=gap)  # Removed the key parameter
 
 def safe_dataframe(data, use_container_width=True, **kwargs):
     """Wrapper that automatically converts tables to cards on mobile"""
