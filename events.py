@@ -224,11 +224,11 @@ def event_ui(user: dict | None) -> None:
             with col1:
                 name = st.text_input("Event Name *", placeholder="e.g., Summer Retreat 2025")
                 location = st.text_input("Location *", placeholder="e.g., Mountain Lodge")
-                start_date = st.date_input("Start Date *", format="DD/MM/YY")
+                start_date = st.date_input("Start Date *", format="DD/MM/YYYY")
                 
             with col2:
                 description = st.text_area("Description", placeholder="Brief description of the event...")
-                end_date = st.date_input("End Date *", format="DD/MM/YY")
+                end_date = st.date_input("End Date *", format="DD/MM/YYYY")
                 guest_count = st.number_input("Expected Guests", min_value=0, value=20)
             
             submitted = st.form_submit_button("Create Event")
