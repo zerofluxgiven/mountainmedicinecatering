@@ -6,6 +6,7 @@ from datetime import datetime
 import tempfile
 import os
 from db_client import db
+from google.cloud.firestore_v1.base_query import FieldFilter
 
 # ----------------------------
 # 🔍 List Uploaded Files
@@ -86,7 +87,7 @@ def render_event_autocomplete(default_event_id=None):
     """Render autocomplete event selector with search"""
     # Get all events for autocomplete
     try:
-        events_docs = db.collection("events").where("deleted", "==", False).stream()
+        events_docs = db.collection("events").where(filter=FieldFilter("deleted", "==", False)).stream()
         events = [doc.to_dict() | {"id": doc.id} for doc in events_docs]
     except Exception as e:
         st.error(f"Could not load events: {e}")
