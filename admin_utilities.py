@@ -4,6 +4,7 @@ from utils import format_timestamp
 from auth import require_role
 from notifications import send_notification
 from db_client import db
+from google.cloud.firestore_v1.base_query import FieldFilter
 
 # ----------------------------
 # 🛠️ Admin Tools
@@ -51,7 +52,7 @@ def _admin_dashboard():
             recipes = list(db.collection("recipes").stream())
             st.metric("Total Recipes", len(recipes))
             
-            files = list(db.collection("files").where("deleted", "==", False).stream())
+            files = list(db.collection("files").where(filter=FieldFilter("deleted", "==", False)).stream())
             st.metric("Active Files", len(files))
 
         st.divider()
@@ -63,7 +64,7 @@ def _admin_dashboard():
             st.metric("Tag Variants", len(tags))
         
         with col5:
-            deleted_files = list(db.collection("files").where("deleted", "==", True).stream())
+            files = list(db.collection("files").where(filter=FieldFilter("deleted", "==", False)).stream())
             st.metric("Soft-Deleted Files", len(deleted_files))
         
         with col6:
@@ -180,8 +181,8 @@ def _cleanup_tools():
             try:
                 cutoff = datetime.utcnow() - timedelta(days=days_old)
                 stale_query = (db.collection("suggestions")
-                             .where("status", "==", "pending")
-                             .where("created_at", "<", cutoff))
+             .where(filter=FieldFilter("status", "==", "pending"))
+             .where(filter=FieldFilter("created_at", "<", cutoff)))
                 
                 stale_suggestions = list(stale_query.stream())
                 count = 0
@@ -219,7 +220,7 @@ def _cleanup_tools():
     
     if st.button("🔍 Find Orphaned Files"):
         try:
-            files = list(db.collection("files").where("deleted", "==", False).stream())
+            files = list(db.collection("files").where(filter=FieldFilter("deleted", "==", False)).stream())
             orphaned = []
             
             for file_doc in files:
@@ -253,7 +254,7 @@ def _cleanup_tools():
     st.caption("Permanently delete files that have been soft-deleted")
     
     try:
-        deleted_files = list(db.collection("files").where("deleted", "==", True).stream())
+        files = list(db.collection("files").where(filter=FieldFilter("deleted", "==", False)).stream())
         
         if deleted_files:
             st.warning(f"Found {len(deleted_files)} soft-deleted files")
