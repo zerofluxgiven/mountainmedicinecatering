@@ -21,13 +21,37 @@ ADMIN_EMAILS = ["mistermcfarland@gmail.com"]
 SESSION_DURATION_DAYS = 90  # 3 months
 ENCRYPTION_KEY = "kJh8mN3pQ7wE9rT2yU5iO1aS4dF6gH0jK9lM2nB5vC8xZ"  # Secure random key
 
-db = firestore.client()
+# Don't initialize db at module level - use a function instead
+def get_db():
+    """Get Firestore database client, initializing Firebase if needed"""
+    try:
+        # Check if Firebase is initialized
+        firebase_admin.get_app()
+    except ValueError:
+        # Firebase not initialized, try to initialize it
+        try:
+            from firebase_config import initialize_firebase
+            initialize_firebase()
+        except Exception as e:
+            st.error(f"❌ Failed to initialize Firebase: {e}")
+            return None
+    
+    # Now we can safely get the Firestore client
+    return firestore.client()
 
 class FirebaseAuthManager:
     def __init__(self):
         self.session_collection = "active_sessions"
         self.users_collection = "users"
-        
+        self._db = None
+    
+    @property
+    def db(self):
+        """Lazy load database client"""
+        if self._db is None:
+            self._db = get_db()
+        return self._db
+    
     def _encrypt_data(self, data: str) -> str:
         """Encrypt data for browser storage"""
         key = ENCRYPTION_KEY.encode()
@@ -54,6 +78,9 @@ class FirebaseAuthManager:
     
     def _store_session(self, user_id: str, session_id: str, user_data: Dict) -> None:
         """Store active session in Firestore"""
+        if not self.db:
+            return
+            
         session_data = {
             "user_id": user_id,
             "session_id": session_id,
@@ -63,7 +90,7 @@ class FirebaseAuthManager:
             "active": True
         }
         
-        db.collection(self.session_collection).document(session_id).set(session_data)
+        self.db.collection(self.session_collection).document(session_id).set(session_data)
         
         # Store encrypted session in browser
         browser_data = {
@@ -89,8 +116,11 @@ class FirebaseAuthManager:
     
     def _validate_session(self, session_id: str) -> bool:
         """Validate session against Firestore"""
+        if not self.db:
+            return False
+            
         try:
-            session_doc = db.collection(self.session_collection).document(session_id).get()
+            session_doc = self.db.collection(self.session_collection).document(session_id).get()
             if not session_doc.exists:
                 return False
                 
@@ -103,7 +133,7 @@ class FirebaseAuthManager:
             expires_at = session_data.get('expires_at')
             if expires_at and expires_at < datetime.utcnow():
                 # Clean up expired session
-                db.collection(self.session_collection).document(session_id).delete()
+                self.db.collection(self.session_collection).document(session_id).delete()
                 return False
                 
             return True
@@ -112,17 +142,23 @@ class FirebaseAuthManager:
     
     def _revoke_session(self, session_id: str) -> None:
         """Revoke specific session"""
+        if not self.db:
+            return
+            
         try:
-            db.collection(self.session_collection).document(session_id).update({"active": False})
+            self.db.collection(self.session_collection).document(session_id).update({"active": False})
         except:
             pass
     
     def _revoke_all_user_sessions(self, user_id: str) -> None:
         """Revoke all sessions for a user"""
+        if not self.db:
+            return
+            
         try:
-            sessions = db.collection(self.session_collection).where("user_id", "==", user_id).stream()
+            sessions = self.db.collection(self.session_collection).where("user_id", "==", user_id).stream()
             for session in sessions:
-                db.collection(self.session_collection).document(session.id).update({"active": False})
+                self.db.collection(self.session_collection).document(session.id).update({"active": False})
         except:
             pass
     
@@ -202,17 +238,20 @@ class FirebaseAuthManager:
     
     def _create_or_update_user(self, firebase_user, email_verified: bool = False) -> Dict[str, Any]:
         """Create or update user in Firestore"""
+        if not self.db:
+            return {}
+            
         user_id = firebase_user.uid
         email = firebase_user.email
         name = firebase_user.display_name or email.split('@')[0]
         
         # Check if user exists
-        user_doc = db.collection(self.users_collection).document(user_id).get()
+        user_doc = self.db.collection(self.users_collection).document(user_id).get()
         
         if user_doc.exists:
             # Update existing user
             user_data = user_doc.to_dict()
-            db.collection(self.users_collection).document(user_id).update({
+            self.db.collection(self.users_collection).document(user_id).update({
                 "last_login": datetime.utcnow(),
                 "email": email,
                 "name": name,
@@ -231,7 +270,7 @@ class FirebaseAuthManager:
                 "active": True,
                 "email_verified": email_verified
             }
-            db.collection(self.users_collection).document(user_id).set(user_data)
+            self.db.collection(self.users_collection).document(user_id).set(user_data)
         
         return {
             "id": user_id,
@@ -527,6 +566,10 @@ def check_role(user: Optional[Dict[str, Any]], required_role: str) -> bool:
 
 def get_all_users() -> list[dict]:
     """Get all users from Firestore"""
+    db = get_db()
+    if not db:
+        return []
+        
     try:
         docs = db.collection("users").stream()
         return [doc.to_dict() | {"id": doc.id} for doc in docs]
@@ -538,10 +581,6 @@ def get_all_users() -> list[dict]:
 def load_user_session():
     """Legacy function - returns current Firebase user"""
     return get_current_user()
-
-def show_login_form():
-    """Legacy function - use firebase_auth_ui instead"""
-    return firebase_auth_ui()
 
 def require_login(func):
     """Legacy decorator - use require_auth instead"""
