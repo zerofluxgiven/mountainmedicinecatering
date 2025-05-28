@@ -1,3 +1,4 @@
+from firebase_init import get_bucket
 import streamlit as st
 from firebase_admin import storage
 from auth import get_user_role, get_user_id
@@ -38,7 +39,7 @@ def upload_file_to_storage(file_data, filename, file_id):
     """Upload file to Firebase Storage and return download URL"""
     try:
         # Get the default bucket
-        bucket = storage.bucket()
+        bucket = get_bucket()
         
         # Create blob with organized path
         blob_path = f"files/{file_id}/{filename}"
