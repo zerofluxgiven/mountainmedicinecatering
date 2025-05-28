@@ -1,5 +1,3 @@
-from firebase_init import get_db
-db = get_db()
 import streamlit as st
 from mobile_layout import mobile_layout
 from mobile_components import detect_mobile, mobile_safe_columns
