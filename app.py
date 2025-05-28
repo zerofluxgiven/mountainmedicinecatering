@@ -1,647 +1,397 @@
+# auth.py - Firebase Auth Compatibility Layer
+
+from firebase_auth_ui import (
+    get_current_user,
+    get_user_role as firebase_get_user_role, 
+    get_user_id as firebase_get_user_id,
+    is_user_logged_in,
+    require_auth,
+    require_role,
+    check_role as firebase_check_role,
+    get_all_users as firebase_get_all_users,
+    firebase_auth_ui
+)
 import streamlit as st
-from mobile_layout import mobile_layout
-from mobile_components import detect_mobile, mobile_safe_columns
-from floating_ai_chat import integrate_floating_chat
-from notifications import notifications_sidebar
+from utils import session_get, session_set
+import functools
 from datetime import datetime
-from utils import format_date, get_active_event, session_get
-from layout import apply_theme, render_top_navbar, render_enhanced_sidebar, render_leave_event_button
-from ui_components import show_event_mode_banner, inject_layout_fixes
-from landing import show as show_landing
-from events import enhanced_event_ui, get_all_events
-from post_event import post_event_ui
-from file_storage import file_manager_ui, show_file_analytics
-from receipts import receipt_upload_ui
-from pdf_export import pdf_export_ui
-from menu_editor import menu_editor_ui
-from event_planning_dashboard import event_planning_dashboard_ui
-from event_modifications import event_modifications_ui
-from bulk_suggestions import bulk_suggestions_ui
-from audit import audit_log_ui
-from tag_merging import tag_merging_ui
-from roles import role_admin_ui as admin_panel_ui
-from ingredients import ingredient_catalogue_ui
-from allergies import allergy_management_ui
-from packing import packing_ui
-from ai_chat import ai_chat_ui
-from recipes import recipes_page
-from admin_utilities import admin_utilities_ui
 
-# ⚙️ Config
-PUBLIC_MODE = False  # Set to True for guest access
+# Use centralized database client
+from firebase_init import db
 
-# 📂 Updated Tab Routing with all your original tabs
-TABS = {
-    "Dashboard": "dashboard",
-    "Events": "events", 
-    "Event Planner": "event_planner",
-    "Recipes": "recipes",
-    "Ingredients": "ingredients",
-    "Allergies": "allergies",
-    "Upload": "files",
-    "Receipts": "receipts",
-    "Packing": "packing",
-    "Post-Event": "post_event",
-    "Suggestions": "suggestions",
-    "Bulk Suggestions": "bulk_suggestions", 
-    "PDF Export": "pdf_export",
-    "Audit Logs": "audit_logs",
-    "Explore Tags": "tags",
-    "Admin Panel": "admin",
-    "Assistant": "assistant"
-}
+USER_COLLECTION = "users"
 
-# Add this function before main() to handle event mode persistence:
-def initialize_event_mode_state():
-    """Initialize event mode state for new users"""
-    user = session_get("user")
+# ------------------------------
+# 📥 Load User from Session (Legacy Compatibility)
+# ------------------------------
+
+def load_user_session() -> dict | None:
+    """Legacy function - returns current Firebase user"""
+    return get_current_user()
+
+def show_login_form() -> None:
+    """Legacy function - use firebase_auth_ui instead"""
+    return firebase_auth_ui()
+
+def logout() -> None:
+    """Logs out the current user."""
+    from firebase_auth_ui import logout_user
+    logout_user()
+    st.success("👋 Logged out successfully")
+    st.rerun()
+
+# ------------------------------
+# 🔐 Permission + Identity (Updated for Firebase)
+# ------------------------------
+
+def get_user_id(user: dict | None = None) -> str | None:
+    """Get user ID from user dict"""
+    return firebase_get_user_id(user)
+
+def get_user_role(user: dict | None = None) -> str:
+    """Returns user role or 'viewer' if not set."""
+    return firebase_get_user_role(user)
+
+def check_role(user: dict | None, role_required: str) -> bool:
+    """Check if user has required role or higher"""
+    return firebase_check_role(user, role_required)
+
+def require_login(fn):
+    """Decorator that blocks access to a function unless a user is logged in."""
+    @functools.wraps(fn)
+    def wrapper(*args, **kwargs):
+        if not is_user_logged_in():
+            st.warning("🔐 Please log in to continue.")
+            firebase_auth_ui()
+            return
+        return fn(*args, **kwargs)
+    return wrapper
+
+# ------------------------------
+# 👤 User Profile Functions (Updated for Firebase)
+# ------------------------------
+
+def get_user_profile(user_id: str) -> dict | None:
+    """Get complete user profile by ID"""
+    try:
+        doc = db.collection(USER_COLLECTION).document(user_id).get()
+        if doc.exists:
+            return doc.to_dict()
+        return None
+    except Exception as e:
+        st.error(f"⚠️ Could not fetch user profile: {e}")
+        return None
+
+def update_user_profile(user_id: str, updates: dict) -> bool:
+    """Update user profile"""
+    try:
+        # Add update timestamp
+        updates["updated_at"] = datetime.utcnow()
+        
+        db.collection(USER_COLLECTION).document(user_id).update(updates)
+        
+        # Update session state if it's the current user
+        current_user = get_current_user()
+        if current_user and current_user.get("id") == user_id:
+            current_user.update(updates)
+            st.session_state["firebase_user"] = current_user
+        
+        return True
+    except Exception as e:
+        st.error(f"❌ Failed to update profile: {e}")
+        return False
+
+# ------------------------------
+# 📋 User Management (Updated for Firebase)
+# ------------------------------
+
+def get_all_users() -> list[dict]:
+    """Returns all users with their role and ID."""
+    return firebase_get_all_users()
+
+def update_user_role(user_id: str, new_role: str) -> bool:
+    """Update a user's role"""
+    try:
+        db.collection(USER_COLLECTION).document(user_id).update({
+            "role": new_role,
+            "role_updated_at": datetime.utcnow()
+        })
+        
+        st.success(f"✅ User role updated to {new_role}")
+        return True
+    except Exception as e:
+        st.error(f"❌ Failed to update user role: {e}")
+        return False
+
+def deactivate_user(user_id: str) -> bool:
+    """Deactivate a user account"""
+    try:
+        # Update in Firestore
+        db.collection(USER_COLLECTION).document(user_id).update({
+            "active": False,
+            "deactivated_at": datetime.utcnow()
+        })
+        
+        # Revoke Firebase sessions
+        from firebase_auth_ui import auth_manager
+        auth_manager._revoke_all_user_sessions(user_id)
+        
+        return True
+    except Exception as e:
+        st.error(f"❌ Failed to deactivate user: {e}")
+        return False
+
+# ------------------------------
+# 🔍 User Search and Analytics (Preserved)
+# ------------------------------
+
+def search_users(query: str) -> list[dict]:
+    """Search users by name or email"""
+    try:
+        all_users = get_all_users()
+        query_lower = query.lower()
+        
+        matching_users = []
+        for user in all_users:
+            name_match = query_lower in user.get("name", "").lower()
+            email_match = query_lower in user.get("email", "").lower()
+            
+            if name_match or email_match:
+                matching_users.append(user)
+        
+        return matching_users
+    except Exception as e:
+        st.error(f"⚠️ User search failed: {e}")
+        return []
+
+def get_user_stats() -> dict:
+    """Get user statistics"""
+    try:
+        users = get_all_users()
+        
+        stats = {
+            "total_users": len(users),
+            "active_users": len([u for u in users if u.get("active", True)]),
+            "verified_users": len([u for u in users if u.get("email_verified", False)]),
+            "roles": {}
+        }
+        
+        # Count by role
+        for user in users:
+            role = user.get("role", "viewer")
+            stats["roles"][role] = stats["roles"].get(role, 0) + 1
+        
+        return stats
+    except Exception as e:
+        st.error(f"⚠️ Could not calculate user stats: {e}")
+        return {}
+
+# ------------------------------
+# 🛡️ Security Functions (Enhanced for Firebase)
+# ------------------------------
+
+def log_auth_attempt(email: str, success: bool, method: str = "firebase") -> None:
+    """Log authentication attempts for security"""
+    try:
+        db.collection("auth_logs").add({
+            "email": email,
+            "success": success,
+            "method": method,
+            "timestamp": datetime.utcnow(),
+            "ip_address": "unknown",  # Could be enhanced with real IP detection
+        })
+    except Exception:
+        pass  # Don't fail auth if logging fails
+
+def check_user_permissions(user: dict, resource: str, action: str) -> bool:
+    """Advanced permission checking for specific resources and actions"""
     if not user:
-        return
-        
-    user_id = user.get("id")
-    if not user_id:
-        return
-        
-    # Check if this is a new session for this user
-    session_key = f"initialized_{user_id}"
-    if session_key not in st.session_state:
-        st.session_state[session_key] = True
-        
-        # For new users, ensure event mode is OFF
-        if "active_event_id" not in st.session_state:
-            st.session_state["active_event_id"] = None
-            st.session_state["active_event"] = None
-            
-        # Try to restore last active event from Firestore user preferences
-        try:
-            from db_client import db
-            user_doc = db.collection("users").document(user_id).get()
-            if user_doc.exists:
-                user_data = user_doc.to_dict()
-                last_event = user_data.get("last_active_event")
-                if last_event:
-                    st.session_state["recent_event_id"] = last_event
-        except Exception:
-            pass
-
-# ----------------------------
-# 🚀 Main App
-# ----------------------------
-def main():
-    # ✅ Initialize Firebase first
-    try:
-        from firebase_init import firebase_admin
-    except Exception as e:
-        st.error(f"❌ Failed to initialize Firebase: {e}")
-        st.stop()
-                # Ensure admin user exists with correct role
-    try:
-        from db_client import db
-        admin_email = "mistermcfarland@gmail.com"
+        return False
     
-        # Check all users and find the admin
-        users = db.collection("users").where("email", "==", admin_email).stream()
-        admin_found = False
+    role = get_user_role(user)
     
-        for user_doc in users:
-            user_data = user_doc.to_dict()
-            if user_data.get("role") != "admin":
-                # Update to admin role
-                db.collection("users").document(user_doc.id).update({"role": "admin"})
-                st.success("✅ Admin role updated for mistermcfarland@gmail.com")
-            admin_found = True
-    
-        if not admin_found:
-            # If you're logged in but no user record exists, create one
-            current_user = st.session_state.get("firebase_user")
-            if current_user and current_user.get("email") == admin_email:
-                db.collection("users").document(current_user["id"]).set({
-                    "id": current_user["id"],
-                    "email": admin_email,
-                    "name": current_user.get("name", "Admin"),
-                    "role": "admin",
-                    "created_at": datetime.utcnow(),
-                    "active": True,
-                    "email_verified": True
-                }, merge=True)
-                st.success("✅ Admin user created")
-    except Exception as e:
-        st.warning(f"Could not verify admin role: {e}")
-
-    # Configure page
-    st.set_page_config(
-        page_title="Mountain Medicine Catering", 
-        layout="wide",
-        initial_sidebar_state="collapsed"
-    )
-
-
-    
-    # ✅ ADD THIS LINE - Initialize auth system
-    try:
-        from auth import load_user_session, get_user_role, show_login_form, initialize_auth_system
-        initialize_auth_system()
-    except Exception as e:
-        st.error(f"❌ Failed to initialize authentication: {e}")
-        st.stop()
-    
-    # Your existing code continues here...
-    mobile_layout.apply_mobile_theme()
-
-    # 💅 Apply complete theme system
-    apply_theme()
-
-    # 🔧 Fix layout issues
-    inject_layout_fixes()
-
-    # 💬 Integrate floating chat
-    integrate_floating_chat()
-
-    # 🔐 Auth
-    user = load_user_session()
-
-    # 🪧 Public mode
-    if PUBLIC_MODE and not user:
-        show_landing()
-        return
-
-    # Show login form if no user and not in public mode
-    if not user and not PUBLIC_MODE:
-        st.markdown("## 🌄 Mountain Medicine Catering")
-        show_login_form()
-        return
-
-    # Initialize event mode state for the user
-    initialize_event_mode_state()
-
-    # 🧭 Enhanced sidebar with admin tools
-    render_enhanced_sidebar()
-
-    # 🧭 Main navigation
-    st.markdown("## 🌄 Mountain Medicine Catering")
-
-    if user:
-        st.sidebar.write(f"👤 Logged in as **{user.get('name', 'User')}**")
-        notifications_sidebar(user)
-    else:
-        st.sidebar.write("👀 Viewing as guest")
-
-    # Top navigation
-    if mobile_layout.is_mobile:
-        selected_tab = mobile_layout.render_mobile_navigation()
-    else:
-        selected_tab = render_top_navbar(list(TABS.keys()))
-
-    # Sidebar for notifications and quick info
-    if user:
-        with st.sidebar:
-            st.write(f"👤 **{user.get('name', 'User')}**")
-            st.caption(f"Role: {get_user_role(user)}")
-            notifications_sidebar(user)
-            
-            # Quick event info in sidebar
-            active_event = get_active_event()
-            if active_event:
-                st.markdown("---")
-                st.markdown("### 📅 Active Event")
-                st.write(f"**{active_event.get('name', 'Unknown')}**")
-                st.caption(f"📍 {active_event.get('location', 'Unknown')}")
-                st.caption(f"👥 {active_event.get('guest_count', 0)} guests")
-
-    # -----------------------------------
-    # 🔀 Enhanced Tab Routing Logic (PRESERVED FROM YOUR ORIGINAL)
-    # -----------------------------------
-    if selected_tab == "Dashboard":
-        # Dashboard should be accessible to logged-in users regardless of PUBLIC_MODE
-        if not user:
-            st.warning("Please log in to view the dashboard.")
-        else:
-            render_dashboard(user)
-
-    elif selected_tab == "Events":
-        # Events tab should always be accessible to logged-in users
-        if not user:
-            st.warning("Please log in to view events.")
-        else:
-            render_leave_event_button("main")
-            enhanced_event_ui(user)
-
-    elif selected_tab == "Event Planner":
-        # Event planner requires login
-        if not user:
-            st.warning("Please log in to use the event planner.")
-        else:
-            render_event_planner(user)
-
-    elif selected_tab == "Recipes":
-        # Recipes/Menu editor accessible to logged-in users
-        if not user:
-            st.warning("Please log in to view recipes.")
-        else:
-            menu_editor_ui(user)
-
-    elif selected_tab == "Ingredients":
-        # Ingredients catalogue accessible to logged-in users
-        if not user:
-            st.warning("Please log in to view ingredients.")
-        else:
-            ingredient_catalogue_ui(user)
-
-    elif selected_tab == "Allergies":
-        # Allergies require login
-        if not user:
-            st.warning("Please log in to manage allergies.")
-        else:
-            allergy_management_ui(user)
-
-    elif selected_tab == "Upload":
-        # File upload requires login
-        if not user:
-            st.warning("Please log in to upload files.")
-        else:
-            render_upload_tab(user)
-
-    elif selected_tab == "Receipts":
-        # Receipts require login
-        if not user:
-            st.warning("Please log in to manage receipts.")
-        else:
-            receipt_upload_ui(user)
-
-    elif selected_tab == "Packing":
-        # Packing requires login
-        if not user:
-            st.warning("Please log in to manage packing.")
-        else:
-            packing_ui()
-
-    elif selected_tab == "Post-Event":
-        # Post-event requires login and appropriate role
-        if not user:
-            st.warning("Please log in to access post-event features.")
-        else:
-            post_event_ui(user)
-
-    elif selected_tab == "Suggestions":
-        # Suggestions require manager+ role
-        if not user:
-            st.warning("Please log in to view suggestions.")
-        else:
-            event_modifications_ui(user)
-
-    elif selected_tab == "Bulk Suggestions":
-        # Bulk suggestions require admin role
-        if not user:
-            st.warning("Please log in to access bulk suggestions.")
-        else:
-            bulk_suggestions_ui()
-
-    elif selected_tab == "PDF Export":
-        # PDF export requires login
-        if not user:
-            st.warning("Please log in to export PDFs.")
-        else:
-            pdf_export_ui()
-
-    elif selected_tab == "Audit Logs":
-        # Audit logs require login
-        if not user:
-            st.warning("Please log in to view audit logs.")
-        else:
-            audit_log_ui(user)
-
-    elif selected_tab == "Explore Tags":
-        # Tags can be viewed by logged-in users
-        if not user:
-            st.warning("Please log in to explore tags.")
-        else:
-            tag_merging_ui()
-
-    elif selected_tab == "Admin Panel":
-        # Admin panel requires admin role
-        if not user:
-            st.warning("Please log in to access admin features.")
-        else:
-            render_admin_panel(user)
-
-    elif selected_tab == "Assistant":
-        # Assistant requires login
-        if not user:
-            st.warning("Please log in to use the assistant.")
-        else:
-            ai_chat_ui()
-
-# ----------------------------
-# 📊 Enhanced Dashboard (PRESERVED AND ENHANCED)
-# ----------------------------
-def render_dashboard(user):
-    if mobile_layout.is_mobile:
-        mobile_layout.render_mobile_dashboard(user, get_active_event())
-        return
-    
-    if PUBLIC_MODE:
-        st.warning("Dashboard is private.")
-        return
-
-    if not user:
-        st.warning("Please log in to view the dashboard.")
-        return
-
-    event = get_active_event()
-    
-    if event:
-        # Active event dashboard
-        col1, col2 = st.columns([3, 1])
-        
-        with col1:
-            st.success(f"📅 Active Event: **{event.get('name', 'Unnamed')}**")
-            st.markdown(f"📍 **Location:** {event.get('location', 'Unknown')}")
-            st.markdown(f"🗓️ **Date:** {format_date(event.get('start_date'))} → {format_date(event.get('end_date'))}")
-            
-            if event.get('description'):
-                st.markdown(f"📝 **Description:** {event.get('description')}")
-        
-        with col2:
-            # Quick actions
-            if st.button("Edit Event", use_container_width=True):
-                st.session_state["editing_event_id"] = event["id"]
-                st.session_state["top_nav"] = "Event Planner"
-                st.rerun()
-
-        # Event metrics
-        st.markdown("### 📈 Quick Stats")
-        col1, col2, col3, col4 = st.columns(4)
-        
-        with col1:
-            st.metric("👥 Guests", event.get("guest_count", "-"))
-        with col2:
-            st.metric("🧑‍🍳 Staff", event.get("staff_count", "-"))
-        with col3:
-            # Try to get menu count
-            try:
-                from db_client import db
-                menu_docs = list(db.collection("menus").where("event_id", "==", event["id"]).stream())
-                menu_count = len(menu_docs)
-            except:
-                menu_count = len(event.get("menu", []))
-            st.metric("🍽️ Menu Items", menu_count)
-        with col4:
-            status = event.get("status", "planning")
-            st.metric("📊 Status", status.title())
-
-        # Today's checklist
-        st.markdown("### ✅ Today's Checklist")
-        checklist_items = [
-            "Prep station setup complete",
-            "Reviewed schedule with staff", 
-            "Checked inventory and supplies",
-            "Load equipment into transport",
-            "Set up dishwashing station",
-            "Final headcount confirmed"
+    # Define permission matrix
+    permissions = {
+        "admin": ["*"],  # Admin can do everything
+        "manager": [
+            "events:create", "events:edit", "events:delete",
+            "menus:create", "menus:edit", "menus:delete",
+            "users:view", "files:manage", "suggestions:approve"
+        ],
+        "user": [
+            "events:view", "events:create", "events:edit_own",
+            "menus:view", "menus:create", "files:upload",
+            "suggestions:create"
+        ],
+        "viewer": [
+            "events:view", "menus:view", "files:view"
         ]
-        
-        # Use columns for mobile-friendly checklist
-        checklist_cols = st.columns(2)
-        for i, item in enumerate(checklist_items):
-            with checklist_cols[i % 2]:
-                st.checkbox(item, key=f"checklist_{i}")
-
-        # Quick access buttons
-        st.markdown("### 🚀 Quick Actions")
-        action_cols = st.columns(4)
-        
-        with action_cols[0]:
-            if st.button("📋 View Menu", use_container_width=True):
-                st.session_state["top_nav"] = "Recipes"
-                st.rerun()
-        
-        with action_cols[1]:
-            if st.button("📁 Upload Files", use_container_width=True):
-                st.session_state["top_nav"] = "Upload"
-                st.rerun()
-        
-        with action_cols[2]:
-            if st.button("📦 Packing", use_container_width=True):
-                st.session_state["top_nav"] = "Packing"
-                st.rerun()
-        
-        with action_cols[3]:
-            if st.button("🤖 AI Assistant", use_container_width=True):
-                st.session_state["top_nav"] = "Assistant"
-                st.rerun()
-
-    else:
-        # No active event dashboard
-        st.info("No active event is currently set.")
-        st.markdown("### 🎯 Get Started")
-        
-        col1, col2 = st.columns(2)
-        
-        with col1:
-            st.markdown("#### Create New Event")
-            st.markdown("Start planning your next catering event")
-            if st.button("Create Event", use_container_width=True):
-                st.session_state["top_nav"] = "Events"
-                st.rerun()
-        
-        with col2:
-            st.markdown("#### Browse Existing Events")
-            st.markdown("Activate or review past events")
-            if st.button("View Events", use_container_width=True):
-                st.session_state["top_nav"] = "Events"
-                st.rerun()
-
-        # Show recent events for quick access
-        try:
-            recent_events = get_all_events()
-            if recent_events:
-                recent_active = [e for e in recent_events if not e.get("deleted")][:3]
-                
-                if recent_active:
-                    st.markdown("### 📅 Recent Events")
-                    for event in recent_active:
-                        col1, col2, col3 = st.columns([3, 1, 1])
-                        
-                        with col1:
-                            st.write(f"**{event.get('name', 'Unnamed')}**")
-                            st.caption(f"{event.get('location', 'Unknown')} • {event.get('guest_count', 0)} guests")
-                        
-                        with col2:
-                            status = event.get('status', 'planning')
-                            if status == 'active':
-                                st.success(status.title())
-                            elif status == 'complete':
-                                st.info(status.title())
-                            else:
-                                st.warning(status.title())
-                        
-                        with col3:
-                            if st.button("Activate", key=f"quick_activate_{event['id']}"):
-                                from events import activate_event
-                                activate_event(event['id'])
-                                st.rerun()
-        except Exception as e:
-            st.error(f"Could not load recent events: {e}")
-
-# ----------------------------
-# 📅 Event Planner Tab (PRESERVED)
-# ----------------------------
-def render_event_planner(user):
-    """Render event planner with proper checks"""
-    if not user:
-        st.warning("Please log in to use the event planner.")
-        return
-        
-    if "editing_event_id" in st.session_state:
-        event_planning_dashboard_ui(st.session_state["editing_event_id"])
-    else:
-        st.info("Select an event to edit from the Events tab.")
-        
-        # Show recent events for quick access
-        try:
-            events = get_all_events()
-            recent_events = [e for e in events if not e.get("deleted")][:5]
-            
-            if recent_events:
-                st.markdown("### 📋 Recent Events")
-                for event in recent_events:
-                    col1, col2 = st.columns([3, 1])
-                    with col1:
-                        st.write(f"**{event.get('name', 'Unnamed')}** - {event.get('status', 'planning')}")
-                    with col2:
-                        if st.button("Edit", key=f"quick_edit_{event['id']}"):
-                            st.session_state["editing_event_id"] = event["id"]
-                            st.rerun()
-        except Exception as e:
-            st.error(f"Could not load recent events: {e}")
-
-# ----------------------------
-# 📁 Enhanced Upload Tab (PRESERVED)
-# ----------------------------
-def render_upload_tab(user):
-    """Enhanced upload tab with analytics"""
-    if not user:
-        st.warning("Please log in to upload files.")
-        return
+    }
     
-    # Tabs for upload and analytics
-    upload_tab, analytics_tab = st.tabs(["📤 Upload Files", "📊 File Analytics"])
+    user_permissions = permissions.get(role, [])
     
-    with upload_tab:
-        file_manager_ui(user)
+    # Check wildcard permission (admin)
+    if "*" in user_permissions:
+        return True
     
-    with analytics_tab:
-        show_file_analytics()
+    # Check specific permission
+    permission_key = f"{resource}:{action}"
+    return permission_key in user_permissions
 
-# ----------------------------
-# 🔐 Admin Panel Tab (PRESERVED)
-# ----------------------------
-def render_admin_panel(user):
-    """Render admin panel with proper permission checks"""
-    if not user:
-        st.warning("Please log in to access admin features.")
-        return
-    
-    user_role = get_user_role(user)
-    if user_role != "admin":
-        st.warning("⚠️ Admin access required.")
-        st.info(f"Your current role: {user_role}")
-        return
-    
-    admin_panel_ui()
+# ------------------------------
+# 🔄 Migration and Maintenance (Firebase Enhanced)
+# ------------------------------
 
-# ----------------------------
-# 📱 Mobile Detection and Optimization (PRESERVED)
-# ----------------------------
-def detect_mobile():
-    """Detect if user is on mobile device"""
-    # This is a simplified detection - in a real app you might use JavaScript
-    return st.session_state.get("mobile_detected", False)
-
-def optimize_for_mobile():
-    """Apply mobile-specific optimizations"""
-    if detect_mobile():
-        # Mobile-specific CSS
-        mobile_css = """
-        <style>
-        .main .block-container {
-            padding-top: 1rem;
-            padding-left: 0.5rem;
-            padding-right: 0.5rem;
-        }
-        
-        .stColumns {
-            flex-direction: column !important;
-        }
-        
-        .stButton > button {
-            width: 100% !important;
-            margin-bottom: 0.5rem !important;
-        }
-        </style>
-        """
-        st.markdown(mobile_css, unsafe_allow_html=True)
-
-# ----------------------------
-# 🧪 Error Handling (PRESERVED)
-# ----------------------------
-def handle_app_errors():
-    """Global error handling for the app"""
+def sync_firebase_users() -> int:
+    """Sync Firebase users with Firestore"""
     try:
-        main()
-    except Exception as e:
-        st.error("🚨 An unexpected error occurred")
-        st.exception(e)
+        from firebase_admin import auth as firebase_auth
         
-        # Log error for debugging
-        try:
-            from db_client import db
-            from utils import generate_id
-            error_id = generate_id("error")
-            db.collection("app_errors").document(error_id).set({
-                "error": str(e),
-                "user": st.session_state.get("user", {}).get("id", "unknown"),
-                "timestamp": datetime.now(),
-                "page": st.session_state.get("top_nav", "unknown")
-            })
-        except:
-            pass  # Don't fail on error logging
-
-# ----------------------------
-# 🎯 Performance Monitoring (PRESERVED)
-# ----------------------------
-def monitor_performance():
-    """Simple performance monitoring"""
-    import time
-    start_time = time.time()
-    
-    # Store start time
-    st.session_state["page_load_start"] = start_time
-    
-    # This would be called at the end of rendering
-    def log_performance():
-        load_time = time.time() - start_time
-        if load_time > 3:  # Log slow pages
-            try:
-                from db_client import db
-                db.collection("performance_logs").add({
-                    "page": st.session_state.get("top_nav", "unknown"),
-                    "load_time": load_time,
-                    "user": st.session_state.get("user", {}).get("id", "unknown"),
-                    "timestamp": datetime.now()
+        # Get all Firebase users
+        firebase_users = firebase_auth.list_users().users
+        synced_count = 0
+        
+        for fb_user in firebase_users:
+            # Check if user exists in Firestore
+            user_doc = db.collection(USER_COLLECTION).document(fb_user.uid).get()
+            
+            if not user_doc.exists:
+                # Create user in Firestore
+                role = "admin" if fb_user.email in ["mistermcfarland@gmail.com"] else "viewer"
+                user_data = {
+                    "id": fb_user.uid,
+                    "email": fb_user.email,
+                    "name": fb_user.display_name or fb_user.email.split('@')[0],
+                    "role": role,
+                    "created_at": datetime.utcnow(),
+                    "last_login": datetime.utcnow(),
+                    "active": True,
+                    "email_verified": fb_user.email_verified
+                }
+                db.collection(USER_COLLECTION).document(fb_user.uid).set(user_data)
+                synced_count += 1
+            else:
+                # Update existing user with Firebase data
+                db.collection(USER_COLLECTION).document(fb_user.uid).update({
+                    "email_verified": fb_user.email_verified,
+                    "email": fb_user.email,
+                    "name": fb_user.display_name or fb_user.email.split('@')[0]
                 })
-            except:
-                pass
+        
+        return synced_count
+    except Exception as e:
+        st.error(f"Firebase sync failed: {e}")
+        return 0
 
-# ----------------------------
-# 🏃 App Entry Point (PRESERVED)
-# ----------------------------
-if __name__ == "__main__":
-    # Apply mobile optimizations
-    optimize_for_mobile()
+def delete_firebase_user(user_id: str) -> bool:
+    """Delete user from both Firebase and Firestore"""
+    try:
+        from firebase_admin import auth as firebase_auth
+        from firebase_auth_ui import auth_manager
+        
+        # Delete from Firebase Auth
+        firebase_auth.delete_user(user_id)
+        
+        # Delete from Firestore
+        db.collection(USER_COLLECTION).document(user_id).delete()
+        
+        # Revoke all sessions
+        auth_manager._revoke_all_user_sessions(user_id)
+        
+        return True
+    except Exception as e:
+        st.error(f"Failed to delete user: {e}")
+        return False
+
+# ------------------------------
+# 🎨 UI Helper Functions (Preserved)
+# ------------------------------
+
+def render_user_avatar(user: dict, size: int = 40) -> None:
+    """Render user avatar (photo or initials)"""
+    if not user:
+        return
     
-    # Monitor performance
-    monitor_performance()
+    photo_url = user.get("photo_url")
+    name = user.get("name", "User")
     
-    # Run app with error handling
-    handle_app_errors()
+    if photo_url:
+        # Display photo
+        avatar_html = f"""
+        <img src="{photo_url}" 
+             alt="{name}" 
+             style="width: {size}px; height: {size}px; border-radius: 50%; object-fit: cover;">
+        """
+    else:
+        # Display initials
+        initials = "".join([word[0].upper() for word in name.split()[:2]])
+        avatar_html = f"""
+        <div style="
+            width: {size}px; 
+            height: {size}px; 
+            border-radius: 50%; 
+            background-color: #6C4AB6; 
+            color: white; 
+            display: flex; 
+            align-items: center; 
+            justify-content: center; 
+            font-weight: bold;
+            font-size: {size//3}px;
+        ">
+            {initials}
+        </div>
+        """
+    
+    st.markdown(avatar_html, unsafe_allow_html=True)
+
+def render_user_badge(user: dict) -> None:
+    """Render user info badge"""
+    if not user:
+        return
+    
+    role = get_user_role(user)
+    role_colors = {
+        "admin": "#dc3545",
+        "manager": "#fd7e14", 
+        "user": "#198754",
+        "viewer": "#6c757d"
+    }
+    
+    color = role_colors.get(role, "#6c757d")
+    verified_icon = "✅" if user.get("email_verified", False) else "⚠️"
+    
+    badge_html = f"""
+    <div style="
+        display: inline-flex; 
+        align-items: center; 
+        gap: 0.5rem; 
+        padding: 0.25rem 0.75rem; 
+        background-color: {color}; 
+        color: white; 
+        border-radius: 1rem; 
+        font-size: 0.875rem;
+        font-weight: 500;
+    ">
+        👤 {user.get('name', 'User')} ({role}) {verified_icon}
+    </div>
+    """
+    
+    st.markdown(badge_html, unsafe_allow_html=True)
+
+# ------------------------------
+# 🚀 Initialization (Firebase Enhanced)
+# ------------------------------
+
+def initialize_auth_system() -> None:
+    """Initialize the Firebase authentication system"""
+    try:
+        # Sync Firebase users to Firestore if needed
+        if st.session_state.get("auth_initialized") != True:
+            synced = sync_firebase_users()
+            if synced > 0:
+                st.info(f"✅ Firebase auth system initialized. Synced {synced} users.")
+            
+            st.session_state["auth_initialized"] = True
+            
+    except Exception as e:
+        st.error(f"⚠️ Auth system initialization failed: {e}")
