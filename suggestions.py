@@ -1,12 +1,12 @@
 # suggestions.py
 
 import streamlit as st
-from firebase_admin import firestore
+from firebase_init import db
 from datetime import datetime
 from auth import get_user_id
 from utils import generate_id
 
-db = firestore.client()
+db = db
 COLLECTION = "suggestions"
 
 # ----------------------------

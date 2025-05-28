@@ -1,13 +1,13 @@
 # post_event.py
 
 import streamlit as st
-from firebase_admin import firestore
+from firebase_init import db
 from auth import require_role
 from utils import format_date, get_scoped_query, is_event_scoped, get_event_scope_message, get_active_event_id
 from datetime import datetime
 from google.cloud.firestore_v1.base_query import FieldFilter
 
-db = firestore.client()
+db = db
 
 # ----------------------------
 # 📋 Post-Event Interview

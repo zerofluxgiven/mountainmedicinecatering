@@ -1,7 +1,7 @@
 import streamlit as st
 import networkx as nx
 from pyvis.network import Network
-from firebase_admin import firestore
+from firebase_init import db
 from utils import session_get
 
 # ------------------------------
@@ -29,7 +29,7 @@ def tag_explorer_ui():
 # 📊 Tag Usage Collector
 # ------------------------------
 def _get_tag_usage(tag: str) -> dict:
-    db = firestore.client()
+    db = db
     tag_data = {
         "events": [],
         "recipes": [],

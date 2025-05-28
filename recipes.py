@@ -1,10 +1,10 @@
 import streamlit as st
-from firebase_admin import firestore
+from firebase_init import db
 from utils import format_date, get_active_event_id
 from ingredients import parse_recipe_ingredients, update_recipe_with_parsed_ingredients
 from allergies import render_allergy_warning
 
-db = firestore.client()
+db = db
 
 # ----------------------------
 # 📖 Recipes Tab (Public)

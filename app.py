@@ -90,8 +90,7 @@ def initialize_event_mode_state():
 def main():
     # ✅ Initialize Firebase first
     try:
-        from firebase_config import initialize_firebase
-        initialize_firebase()
+        from firebase_init import firebase_admin
     except Exception as e:
         st.error(f"❌ Failed to initialize Firebase: {e}")
         st.stop()

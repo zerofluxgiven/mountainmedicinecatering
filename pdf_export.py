@@ -2,13 +2,13 @@
 
 import streamlit as st
 from fpdf import FPDF
-from firebase_admin import firestore
+from firebase_init import db
 from datetime import datetime
 from utils import format_date
 import os
 from auth import require_login
 
-db = firestore.client()
+db = db
 
 # ----------------------------
 # 📄 Generate Event Summary PDF

@@ -1,3 +1,4 @@
+from firebase_init import firebase_admin
 # firestore_utils.py
 
 """

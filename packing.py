@@ -1,9 +1,9 @@
 import streamlit as st
-from firebase_admin import firestore
+from firebase_init import db
 from utils import generate_id, get_scoped_query, is_event_scoped, get_event_scope_message, get_active_event_id
 from datetime import datetime
 
-db = firestore.client()
+db = db
 
 # ----------------------------
 # 📦 Packing & Loading UI
