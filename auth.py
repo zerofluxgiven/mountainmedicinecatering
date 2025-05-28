@@ -1,6 +1,6 @@
 from firebase_init import get_db
-# auth.py - Firebase Auth Compatibility Layer
 db = get_db()
+# auth.py - Firebase Auth Compatibility Layer
 
 from firebase_auth_ui import (
     get_current_user,
@@ -19,7 +19,7 @@ import functools
 from datetime import datetime
 
 # Use centralized database client
-from firebase_init import db
+from db_client import db
 
 USER_COLLECTION = "users"
 
