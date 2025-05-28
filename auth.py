@@ -1,4 +1,6 @@
+from firebase_init import get_db
 # auth.py - Firebase Auth Compatibility Layer
+db = get_db()
 
 from firebase_auth_ui import (
     get_current_user,

@@ -1,12 +1,12 @@
 # suggestions.py
 
 import streamlit as st
-from firebase_init import db
+from firebase_init import get_db
 from datetime import datetime
 from auth import get_user_id
 from utils import generate_id
 
-db = db
+db = get_db()
 COLLECTION = "suggestions"
 
 # ----------------------------
@@ -42,7 +42,7 @@ def create_suggestion(
         "source_references": source_references or [],
     }
 
-    db.collection(COLLECTION).document(suggestion_id).set(suggestion_data)
+    get_db().collection(COLLECTION).document(suggestion_id).set(suggestion_data)
     st.success("✅ Suggestion submitted for admin review.")
 
 # ----------------------------
@@ -70,13 +70,13 @@ def suggestion_input(field_name: str, current_value: str, document_type: str, do
 # ----------------------------
 
 def approve_suggestion(suggestion_id: str) -> None:
-    db.collection(COLLECTION).document(suggestion_id).update({
+    get_db().collection(COLLECTION).document(suggestion_id).update({
         "status": "approved",
         "approved_at": firestore.SERVER_TIMESTAMP
     })
 
 def reject_suggestion(suggestion_id: str) -> None:
-    db.collection(COLLECTION).document(suggestion_id).update({
+    get_db().collection(COLLECTION).document(suggestion_id).update({
         "status": "rejected",
         "rejected_at": firestore.SERVER_TIMESTAMP
     })
@@ -86,7 +86,7 @@ def reject_suggestion(suggestion_id: str) -> None:
 # ----------------------------
 
 def get_pending_suggestions() -> list[dict]:
-    docs = db.collection(COLLECTION).where("status", "==", "pending").order_by("created_at", direction=firestore.Query.DESCENDING).stream()
+    docs = get_db().collection(COLLECTION).where("status", "==", "pending").order_by("created_at", direction=firestore.Query.DESCENDING).stream()
     return [doc.to_dict() for doc in docs]
 
 def get_suggestion_count() -> int:
