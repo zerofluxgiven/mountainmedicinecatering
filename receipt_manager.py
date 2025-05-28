@@ -1,10 +1,10 @@
 import streamlit as st
-from firebase_init import db
+from firebase_init import get_db
 from auth import get_user_id
 from utils import generate_id
 from datetime import datetime
 
-db = db
+db = get_db()
 
 # ----------------------------
 # 🧾 Receipt Upload & Linking
@@ -42,7 +42,7 @@ def receipt_upload_ui(user):
             "created_at": firestore.SERVER_TIMESTAMP
         }
 
-        db.collection("receipts").document(rid).set(data)
+        get_db().collection("receipts").document(rid).set(data)
         st.success("✅ Receipt uploaded.")
 
         if ai_parse:

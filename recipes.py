@@ -1,10 +1,10 @@
 import streamlit as st
-from firebase_init import db
+from firebase_init import get_db
 from utils import format_date, get_active_event_id
 from ingredients import parse_recipe_ingredients, update_recipe_with_parsed_ingredients
 from allergies import render_allergy_warning
 
-db = db
+db = get_db()
 
 # ----------------------------
 # 📖 Recipes Tab (Public)
@@ -28,7 +28,7 @@ def recipes_page():
 def _browse_recipes_tab():
     """Browse all recipes"""
     try:
-        docs = db.collection("recipes").order_by("created_at", direction=firestore.Query.DESCENDING).stream()
+        docs = get_db().collection("recipes").order_by("created_at", direction=firestore.Query.DESCENDING).stream()
         recipes = [doc.to_dict() | {"id": doc.id} for doc in docs]
     except Exception as e:
         st.error(f"Failed to load recipes: {e}")
@@ -101,7 +101,7 @@ def _browse_recipes_tab():
                 for ping in recipe.get('parsed_ingredients', []):
                     # Get ingredient details
                     try:
-                        ing_doc = db.collection("ingredients").document(ping['ingredient_id']).get()
+                        ing_doc = get_db().collection("ingredients").document(ping['ingredient_id']).get()
                         if ing_doc.exists:
                             category = ing_doc.to_dict().get('category', 'Other')
                             if category not in ingredients_by_category:
@@ -197,7 +197,7 @@ def _recipe_analytics_tab():
     
     try:
         # Get all recipes
-        recipes = [doc.to_dict() for doc in db.collection("recipes").stream()]
+        recipes = [doc.to_dict() for doc in get_db().collection("recipes").stream()]
         
         if not recipes:
             st.info("No recipes to analyze")
@@ -208,7 +208,7 @@ def _recipe_analytics_tab():
         parsed_recipes = len([r for r in recipes if r.get('ingredients_parsed', False)])
         
         # Get all ingredients
-        all_ingredients = db.collection("ingredients").stream()
+        all_ingredients = get_db().collection("ingredients").stream()
         ingredients_list = [doc.to_dict() for doc in all_ingredients]
         
         col1, col2, col3, col4 = st.columns(4)
