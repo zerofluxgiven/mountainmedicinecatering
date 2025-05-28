@@ -2,13 +2,13 @@
 
 import streamlit as st
 from fpdf import FPDF
-from firebase_init import db
+from firebase_init import get_db
 from datetime import datetime
 from utils import format_date
 import os
 from auth import require_login
 
-db = db
+db = get_db()
 
 # ----------------------------
 # 📄 Generate Event Summary PDF
@@ -16,7 +16,7 @@ db = db
 
 def generate_event_summary_pdf(event_id: str) -> None:
     """Generates a post-event summary PDF for the given event."""
-    event = db.collection("events").document(event_id).get().to_dict()
+    event = get_db().collection("events").document(event_id).get().to_dict()
     if not event:
         st.error("Event not found.")
         return

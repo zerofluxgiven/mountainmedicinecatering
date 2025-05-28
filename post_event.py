@@ -1,13 +1,13 @@
 # post_event.py
 
 import streamlit as st
-from firebase_init import db
+from firebase_init import get_db
 from auth import require_role
 from utils import format_date, get_scoped_query, is_event_scoped, get_event_scope_message, get_active_event_id
 from datetime import datetime
 from google.cloud.firestore_v1.base_query import FieldFilter
 
-db = db
+db = get_db()
 
 # ----------------------------
 # 📋 Post-Event Interview
@@ -25,7 +25,7 @@ def post_event_ui(user: dict) -> None:
     if is_event_scoped():
         # Check if the active event is complete
         active_event_id = get_active_event_id()
-        event_doc = db.collection("events").document(active_event_id).get()
+        event_doc = get_db().collection("events").document(active_event_id).get()
         
         if not event_doc.exists:
             st.error("Active event not found")
@@ -50,7 +50,7 @@ def _show_completed_events_list(user: dict) -> None:
     
     # Get all completed events
     try:
-        completed_events = db.collection("events").where(filter=FieldFilter("status", "==", "complete")).where(filter=FieldFilter("deleted", "==", False)).stream()
+        completed_events = get_db().collection("events").where(filter=FieldFilter("status", "==", "complete")).where(filter=FieldFilter("deleted", "==", False)).stream()
         events_list = [doc.to_dict() | {"id": doc.id} for doc in completed_events]
     except:
         events_list = []
@@ -107,7 +107,7 @@ def _show_completed_events_list(user: dict) -> None:
     # Check if an event was selected
     if "post_event_selected" in st.session_state:
         selected_id = st.session_state["post_event_selected"]
-        selected_doc = db.collection("events").document(selected_id).get()
+        selected_doc = get_db().collection("events").document(selected_id).get()
         
         if selected_doc.exists:
             st.markdown("---")
@@ -127,7 +127,7 @@ def _render_post_event_form(event_id: str, event_data: dict, user: dict) -> None
         st.markdown("### 🍽️ Menu Popularity")
         st.caption("Rate each menu item from 1 (poor) to 5 (excellent)")
         
-        menus = db.collection("menus").where("event_id", "==", event_id).stream()
+        menus = get_db().collection("menus").where("event_id", "==", event_id).stream()
         menu_popularity = {}
         
         for menu in menus:
@@ -217,7 +217,7 @@ def _render_post_event_form(event_id: str, event_data: dict, user: dict) -> None
                 }
                 
                 # Update event document
-                db.collection("events").document(event_id).update({
+                get_db().collection("events").document(event_id).update({
                     "post_event_summary": summary_data
                 })
                 
@@ -250,7 +250,7 @@ def show_post_event_analytics():
     # Get all events with post-event summaries
     try:
         events_with_feedback = []
-        all_events = db.collection("events").where("deleted", "==", False).stream()
+        all_events = get_db().collection("events").where("deleted", "==", False).stream()
         
         for event_doc in all_events:
             event_data = event_doc.to_dict()

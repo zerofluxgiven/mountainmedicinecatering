@@ -1,9 +1,9 @@
 import streamlit as st
-from firebase_init import db
+from firebase_init import get_db
 from utils import generate_id, get_scoped_query, is_event_scoped, get_event_scope_message, get_active_event_id
 from datetime import datetime
 
-db = db
+db = get_db()
 
 # ----------------------------
 # 📦 Packing & Loading UI
@@ -33,7 +33,7 @@ def _show_all_events_packing():
     """Show packing lists for all events"""
     # Get all non-deleted events
     try:
-        events = db.collection("events").where("deleted", "==", False).order_by("start_date").stream()
+        events = get_db().collection("events").where("deleted", "==", False).order_by("start_date").stream()
         event_list = [doc.to_dict() | {"id": doc.id} for doc in events]
     except:
         event_list = []
@@ -86,7 +86,7 @@ def _render_event_packing(event_id):
 def _render_task_list(event_id):
     st.subheader("📝 Tasks")
     
-    tasks_ref = db.collection("events").document(event_id).collection("tasks")
+    tasks_ref = get_db().collection("events").document(event_id).collection("tasks")
     tasks = [doc.to_dict() for doc in tasks_ref.stream()]
     
     # Group tasks by priority
@@ -164,7 +164,7 @@ def _render_task_item(task, tasks_ref):
 def _render_equipment_list(event_id):
     st.subheader("🔧 Equipment")
     
-    items_ref = db.collection("events").document(event_id).collection("equipment")
+    items_ref = get_db().collection("events").document(event_id).collection("equipment")
     items = [doc.to_dict() for doc in items_ref.stream()]
     
     # Group by category
@@ -232,7 +232,7 @@ def _render_grocery_list(event_id):
     st.subheader("🛒 Groceries")
     
     # Use shopping_items collection instead of groceries for consistency
-    groc_ref = db.collection("events").document(event_id).collection("shopping_items")
+    groc_ref = get_db().collection("events").document(event_id).collection("shopping_items")
     items = [doc.to_dict() for doc in groc_ref.stream()]
     
     # Group by category
@@ -304,9 +304,9 @@ def _render_packing_summary(event_id):
     st.subheader("📊 Packing Summary")
     
     # Get all data
-    tasks_ref = db.collection("events").document(event_id).collection("tasks")
-    equipment_ref = db.collection("events").document(event_id).collection("equipment")
-    shopping_ref = db.collection("events").document(event_id).collection("shopping_items")
+    tasks_ref = get_db().collection("events").document(event_id).collection("tasks")
+    equipment_ref = get_db().collection("events").document(event_id).collection("equipment")
+    shopping_ref = get_db().collection("events").document(event_id).collection("shopping_items")
     
     tasks = [doc.to_dict() for doc in tasks_ref.stream()]
     equipment = [doc.to_dict() for doc in equipment_ref.stream()]
@@ -375,7 +375,7 @@ def _export_packing_checklist(event_id, tasks, equipment, shopping):
 def _get_event_info(event_id):
     """Get event information"""
     try:
-        doc = db.collection("events").document(event_id).get()
+        doc = get_db().collection("events").document(event_id).get()
         if doc.exists:
             return doc.to_dict()
     except:

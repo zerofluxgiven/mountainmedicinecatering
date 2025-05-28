@@ -1,5 +1,5 @@
 import streamlit as st
-from firebase_init import db, storage
+from firebase_init import get_db, storage
 from auth import require_login
 from utils import generate_id, get_scoped_query, is_event_scoped, get_event_scope_message, get_active_event_id
 from datetime import datetime
@@ -10,12 +10,12 @@ import io
 import json
 import re
 from google.cloud.firestore_v1.base_query import FieldFilter
-from firebase_init import db
+from firebase_init import get_db
 
 from mobile_helpers import safe_columns, safe_file_uploader
 from mobile_layout import render_mobile_navigation
 
-db = db
+db = get_db()
 
 # ----------------------------
 # 🧾 Receipt Upload & Parsing
@@ -255,7 +255,7 @@ def _display_receipts(receipts: list) -> None:
 
             if st.button(f"🗑️ Delete Receipt", key=f"del_{receipt['id']}"):
                 try:
-                    db.collection("receipts").document(receipt['id']).delete()
+                    get_db().collection("receipts").document(receipt['id']).delete()
                     st.success("Receipt deleted")
                     st.rerun()
                 except Exception as e:
@@ -403,7 +403,7 @@ def _upload_receipt_section(user: dict) -> None:
                         "parse_confidence": "high" if vendor and total else "low"
                     }
 
-                    db.collection("receipts").document(receipt_data['file_id']).set(firestore_data)
+                    get_db().collection("receipts").document(receipt_data['file_id']).set(firestore_data)
 
                     import os
                     os.unlink(receipt_data['tmp_path'])
@@ -445,7 +445,7 @@ def _view_receipts_section(user: dict) -> None:
         for event_id, event_receipts in receipts_by_event.items():
             if event_id != "No Event":
                 try:
-                    event_doc = db.collection("events").document(event_id).get()
+                    event_doc = get_db().collection("events").document(event_id).get()
                     event_name = event_doc.to_dict().get("name", "Unknown Event") if event_doc.exists else "Unknown Event"
                     st.markdown(f"### 🎪 {event_name}")
                 except:

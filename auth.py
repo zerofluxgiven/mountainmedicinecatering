@@ -17,7 +17,7 @@ import functools
 from datetime import datetime
 
 # Use centralized database client
-from db_client import db
+from firebase_init import get_db
 
 USER_COLLECTION = "users"
 
@@ -74,7 +74,7 @@ def require_login(fn):
 def get_user_profile(user_id: str) -> dict | None:
     """Get complete user profile by ID"""
     try:
-        doc = db.collection(USER_COLLECTION).document(user_id).get()
+        doc = get_db().collection(USER_COLLECTION).document(user_id).get()
         if doc.exists:
             return doc.to_dict()
         return None
@@ -88,7 +88,7 @@ def update_user_profile(user_id: str, updates: dict) -> bool:
         # Add update timestamp
         updates["updated_at"] = datetime.utcnow()
         
-        db.collection(USER_COLLECTION).document(user_id).update(updates)
+        get_db().collection(USER_COLLECTION).document(user_id).update(updates)
         
         # Update session state if it's the current user
         current_user = get_current_user()
@@ -112,7 +112,7 @@ def get_all_users() -> list[dict]:
 def update_user_role(user_id: str, new_role: str) -> bool:
     """Update a user's role"""
     try:
-        db.collection(USER_COLLECTION).document(user_id).update({
+        get_db().collection(USER_COLLECTION).document(user_id).update({
             "role": new_role,
             "role_updated_at": datetime.utcnow()
         })
@@ -127,7 +127,7 @@ def deactivate_user(user_id: str) -> bool:
     """Deactivate a user account"""
     try:
         # Update in Firestore
-        db.collection(USER_COLLECTION).document(user_id).update({
+        get_db().collection(USER_COLLECTION).document(user_id).update({
             "active": False,
             "deactivated_at": datetime.utcnow()
         })
@@ -193,7 +193,7 @@ def get_user_stats() -> dict:
 def log_auth_attempt(email: str, success: bool, method: str = "firebase") -> None:
     """Log authentication attempts for security"""
     try:
-        db.collection("auth_logs").add({
+        get_db().collection("auth_logs").add({
             "email": email,
             "success": success,
             "method": method,
@@ -253,7 +253,7 @@ def sync_firebase_users() -> int:
         
         for fb_user in firebase_users:
             # Check if user exists in Firestore
-            user_doc = db.collection(USER_COLLECTION).document(fb_user.uid).get()
+            user_doc = get_db().collection(USER_COLLECTION).document(fb_user.uid).get()
             
             if not user_doc.exists:
                 # Create user in Firestore
@@ -268,11 +268,11 @@ def sync_firebase_users() -> int:
                     "active": True,
                     "email_verified": fb_user.email_verified
                 }
-                db.collection(USER_COLLECTION).document(fb_user.uid).set(user_data)
+                get_db().collection(USER_COLLECTION).document(fb_user.uid).set(user_data)
                 synced_count += 1
             else:
                 # Update existing user with Firebase data
-                db.collection(USER_COLLECTION).document(fb_user.uid).update({
+                get_db().collection(USER_COLLECTION).document(fb_user.uid).update({
                     "email_verified": fb_user.email_verified,
                     "email": fb_user.email,
                     "name": fb_user.display_name or fb_user.email.split('@')[0]
@@ -293,7 +293,7 @@ def delete_firebase_user(user_id: str) -> bool:
         firebase_auth.delete_user(user_id)
         
         # Delete from Firestore
-        db.collection(USER_COLLECTION).document(user_id).delete()
+        get_db().collection(USER_COLLECTION).document(user_id).delete()
         
         # Revoke all sessions
         auth_manager._revoke_all_user_sessions(user_id)
