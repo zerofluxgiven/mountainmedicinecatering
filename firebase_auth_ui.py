@@ -30,8 +30,7 @@ def get_db():
     except ValueError:
         # Firebase not initialized, try to initialize it
         try:
-            from firebase_config import initialize_firebase
-            initialize_firebase()
+            from firebase_init import firebase_admin
         except Exception as e:
             st.error(f"❌ Failed to initialize Firebase: {e}")
             return None
@@ -290,8 +289,7 @@ def initialize_firebase_auth():
         return True
     except ValueError:
         try:
-            from firebase_config import initialize_firebase
-            initialize_firebase()
+            from firebase_init import firebase_admin
             return True
         except Exception as e:
             st.error(f"❌ Firebase not initialized: {e}")

@@ -1,3 +1,4 @@
+from firebase_init import firebase_admin
 import streamlit as st
 from auth import require_role
 from file_storage import save_uploaded_file

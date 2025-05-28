@@ -1,3 +1,4 @@
+from firebase_init import firebase_admin
 import streamlit as st
 from firebase_admin import storage
 from auth import get_user_role, get_user_id

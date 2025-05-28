@@ -1,7 +1,7 @@
 import streamlit as st
-from firebase_admin import firestore
+from firebase_init import db
 from utils import format_date
-from firebase_admin import firestore
+from firebase_init import db
 
 db = firestore.client()
 

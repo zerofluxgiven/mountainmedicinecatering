@@ -1,10 +1,10 @@
 import streamlit as st
-from firebase_admin import firestore
+from firebase_init import db
 from auth import get_user_id
 from utils import generate_id
 from datetime import datetime
 
-db = firestore.client()
+db = db
 
 # ----------------------------
 # 🧾 Receipt Upload & Linking

@@ -1,6 +1,5 @@
 import streamlit as st
-from firebase_config import initialize_firebase
-initialize_firebase()
+from firebase_init import firebase_admin
 
 # 🔐 Auth & Permissions
 from auth import load_user_session, require_role

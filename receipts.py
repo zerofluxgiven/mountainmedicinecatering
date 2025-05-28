@@ -1,5 +1,5 @@
 import streamlit as st
-from firebase_admin import firestore, storage
+from firebase_init import db, storage
 from auth import require_login
 from utils import generate_id, get_scoped_query, is_event_scoped, get_event_scope_message, get_active_event_id
 from datetime import datetime
@@ -10,12 +10,12 @@ import io
 import json
 import re
 from google.cloud.firestore_v1.base_query import FieldFilter
-from firebase_admin import firestore
+from firebase_init import db
 
 from mobile_helpers import safe_columns, safe_file_uploader
 from mobile_layout import render_mobile_navigation
 
-db = firestore.client()
+db = db
 
 # ----------------------------
 # 🧾 Receipt Upload & Parsing

@@ -1,7 +1,7 @@
 # roles.py - Updated for Firebase Authentication
 
 import streamlit as st
-from firebase_admin import firestore
+from firebase_init import db
 from auth import require_role, get_current_user, get_user_role as auth_get_user_role
 
 db = firestore.client()
