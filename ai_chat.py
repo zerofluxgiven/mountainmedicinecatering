@@ -5,7 +5,7 @@ from db_client import db
 from utils import format_date, generate_id, get_active_event, get_active_event_id
 import json
 from google.cloud.firestore_v1.base_query import FieldFilter
-from firebase_init import db
+from firebase_admin import firestore
 
 # Initialize OpenAI client
 try:

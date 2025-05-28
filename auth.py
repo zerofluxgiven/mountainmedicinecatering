@@ -1,5 +1,3 @@
-from firebase_init import get_db
-db = get_db()
 # auth.py - Firebase Auth Compatibility Layer
 
 from firebase_auth_ui import (
