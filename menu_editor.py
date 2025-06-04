@@ -94,6 +94,42 @@ def menu_editor_ui():
         except Exception as e:
             st.error(f"Failed to load ingredients: {e}")
 
+# ----------------------------
+# 🍽️ Scoped Menu Editor - Used by Dashboards
+# ----------------------------
+
+def render_menu_editor_scoped(event_id: str, user: dict):
+    st.subheader("📋 Scoped Menu Editor")
+
+    menu = get_event_menu(event_id)
+    if not menu:
+        st.info("No menu items for this event yet.")
+
+    updated_menu = []
+
+    for idx, item in enumerate(menu):
+        with st.expander(f"{item.get('day', 'Day')} - {item.get('meal', 'Meal')}"):
+            col1, col2 = st.columns(2)
+            day = col1.text_input("Day", item.get("day", ""), key=f"scoped_day_{idx}")
+            meal = col2.text_input("Meal", item.get("meal", ""), key=f"scoped_meal_{idx}")
+            recipe = st.text_input("Recipe", item.get("recipe", ""), key=f"scoped_recipe_{idx}")
+            if day and meal and recipe:
+                updated_menu.append({"day": day, "meal": meal, "recipe": recipe})
+
+    st.markdown("### ➕ Add Menu Item")
+    with st.form(f"scoped_add_menu_item_form_{event_id}"):
+        new_day = st.text_input("Day", key=f"scoped_new_day_{event_id}")
+        new_meal = st.text_input("Meal", key=f"scoped_new_meal_{event_id}")
+        new_recipe = st.text_input("Recipe", key=f"scoped_new_recipe_{event_id}")
+        if st.form_submit_button("Add"):
+            updated_menu.append({"day": new_day, "meal": new_meal, "recipe": new_recipe})
+
+    if st.button("💾 Save Scoped Menu", key=f"scoped_save_{event_id}"):
+        if save_event_menu(event_id, updated_menu):
+            st.success("✅ Scoped menu saved")
+            st.rerun()
+
+
 
 
 
