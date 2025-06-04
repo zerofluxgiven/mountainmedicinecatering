@@ -9,12 +9,25 @@ from typing import List, Dict, Optional
 import re
 from google.cloud.firestore_v1.base_query import FieldFilter
 from firebase_admin import firestore
+from utils import normalize_ingredient
+
 
 db = firestore.client()
 
 # ----------------------------
 # 🥕 Ingredient Management
 # ----------------------------
+
+def scale_ingredients(ingredients: list, multiplier: float) -> list:
+    """Scale quantities of ingredients by a multiplier (e.g., guest count)"""
+    for ing in ingredients:
+        try:
+            qty = float(ing.get("quantity", "1").split()[0])
+            ing["quantity"] = str(round(qty * multiplier, 2))
+        except:
+            pass  # fallback: skip if not numerical
+    return ingredients
+
 
 def normalize_ingredient(ingredient: str) -> str:
     """Normalize ingredient name for consistency"""
