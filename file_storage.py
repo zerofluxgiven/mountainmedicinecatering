@@ -77,14 +77,16 @@ def save_file_metadata(file_id, filename, file_url, tags, user_id, event_id=None
         }
         
         db.collection("files").document(file_id).set(metadata)
+
+          # ✅ If this file is tagged 'menu' and tied to an event, store as canonical menu_html
+        if "menu" in [t.lower() for t in tags] and event_id:
+            try:
+                db.collection("events").document(event_id).collection("meta").document("event_file").update({
+                    "menu_html": st.session_state.get("current_file_data", b"").decode("utf-8")
+                })
+            except Exception as update_err:
+                st.warning(f"Could not update event_file.menu_html: {update_err}")
         return True
-
-        if "menu" in tags and event_id:
-            db.collection("events").document(event_id).update({
-                "menu_file_id": file_id,
-                "updated_at": datetime.utcnow()
-            })
-
         
     except Exception as e:
         st.error(f"❌ Failed to save file metadata: {e}")
