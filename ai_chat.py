@@ -85,18 +85,18 @@ def ai_chat_ui():
         st.session_state.chat_history = []
 
     if recipe_context:
-    with st.expander("📘 Recipe Context (linked)", expanded=False):
-        st.markdown(f"**Name:** {recipe_context.get('name', 'Unnamed')}")
-        st.markdown(f"**Author:** {recipe_context.get('author_name', 'Unknown')}")
-        st.markdown(f"**Ingredients:**\n{recipe_context.get('ingredients', '—')}")
-        st.markdown(f"**Instructions:**\n{recipe_context.get('instructions', '—')}")
-        if st.button("🧠 Ask AI about this recipe"):
-            st.session_state.chat_history.append({
-                "sender": "user",
-                "content": f"Analyze or suggest improvements for this recipe: {recipe_context.get('name', '')}",
-                "timestamp": format_date(datetime.now())
-            })
-            st.rerun()
+        with st.expander("📘 Recipe Context (linked)", expanded=False):
+            st.markdown(f"**Name:** {recipe_context.get('name', 'Unnamed')}")
+            st.markdown(f"**Author:** {recipe_context.get('author_name', 'Unknown')}")
+            st.markdown(f"**Ingredients:**\n{recipe_context.get('ingredients', '—')}")
+            st.markdown(f"**Instructions:**\n{recipe_context.get('instructions', '—')}")
+            if st.button("🧠 Ask AI about this recipe"):
+                st.session_state.chat_history.append({
+                    "sender": "user",
+                    "content": f"Analyze or suggest improvements for this recipe: {recipe_context.get('name', '')}",
+                    "timestamp": format_date(datetime.now())
+                })
+                st.rerun()
 
 
     # Chat interface
