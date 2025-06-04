@@ -99,19 +99,71 @@ def recipe_editor_ui(recipe_id: str):
             st.error("Recipe not found.")
             return
         recipe = doc.to_dict()
+        from lock_utils import is_locked
+        locked = is_locked(recipe.get("event_id"))
+
     except Exception as e:
         st.error(f"Error loading recipe: {e}")
         return
 
     st.title("📝 Edit Recipe")
 
-    name = st.text_input("Recipe Name", recipe.get("name", ""))
-    ingredients = st.text_area("Ingredients (one per line)", recipe.get("ingredients", ""))
-    instructions = st.text_area("Instructions", recipe.get("instructions", ""))
-    notes = st.text_area("Notes", recipe.get("notes", ""))
+    name = st.text_input("Recipe Name", recipe.get("name", ""), disabled=locked)
+    if locked:
+        st.text_input("💡 Suggest a new name", key="suggest_name")
 
+    ingredients = st.text_area("Ingredients (one per line)", recipe.get("ingredients", ""), disabled=locked)
+    if locked:
+        st.text_area("💡 Suggest updated ingredients", key="suggest_ingredients")
+    instructions = st.text_area("Instructions", recipe.get("instructions", ""), disabled=locked)
+    if locked:
+        st.text_area("💡 Suggest updated instructions", key="suggest_instructions")
+    notes = st.text_area("Notes", recipe.get("notes", ""), disabled=locked)
+    if locked:
+        st.text_area("💡 Suggest updated notes", key="suggest_notes")
+
+    
+        # Optional: Edit parsed ingredients if present
+    parsed = recipe.get("parsed_ingredients", [])
+    if parsed:
+        st.markdown("### 🧪 Parsed Ingredients")
+        for i, ping in enumerate(parsed):
+            col1, col2, col3 = st.columns([2, 1, 3])
+            with col1:
+                parsed[i]["quantity"] = col1.text_input(f"Qty {i+1}", ping.get("quantity", ""), key=f"qty_{i}")
+            with col2:
+                parsed[i]["unit"] = col2.text_input(f"Unit {i+1}", ping.get("unit", ""), key=f"unit_{i}")
+            with col3:
+                parsed[i]["name"] = col3.text_input(f"Name {i+1}", ping.get("name", ""), key=f"name_{i}")
+
+
+    if st.button("🧪 Re-Parse Ingredients"):
+        try:
+            parsed = parse_recipe_ingredients(ingredients)
+            if parsed:
+                recipe_ref.update({
+                    "parsed_ingredients": parsed,
+                    "ingredients_parsed": True
+                })
+                st.success("✅ Ingredients re-parsed successfully.")
+            else:
+                st.warning("⚠️ No ingredients could be parsed.")
+        except Exception as e:
+            st.error(f"Failed to re-parse ingredients: {e}")
+    
     if st.button("💾 Save Changes"):
         try:
+            if parsed:
+                cleaned = []
+                for p in parsed:
+                    if p.get("name"):
+                        cleaned.append({
+                            "name": p.get("name", "").strip(),
+                            "quantity": p.get("quantity", "").strip(),
+                            "unit": p.get("unit", "").strip(),
+                        })
+                recipe_ref.update({"parsed_ingredients": cleaned})
+    
             recipe_ref.update({
                 "name": name,
                 "ingredients": ingredients,
@@ -122,6 +174,43 @@ def recipe_editor_ui(recipe_id: str):
             st.success("✅ Recipe saved successfully.")
         except Exception as e:
             st.error(f"❌ Failed to save recipe: {e}")
+
+        if locked:
+            from suggestions import submit_suggestion
+            fields = {
+                "name": st.session_state.get("suggest_name"),
+                "ingredients": st.session_state.get("suggest_ingredients"),
+                "instructions": st.session_state.get("suggest_instructions"),
+                "notes": st.session_state.get("suggest_notes"),
+            }
+            for field, new_value in fields.items():
+                if new_value:
+                    submit_suggestion(
+                        doc_type="recipe",
+                        doc_id=recipe_id,
+                        field=field,
+                        new_value=new_value,
+                        event_id=recipe.get("event_id")
+                    )
+            st.success("💡 Suggestions submitted for review.")
+
+
+    # Optional: AI-Powered Tag Suggestions
+    if recipe.get("ingredients_parsed"):
+        from ai_chat import suggest_tags_for_ingredients
+        st.markdown("### 🤖 Suggested Tags")
+
+        try:
+            suggestions = suggest_tags_for_ingredients(parsed)
+            if suggestions:
+                selected = st.multiselect("Select suggested tags", suggestions)
+                if st.button("➕ Add Selected Tags") and selected:
+                    new_tags = list(set(recipe.get("tags", []) + selected))
+                    recipe_ref.update({"tags": new_tags})
+                    st.success(f"✅ Tags updated: {', '.join(new_tags)}")
+        except Exception as e:
+            st.warning(f"⚠️ AI tag suggestion failed: {e}")
+
 
 
 def _browse_recipes_tab():
