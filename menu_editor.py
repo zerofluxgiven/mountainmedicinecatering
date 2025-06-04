@@ -5,6 +5,30 @@ from datetime import datetime
 from ingredients import get_event_ingredient_list
 
 # ----------------------------
+# 📄 Load & Save Menu from event_file
+# ----------------------------
+
+def get_event_menu(event_id):
+    try:
+        ref = db.collection("events").document(event_id).collection("meta").document("event_file")
+        doc = ref.get()
+        if doc.exists:
+            return doc.to_dict().get("menu", [])
+    except Exception as e:
+        st.error(f"Failed to load menu: {e}")
+    return []
+
+def save_event_menu(event_id, menu_list):
+    try:
+        ref = db.collection("events").document(event_id).collection("meta").document("event_file")
+        ref.update({"menu": menu_list})
+        return True
+    except Exception as e:
+        st.error(f"Failed to save menu: {e}")
+        return False
+
+
+# ----------------------------
 # 📝 Menu Editor
 # ----------------------------
 
@@ -20,18 +44,8 @@ def menu_editor_ui():
             return
 
         event_id = get_active_event_id()
-        menu_doc_ref = db.collection("events").document(event_id).collection("meta").document("event_file")
+        menu = get_event_menu(event_id)
 
-        try:
-            menu_doc = menu_doc_ref.get()
-            if menu_doc.exists:
-                event_data = menu_doc.to_dict()
-                menu = event_data.get("menu", [])
-            else:
-                menu = []
-        except Exception as e:
-            st.error(f"Error loading menu: {e}")
-            return
 
         st.markdown("### 🍽️ Current Menu")
         new_menu = []
@@ -60,11 +74,8 @@ def menu_editor_ui():
 
         if st.button("💾 Save Menu"):
             try:
-                menu_doc_ref.update({
-                    "menu": new_menu,
-                    "menu_updated_at": datetime.utcnow()
-                })
-                st.success("✅ Menu saved successfully.")
+                if save_event_menu(event_id, new_menu):
+                    st.success("✅ Menu saved successfully.")
             except Exception as e:
                 st.error(f"❌ Failed to save menu: {e}")
 
