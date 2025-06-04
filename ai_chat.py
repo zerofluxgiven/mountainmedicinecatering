@@ -35,6 +35,16 @@ def ai_chat_ui():
     if not user:
         st.warning("You must be signed in to use the assistant.")
         return
+    selected_recipe_id = st.session_state.get("selected_recipe_id")
+    recipe_context = None
+    if selected_recipe_id:
+        try:
+            recipe_doc = db.collection("recipes").document(selected_recipe_id).get()
+            if recipe_doc.exists:
+                recipe_context = recipe_doc.to_dict()
+        except Exception as e:
+            st.warning(f"⚠️ Failed to load recipe context: {e}")
+
 
     # Check if OpenAI is available
     if not client:
@@ -73,6 +83,21 @@ def ai_chat_ui():
     # Initialize chat history
     if "chat_history" not in st.session_state:
         st.session_state.chat_history = []
+
+    if recipe_context:
+    with st.expander("📘 Recipe Context (linked)", expanded=False):
+        st.markdown(f"**Name:** {recipe_context.get('name', 'Unnamed')}")
+        st.markdown(f"**Author:** {recipe_context.get('author_name', 'Unknown')}")
+        st.markdown(f"**Ingredients:**\n{recipe_context.get('ingredients', '—')}")
+        st.markdown(f"**Instructions:**\n{recipe_context.get('instructions', '—')}")
+        if st.button("🧠 Ask AI about this recipe"):
+            st.session_state.chat_history.append({
+                "sender": "user",
+                "content": f"Analyze or suggest improvements for this recipe: {recipe_context.get('name', '')}",
+                "timestamp": format_date(datetime.now())
+            })
+            st.rerun()
+
 
     # Chat interface
     st.markdown("### 💬 Conversation")
@@ -251,6 +276,19 @@ def handle_quick_action(action_type: str):
 def build_context(user: dict, include_event: bool = True) -> str:
     """Build context string for AI"""
     context_parts = []
+        # Add recipe context if available
+    recipe_id = st.session_state.get("selected_recipe_id")
+    if recipe_id:
+        try:
+            recipe_doc = db.collection("recipes").document(recipe_id).get()
+            if recipe_doc.exists:
+                recipe = recipe_doc.to_dict()
+                context_parts.append(f"Recipe: {recipe.get('name', 'Unnamed')}")
+                context_parts.append("Ingredients:\n" + recipe.get("ingredients", "—"))
+                context_parts.append("Instructions:\n" + recipe.get("instructions", "—"))
+        except Exception as e:
+            context_parts.append("⚠️ Failed to load selected recipe context.")
+
     
     if include_event:
         active_event = get_active_event()
