@@ -294,7 +294,7 @@ def event_ui(user: dict | None) -> None:
         # Use different styling for active event
         container_class = "active-event" if is_active else "inactive-event"
         
-            with st.expander(f"{'🟣 ' if is_active else '⚪ '}{event.get('name', 'Unnamed Event')}", expanded=is_active):
+        with st.expander(f"{'🟣 ' if is_active else '⚪ '}{event.get('name', 'Unnamed Event')}", expanded=is_active):
             # Event details
             col1, col2 = st.columns(2)
 
