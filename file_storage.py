@@ -78,6 +78,13 @@ def save_file_metadata(file_id, filename, file_url, tags, user_id, event_id=None
         
         db.collection("files").document(file_id).set(metadata)
         return True
+
+        if "menu" in tags and event_id:
+            db.collection("events").document(event_id).update({
+                "menu_file_id": file_id,
+                "updated_at": datetime.utcnow()
+            })
+
         
     except Exception as e:
         st.error(f"❌ Failed to save file metadata: {e}")
