@@ -129,6 +129,14 @@ def session_set(key, value):
     st.session_state[key] = value
 
 # ----------------------------
+# 🧂 Normalize Ingredient Name
+# ----------------------------
+
+def normalize_ingredient(name: str) -> str:
+    """Normalize ingredient names for consistency (lowercase, trimmed)"""
+    return name.strip().lower()
+
+# ----------------------------
 # 🔑 Unique ID Generator
 # ----------------------------
 
