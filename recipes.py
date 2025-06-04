@@ -8,6 +8,51 @@ from ingredients import get_event_ingredient_list
 
 db = get_db()
 
+def parse_and_store_recipe_from_file(file_text: str, uploaded_by: str) -> str | None:
+    """Parse a text file for recipe content and store it"""
+    from datetime import datetime
+    import re
+    import uuid
+
+    # Basic extraction
+    lines = file_text.strip().splitlines()
+    name = lines[0].strip() if lines else "Unnamed Recipe"
+    
+    # Rough guesswork parsing for ingredients/instructions
+    try:
+        ingredients_start = next(i for i, line in enumerate(lines) if "ingredient" in line.lower())
+    except StopIteration:
+        ingredients_start = 1
+
+    try:
+        instructions_start = next(i for i, line in enumerate(lines) if "instruction" in line.lower())
+    except StopIteration:
+        instructions_start = len(lines) // 2
+
+    ingredients = "\n".join(lines[ingredients_start:instructions_start]).strip()
+    instructions = "\n".join(lines[instructions_start:]).strip()
+
+    recipe_data = {
+        "id": str(uuid.uuid4()),
+        "name": name,
+        "ingredients": ingredients,
+        "instructions": instructions,
+        "notes": "",
+        "created_at": datetime.utcnow(),
+        "author_id": uploaded_by,
+        "author_name": uploaded_by,
+        "ingredients_parsed": False,
+    }
+
+    try:
+        ref = db.collection("recipes").document(recipe_data["id"])
+        ref.set(recipe_data)
+        return recipe_data["id"]
+    except Exception as e:
+        print("Error saving recipe:", e)
+        return None
+
+
 # ----------------------------
 # 📖 Recipes Tab (Public)
 # ----------------------------
