@@ -26,7 +26,7 @@ def initialize_firebase() -> None:
         })
 
         firebase_admin.initialize_app(cred, {
-        "storageBucket": "mountainmedicine-6e572.appspot.com"
+        "storageBucket": st.secrets["firebase"]["storageBucket"]
         })
         print("✅ Firebase initialized.")
 
