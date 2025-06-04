@@ -150,6 +150,16 @@ def create_event(event_data: dict, user_id: str) -> str:
         event_data.setdefault("equipment_list", [])
         
         db.collection("events").document(event_id).set(event_data)
+
+         # ✅ Create canonical event_file under /events/{eventId}/meta/event_file
+        db.collection("events").document(event_id).collection("meta").document("event_file").set({
+            "menu": [],
+            "menu_html": "",
+            "schedule": [],
+            "equipment": [],
+            "notes": ""
+        })
+
         return event_id
         
     except Exception as e:
