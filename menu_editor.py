@@ -1,404 +1,64 @@
 import streamlit as st
-from firebase_admin import firestore
-from auth import require_login, get_user_role
-from utils import format_date, suggest_edit_box, get_scoped_query, is_event_scoped, get_event_scope_message, get_active_event_id, generate_id
+from db_client import db
+from utils import get_active_event_id, is_event_scoped
 from datetime import datetime
-from ingredients import parse_recipe_ingredients, update_recipe_with_parsed_ingredients
-from allergies import render_allergy_warning, get_event_allergies
-
-db = firestore.client()
 
 # ----------------------------
-# 🍽️ Menu Editor UI
+# 📝 Menu Editor
 # ----------------------------
 
-@require_login
-def menu_editor_ui(user: dict) -> None:
-    """Editable menu UI with proper event scoping."""
-    st.title("🍽️ Menu Editor")
-    
-    # Show current scope
-    st.info(get_event_scope_message())
-    
-    role = get_user_role(user)
-    
-    # Create Menu button (with event context if active)
-    if st.button("➕ Create New Menu Item"):
-        _show_create_menu_form(user)
-    
-    # Use scoped query
-    query = get_scoped_query("menus")
-    
-    try:
-        menus = [doc.to_dict() for doc in query.stream()]
-    except Exception as e:
-        st.error(f"⚠️ Failed to load menus: {e}")
-        return
+def menu_editor_ui():
+    st.title("📋 Edit Menu")
 
-    if not menus:
-        if is_event_scoped():
-            st.info("No menu items found for this event. Click 'Create New Menu Item' to add one.")
-        else:
-            st.info("No menu items found across all events. Create your first menu item!")
-        return
-    
-    # Group menus by event if not in event mode
     if not is_event_scoped():
-        st.markdown(f"### All Menu Items ({len(menus)} total)")
-        
-        # Group by event for better organization
-        menus_by_event = {}
-        for menu in menus:
-            event_id = menu.get("event_id", "No Event")
-            if event_id not in menus_by_event:
-                menus_by_event[event_id] = []
-            menus_by_event[event_id].append(menu)
-        
-        # Display grouped menus
-        for event_id, event_menus in menus_by_event.items():
-            if event_id != "No Event":
-                # Get event name
-                try:
-                    event_doc = db.collection("events").document(event_id).get()
-                    event_name = event_doc.to_dict().get("name", "Unknown Event") if event_doc.exists else "Unknown Event"
-                    st.markdown(f"#### 🎪 {event_name}")
-                except:
-                    st.markdown(f"#### 🎪 Event ID: {event_id}")
-            else:
-                st.markdown("#### 📋 Unassigned Menu Items")
-            
-            _display_menu_items(event_menus, user, role)
-    else:
-        # In event mode, just show the menus
-        st.markdown(f"### Menu Items ({len(menus)} items)")
-        _display_menu_items(menus, user, role)
-
-def _display_menu_items(menus: list, user: dict, role: str) -> None:
-    """Display a list of menu items"""
-    for m in menus:
-        with st.expander(f"{m.get('name', 'Unnamed')} ({m.get('category', 'No Category')})"):
-            # Show which event this belongs to if not in event mode
-            if not is_event_scoped() and m.get("event_id"):
-                st.caption(f"Event ID: {m.get('event_id')}")
-            
-            # Check for allergy warnings
-            if m.get("event_id"):
-                render_allergy_warning(m.get("id"), m.get("event_id"))
-            
-            locked = _is_locked(m.get("event_id"))
-
-            st.markdown("**Description:**")
-            if locked:
-                st.write(m.get("description", "No description"))
-                suggest_edit_box(
-                    field_name="Description",
-                    current_value=m.get("description", ""),
-                    user=user,
-                    target_id=m["id"],
-                    doc_type="menu_item"
-                )
-            else:
-                # Direct edit for unlocked items
-                new_desc = st.text_area(
-                    "Edit Description",
-                    value=m.get("description", ""),
-                    key=f"desc_{m['id']}"
-                )
-                if new_desc != m.get("description", ""):
-                    if st.button(f"Save Description", key=f"save_desc_{m['id']}"):
-                        _update_menu_item(m["id"], {"description": new_desc})
-                        st.success("Description updated!")
-                        st.rerun()
-
-            st.markdown("**Ingredients:**")
-            ingredients_text = m.get("ingredients", "No ingredients listed")
-            
-            # Show parsed ingredients if available
-            if m.get("ingredients_parsed") and m.get("parsed_ingredients"):
-                st.markdown("**📊 Parsed Ingredients:**")
-                for ping in m.get("parsed_ingredients", []):
-                    cols = st.columns([1, 1, 3])
-                    with cols[0]:
-                        st.write(ping.get('quantity', '-'))
-                    with cols[1]:
-                        st.write(ping.get('unit', '-'))
-                    with cols[2]:
-                        st.write(ping.get('name', '-'))
-                
-                # Button to re-parse
-                if role in ["admin", "manager"]:
-                    if st.button(f"🔄 Re-parse Ingredients", key=f"reparse_{m['id']}"):
-                        _parse_menu_ingredients(m["id"], ingredients_text)
-                        st.rerun()
-            else:
-                # Show raw ingredients text
-                st.text(ingredients_text)
-                
-                # Parse button for admin/manager
-                if role in ["admin", "manager"] and ingredients_text != "No ingredients listed":
-                    if st.button(f"🔍 Parse Ingredients", key=f"parse_{m['id']}"):
-                        _parse_menu_ingredients(m["id"], ingredients_text)
-                        st.rerun()
-            
-            if locked:
-                suggest_edit_box(
-                    field_name="Ingredients",
-                    current_value=ingredients_text,
-                    user=user,
-                    target_id=m["id"],
-                    doc_type="menu_item"
-                )
-            else:
-                new_ingredients = st.text_area(
-                    "Edit Ingredients",
-                    value=ingredients_text,
-                    key=f"ingredients_{m['id']}"
-                )
-                if new_ingredients != ingredients_text:
-                    if st.button(f"Save Ingredients", key=f"save_ingredients_{m['id']}"):
-                        _update_menu_item(m["id"], {"ingredients": new_ingredients})
-                        # Re-parse if ingredients changed
-                        if m.get("ingredients_parsed"):
-                            _parse_menu_ingredients(m["id"], new_ingredients)
-                        st.success("Ingredients updated!")
-                        st.rerun()
-
-            st.markdown("**Tags:**")
-            current_tags = m.get("tags", [])
-            if locked:
-                st.write(", ".join(current_tags) if current_tags else "No tags")
-                suggest_edit_box(
-                    field_name="Tags",
-                    current_value=", ".join(current_tags),
-                    user=user,
-                    target_id=m["id"],
-                    doc_type="menu_item"
-                )
-            else:
-                new_tags = st.text_input(
-                    "Edit Tags (comma-separated)",
-                    value=", ".join(current_tags),
-                    key=f"tags_{m['id']}"
-                )
-                if new_tags != ", ".join(current_tags):
-                    if st.button(f"Save Tags", key=f"save_tags_{m['id']}"):
-                        tags_list = [tag.strip() for tag in new_tags.split(",") if tag.strip()]
-                        _update_menu_item(m["id"], {"tags": tags_list})
-                        st.success("Tags updated!")
-                        st.rerun()
-
-            # Delete button (if user has permission)
-            if role in ["admin", "manager"] or m.get("created_by") == user.get("id"):
-                st.markdown("---")
-                if st.button(f"🗑️ Delete Menu Item", key=f"delete_{m['id']}"):
-                    if _delete_menu_item(m["id"]):
-                        st.success("Menu item deleted!")
-                        st.rerun()
-
-            # Show feedback if event is complete
-            if m.get("event_id") and _event_is_complete(m.get("event_id")):
-                _render_feedback(m)
-
-# ----------------------------
-# ➕ Create Menu Item
-# ----------------------------
-
-def _show_create_menu_form(user: dict) -> None:
-    """Show form to create a new menu item"""
-    with st.form("create_menu_form"):
-        st.subheader("Create New Menu Item")
-        
-        name = st.text_input("Name *", placeholder="e.g., Grilled Chicken Breast")
-        category = st.selectbox(
-            "Category *",
-            ["Appetizer", "Main Course", "Side Dish", "Dessert", "Beverage", "Other"]
-        )
-        description = st.text_area("Description", placeholder="Describe the dish...")
-        ingredients = st.text_area("Ingredients", placeholder="List ingredients, one per line...")
-        tags = st.text_input("Tags (comma-separated)", placeholder="e.g., gluten-free, vegetarian")
-        
-        # If in event mode, auto-assign to current event
-        active_event_id = get_active_event_id()
-        if active_event_id:
-            st.info(f"This menu item will be added to the current event")
-            event_id = active_event_id
-        else:
-            # Let user choose which event to assign to
-            events = _get_available_events()
-            event_options = ["No Event"] + [f"{e['name']} ({e['id']})" for e in events]
-            selected_event = st.selectbox("Assign to Event", event_options)
-            event_id = None if selected_event == "No Event" else selected_event.split("(")[-1].rstrip(")")
-        
-        # Option to parse ingredients
-        parse_ingredients = st.checkbox("Parse ingredients after creation", value=True)
-        
-        submitted = st.form_submit_button("Create Menu Item")
-        
-        if submitted:
-            if not name:
-                st.error("Please provide a name for the menu item")
-            else:
-                menu_data = {
-                    "id": generate_id("menu"),
-                    "name": name,
-                    "category": category,
-                    "description": description,
-                    "ingredients": ingredients,
-                    "tags": [tag.strip() for tag in tags.split(",") if tag.strip()],
-                    "event_id": event_id,
-                    "created_by": user["id"],
-                    "created_at": datetime.utcnow(),
-                    "ingredients_parsed": False
-                }
-                
-                if _create_menu_item(menu_data):
-                    st.success(f"Menu item '{name}' created!")
-                    
-                    # Parse ingredients if requested
-                    if parse_ingredients and ingredients:
-                        _parse_menu_ingredients(menu_data["id"], ingredients)
-                    
-                    st.rerun()
-
-# ----------------------------
-# 🧱 Embedded Menu Editor (for dashboards)
-# ----------------------------
-
-def render_menu_editor(event_id: str, user: dict) -> None:
-    """Minimal scoped menu editor for inclusion inside dashboards or forms."""
-    st.markdown("### 🍽️ Menu Items")
-
-    query = db.collection("menus").where("event_id", "==", event_id)
-    menus = [doc.to_dict() for doc in query.stream()]
-
-    if not menus:
-        st.info("No menu items for this event.")
-        if st.button("Add Menu Item", key=f"add_menu_{event_id}"):
-            _show_create_menu_form(user)
+        st.warning("Please enter Event Mode to edit a menu.")
         return
 
-    role = get_user_role(user)
-    _display_menu_items(menus, user, role)
+    event_id = get_active_event_id()
+    menu_doc_ref = db.collection("events").document(event_id).collection("meta").document("event_file")
 
-# ----------------------------
-# 🔒 Lock Logic
-# ----------------------------
-
-def _is_locked(event_id: str = None) -> bool:
-    """Check if an event's menus are locked (event is not in planning status)"""
-    if not event_id:
-        # If no event specified, check active event
-        event_id = get_active_event_id()
-    
-    if not event_id:
-        return False
-        
     try:
-        doc = db.collection("events").document(event_id).get()
-        if doc.exists:
-            return doc.to_dict().get("status") != "planning"
-    except:
-        pass
-    
-    return False
-
-def _event_is_complete(event_id: str) -> bool:
-    """Check if an event is complete"""
-    try:
-        doc = db.collection("events").document(event_id).get()
-        if doc.exists:
-            return doc.to_dict().get("status") == "complete"
-    except:
-        pass
-    return False
-
-# ----------------------------
-# 📊 Helper Functions
-# ----------------------------
-
-def _get_available_events() -> list:
-    """Get list of available events for menu assignment"""
-    try:
-        events = db.collection("events").where("deleted", "==", False).stream()
-        return [doc.to_dict() | {"id": doc.id} for doc in events]
-    except:
-        return []
-
-def _create_menu_item(menu_data: dict) -> bool:
-    """Create a new menu item"""
-    try:
-        db.collection("menus").document(menu_data["id"]).set(menu_data)
-        return True
+        menu_doc = menu_doc_ref.get()
+        if menu_doc.exists:
+            event_data = menu_doc.to_dict()
+            menu = event_data.get("menu", [])
+        else:
+            menu = []
     except Exception as e:
-        st.error(f"Failed to create menu item: {e}")
-        return False
+        st.error(f"Error loading menu: {e}")
+        return
 
-def _update_menu_item(menu_id: str, updates: dict) -> bool:
-    """Update a menu item"""
-    try:
-        db.collection("menus").document(menu_id).update(updates)
-        return True
-    except Exception as e:
-        st.error(f"Failed to update menu item: {e}")
-        return False
+    st.markdown("### 🍽️ Current Menu")
+    new_menu = []
 
-def _delete_menu_item(menu_id: str) -> bool:
-    """Delete a menu item"""
-    try:
-        db.collection("menus").document(menu_id).delete()
-        return True
-    except Exception as e:
-        st.error(f"Failed to delete menu item: {e}")
-        return False
+    if not menu:
+        st.info("No menu items yet. Add your first below.")
 
-def _parse_menu_ingredients(menu_id: str, ingredients_text: str) -> bool:
-    """Parse ingredients for a menu item"""
-    try:
-        with st.spinner("Parsing ingredients..."):
-            parsed = parse_recipe_ingredients(ingredients_text)
-            
-            if parsed:
-                # Update menu item with parsed data
-                ingredient_ids = list(set(ing['ingredient_id'] for ing in parsed))
-                
-                db.collection("menus").document(menu_id).update({
-                    "parsed_ingredients": parsed,
-                    "ingredient_ids": ingredient_ids,
-                    "ingredients_parsed": True,
-                    "parsed_at": datetime.utcnow()
-                })
-                
-                # Update ingredient usage counts
-                for ing_id in ingredient_ids:
-                    db.collection("ingredients").document(ing_id).update({
-                        "usage_count": firestore.Increment(1)
-                    })
-                
-                st.success(f"✅ Parsed {len(parsed)} ingredients!")
-                return True
-            else:
-                st.warning("No ingredients could be parsed")
-                return False
-                
-    except Exception as e:
-        st.error(f"Failed to parse ingredients: {e}")
-        return False
+    for idx, item in enumerate(menu):
+        with st.expander(f"{item.get('day', 'Day')} - {item.get('meal', 'Meal')}", expanded=False):
+            col1, col2 = st.columns(2)
+            day = col1.text_input("Day", item.get("day", ""), key=f"day_{idx}")
+            meal = col2.text_input("Meal", item.get("meal", ""), key=f"meal_{idx}")
+            recipe = st.text_input("Recipe Name", item.get("recipe", ""), key=f"recipe_{idx}")
+            if day and meal and recipe:
+                new_menu.append({"day": day, "meal": meal, "recipe": recipe})
 
-# ----------------------------
-# ✅ Completed Event Feedback
-# ----------------------------
-
-def _render_feedback(menu: dict) -> None:
     st.markdown("---")
-    st.subheader("📊 Post-Event Feedback")
+    with st.form("add_menu_item_form"):
+        st.subheader("➕ Add New Menu Item")
+        new_day = st.text_input("Day", key="new_day")
+        new_meal = st.text_input("Meal", key="new_meal")
+        new_recipe = st.text_input("Recipe Name", key="new_recipe")
+        submitted = st.form_submit_button("Add")
+        if submitted and new_day and new_meal and new_recipe:
+            new_menu.append({"day": new_day, "meal": new_meal, "recipe": new_recipe})
 
-    feedback = menu.get("feedback", {})
-    popularity = feedback.get("popularity")
-    comments = feedback.get("comments")
-
-    if popularity:
-        st.markdown(f"**Popularity Score:** {popularity}/5")
-    if comments:
-        st.markdown(f"**Comments:** {comments}")
-    else:
-        st.markdown("_No feedback submitted._")
+    if st.button("💾 Save Menu"):
+        try:
+            menu_doc_ref.update({
+                "menu": new_menu,
+                "menu_updated_at": datetime.utcnow()
+            })
+            st.success("✅ Menu saved successfully.")
+        except Exception as e:
+            st.error(f"❌ Failed to save menu: {e}")
