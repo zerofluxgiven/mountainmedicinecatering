@@ -1,33 +1,72 @@
 # menu_viewer.py
 
 import streamlit as st
-from firebase_admin import firestore
-from db_client import db
-import streamlit.components.v1 as components
+from auth import require_role, get_user_id
+from utils import get_active_event_id
+from event_file import get_event_file, update_event_file_field, initialize_event_file
 
 # ----------------------------
-# 📜 Render Menu View
+# 📋 View & Edit Menu (Structured)
 # ----------------------------
 
-def render_menu_view(event_id: str):
-    """Render the HTML content of the event's menu from event_file.menu_html."""
-    try:
-        doc = db.collection("events").document(event_id).collection("meta").document("event_file").get()
-        if doc.exists:
-            data = doc.to_dict()
-            html = data.get("menu_html", "<p><i>No menu uploaded yet.</i></p>")
-            st.markdown("### 📜 Event Menu Preview")
-            components.html(html, height=800, scrolling=True)
-        else:
-            st.info("⚠️ No menu data found.")
-    except Exception as e:
-        st.error(f"Failed to load menu: {e}")
+@require_role("user")
+def menu_viewer_ui():
+    st.title("🍽️ Event Menu")
+
+    event_id = get_active_event_id()
+    if not event_id:
+        st.warning("No active event selected.")
+        return
+
+    user_id = get_user_id()
+
+    # Initialize event file if not present
+    initialize_event_file(event_id, user_id)
+
+    event_file = get_event_file(event_id)
+    menu = event_file.get("menu", [])
+
+    st.markdown("### 🧾 Current Menu")
+
+    updated_menu = []
+    for i, item in enumerate(menu):
+        with st.expander(f"{item.get('name', 'Untitled Dish')}", expanded=False):
+            name = st.text_input(f"Dish Name #{i+1}", item.get("name", ""), key=f"name_{i}")
+            category = st.selectbox(f"Category #{i+1}", ["Appetizer", "Main", "Side", "Dessert", "Drink", "Other"], index=_get_category_index(item.get("category")), key=f"cat_{i}")
+            description = st.text_area(f"Description #{i+1}", item.get("description", ""), key=f"desc_{i}")
+            tags = st.text_input(f"Tags #{i+1} (comma-separated)", ", ".join(item.get("tags", [])), key=f"tags_{i}")
+            updated_menu.append({
+                "name": name.strip(),
+                "category": category,
+                "description": description.strip(),
+                "tags": [t.strip() for t in tags.split(",") if t.strip()]
+            })
+
+    st.markdown("### ➕ Add New Menu Item")
+    with st.form("new_menu_item_form", clear_on_submit=True):
+        new_name = st.text_input("New Dish Name")
+        new_category = st.selectbox("New Category", ["Appetizer", "Main", "Side", "Dessert", "Drink", "Other"])
+        new_description = st.text_area("New Description")
+        new_tags = st.text_input("New Tags (comma-separated)")
+        submitted = st.form_submit_button("Add Menu Item")
+        if submitted and new_name.strip():
+            updated_menu.append({
+                "name": new_name.strip(),
+                "category": new_category,
+                "description": new_description.strip(),
+                "tags": [t.strip() for t in new_tags.split(",") if t.strip()]
+            })
+            st.success(f"✅ Added: {new_name.strip()}")
+
+    if st.button("💾 Save Menu"):
+        update_event_file_field(event_id, "menu", updated_menu, user_id)
+        st.success("✅ Menu saved successfully!")
+        st.rerun()
 
 # ----------------------------
-# ✏️ Render Menu Editor (Coming Soon)
+# 🔧 Helpers
 # ----------------------------
 
-def render_menu_editor(event_id: str):
-    """Basic editor UI stub. Full structured editor coming later."""
-    st.markdown("### ✏️ Edit Menu (Coming Soon)")
-    st.info("This editor will let you structure menus by meal type, day, notes, and more.")
+def _get_category_index(category: str):
+    options = ["Appetizer", "Main", "Side", "Dessert", "Drink", "Other"]
+    return options.index(category) if category in options else 0
