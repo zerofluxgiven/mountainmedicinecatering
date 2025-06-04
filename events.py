@@ -286,6 +286,18 @@ def event_ui(user: dict | None) -> None:
         with st.expander(f"{'🟣 ' if is_active else '⚪ '}{event.get('name', 'Unnamed Event')}", expanded=is_active):
             # Event details
             col1, col2 = st.columns(2)
+        menu_file_id = event.get("menu_file_id")
+
+        if menu_file_id:
+            if st.button("📜 View Menu", key=f"view_menu_{event['id']}"):
+                st.session_state["viewing_menu_event_id"] = event["id"]
+                st.rerun()
+            if st.button("✏️ Edit Menu", key=f"edit_menu_{event['id']}"):
+                st.session_state["editing_menu_event_id"] = event["id"]
+                st.rerun()
+        else:
+            st.caption("No menu uploaded yet.")
+
             
             with col1:
                 st.markdown(f"**Location:** {event.get('location', 'Unknown')}")
