@@ -25,7 +25,9 @@ def initialize_firebase() -> None:
             "universe_domain": config.get("universe_domain", "googleapis.com")
         })
 
-        firebase_admin.initialize_app(cred)
+        firebase_admin.initialize_app(cred, {
+            "storageBucket": "mountainmedicine-6e572.appspot.com"
+        })
         print("✅ Firebase initialized.")
 
     except Exception as e:
