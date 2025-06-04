@@ -28,6 +28,7 @@ def upload_ui(event_id: str = None):
     if file and user:
         uploaded_by = user["id"]
         if st.button("Upload"):
+
             file_id = save_uploaded_file(file, eid, uploaded_by)
             st.success(f"✅ File uploaded! File ID: {file_id}")
 
