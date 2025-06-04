@@ -176,7 +176,7 @@ def recipe_editor_ui(recipe_id: str):
             st.error(f"❌ Failed to save recipe: {e}")
 
         if locked:
-            from suggestions import submit_suggestion
+            from suggestions import create_suggestion as submit_suggestion
             fields = {
                 "name": st.session_state.get("suggest_name"),
                 "ingredients": st.session_state.get("suggest_ingredients"),
