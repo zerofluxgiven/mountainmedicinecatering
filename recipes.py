@@ -3,6 +3,8 @@ from firebase_init import get_db
 from utils import format_date, get_active_event_id
 from ingredients import parse_recipe_ingredients, update_recipe_with_parsed_ingredients
 from allergies import render_allergy_warning
+from ingredients import get_event_ingredient_list
+
 
 db = get_db()
 
@@ -18,12 +20,64 @@ def recipes_page():
     
     with tab1:
         _browse_recipes_tab()
+                # Event Mode scoped ingredient list
+        active_event = get_active_event_id()
+        if active_event:
+            with st.expander("📦 Ingredients for Active Event"):
+                try:
+                    ingredients = get_event_ingredient_list(active_event)
+                    if ingredients:
+                        for ing in ingredients:
+                            qty = ing.get("quantity", "N/A")
+                            unit = ing.get("unit", "")
+                            name = ing.get("name", "")
+                            st.write(f"- {qty} {unit} {name}")
+                    else:
+                        st.info("No ingredients found. Make sure recipes are linked and parsed.")
+                except Exception as e:
+                    st.error(f"Failed to load ingredients: {e}")
+
     
     with tab2:
         _search_by_ingredient_tab()
     
     with tab3:
         _recipe_analytics_tab()
+
+def recipe_editor_ui(recipe_id: str):
+    """Edit a recipe's structured metadata"""
+    recipe_ref = db.collection("recipes").document(recipe_id)
+
+    try:
+        doc = recipe_ref.get()
+        if not doc.exists:
+            st.error("Recipe not found.")
+            return
+        recipe = doc.to_dict()
+    except Exception as e:
+        st.error(f"Error loading recipe: {e}")
+        return
+
+    st.title("📝 Edit Recipe")
+
+    name = st.text_input("Recipe Name", recipe.get("name", ""))
+    ingredients = st.text_area("Ingredients (one per line)", recipe.get("ingredients", ""))
+    instructions = st.text_area("Instructions", recipe.get("instructions", ""))
+    notes = st.text_area("Notes", recipe.get("notes", ""))
+
+    if st.button("💾 Save Changes"):
+        try:
+            recipe_ref.update({
+                "name": name,
+                "ingredients": ingredients,
+                "instructions": instructions,
+                "notes": notes,
+                "updated_at": datetime.utcnow()
+            })
+            st.success("✅ Recipe saved successfully.")
+        except Exception as e:
+            st.error(f"❌ Failed to save recipe: {e}")
+
 
 def _browse_recipes_tab():
     """Browse all recipes"""
