@@ -28,6 +28,39 @@ def scale_ingredients(ingredients: list, multiplier: float) -> list:
             pass  # fallback: skip if not numerical
     return ingredients
 
+def get_event_ingredient_list(event_id: str) -> list:
+    """Aggregate and scale ingredients for all recipes in the event's menu"""
+    try:
+        meta_doc = db.collection("events").document(event_id).collection("meta").document("event_file").get()
+        if not meta_doc.exists:
+            return []
+        meta = meta_doc.to_dict()
+        menu_recipes = meta.get("menu", [])
+
+        event_doc = db.collection("events").document(event_id).get()
+        guest_count = event_doc.to_dict().get("guest_count", 1)
+
+        all_ingredients = []
+        for recipe_entry in menu_recipes:
+            recipe_name = recipe_entry.get("recipe")
+            if not recipe_name:
+                continue
+
+            query = db.collection("recipes").where("name", "==", recipe_name).limit(1).stream()
+            recipe_doc = next(query, None)
+            if not recipe_doc:
+                continue
+
+            recipe_data = recipe_doc.to_dict()
+            if recipe_data.get("parsed_ingredients"):
+                scaled = scale_ingredients(recipe_data["parsed_ingredients"], guest_count)
+                all_ingredients.extend(scaled)
+        return all_ingredients
+    except Exception as e:
+        st.error(f"Could not build event ingredient list: {e}")
+        return []
+
+
 
 def normalize_ingredient(ingredient: str) -> str:
     """Normalize ingredient name for consistency"""
