@@ -6,7 +6,7 @@ import streamlit as st
 from mobile_helpers import safe_columns, safe_dataframe, safe_file_uploader
 from db_client import db
 from utils import session_get, generate_id, get_scoped_query, is_event_scoped, get_event_scope_message
-from menu_editor import render_menu_editor
+from menu_editor import menu_editor_ui, render_menu_editor_scoped
 from file_storage import save_uploaded_file
 from datetime import datetime
 from layout import render_event_toolbar
