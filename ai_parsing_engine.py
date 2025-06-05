@@ -118,26 +118,25 @@ def extract_text_from_image(uploaded_file):
 # --------------------------------------------
 # 💬 AI Prompt Routing
 # --------------------------------------------
-def query_ai_parser(raw_text, target_type):
-    system_prompt = """You are an expert data parser. Extract only structured data from unstructured text.
-Return only a JSON object.
-- recipes → include name, ingredients, instructions, servings, tags
-- menus → day, meal, items
-- tags → list of relevant tags
-- ingredients → list of items with quantity + unit if available
-- allergens → list of known allergens mentioned
-"""
+from openai import OpenAI
 
-    user_prompt = f"""
-Extract {target_type} data from the following:
-```
-{raw_text[:6000]}
-```
-Only return JSON.
-"""
+client = OpenAI()
+
+def query_ai_parser(raw_text, target_type):
+    system_prompt = (
+        "You are an expert data parser. Extract only structured data from unstructured text.\n"
+        "Return only a JSON object.\n"
+        "- recipes → include name, ingredients, instructions, servings, tags\n"
+        "- menus → day, meal, items\n"
+        "- tags → list of relevant tags\n"
+        "- ingredients → list of items with quantity + unit if available\n"
+        "- allergens → list of known allergens mentioned"
+    )
+
+    user_prompt = f"Extract {target_type} data from the following:\n\n```\n{raw_text[:6000]}\n```\nOnly return JSON."
 
     try:
-        response = openai.ChatCompletion.create(
+        response = client.chat.completions.create(
             model="gpt-4",
             messages=[
                 {"role": "system", "content": system_prompt},
@@ -145,20 +144,23 @@ Only return JSON.
             ],
             temperature=0.3
         )
-        print("🔍 AI raw output:", response.choices[0].message.content)
-        st.warning("🔍 AI raw output:\n" + response.choices[0].message.content)
-    
-        return json.loads(response.choices[0].message.content)
+
+        raw_output = response.choices[0].message.content
+        print("🔍 AI raw output:", raw_output)
+        st.warning("🔍 AI raw output:\n" + raw_output)
+
+        return json.loads(raw_output)
 
     except json.JSONDecodeError as decode_error:
         print(f"JSON decode error: {decode_error}")
         st.error("❌ Failed to parse AI response as valid JSON.")
         return {}
-    
+
     except Exception as e:
         print(f"OpenAI error: {e}")
         st.error(f"OpenAI error: {e}")
         return {}
+
 
 # --------------------------------------------
 # ⏬ UI Extract Buttons (called from other files)
