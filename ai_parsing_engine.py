@@ -7,13 +7,8 @@ import fitz  # PyMuPDF
 from PIL import Image
 import pytesseract
 from datetime import datetime
-from firebase_admin import firestore
+from firebase_init import db
 import streamlit as st
-
-# --------------------------------------------
-# 🔌 Initialize Firestore
-# --------------------------------------------
-db = firestore.client()
 
 # --------------------------------------------
 # 🧠 Main Entry Point
