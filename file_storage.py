@@ -480,30 +480,21 @@ def _display_files(files, role, user_id):
                     file_doc = db.collection("files").document(file_data["id"]).get()
                     if file_doc.exists:
                         file_data = file_doc.to_dict() | {"id": file_doc.id}
-
-                    parsed = file_data.get("parsed_data")
-                    if parsed:
+                
+                    parsed_record = file_data.get("parsed_data")
+                    parsed_data = parsed_record.get("parsed", {}) if parsed_record else {}
+                
+                    if parsed_record:
                         with st.expander("📑 Parsed Data"):
-                            st.json(parsed.get("parsed", {}))
-                            st.markdown(f"**Status:** `{parsed.get('status', 'unknown')}`  \n"
-                                        f"**Last Updated:** `{parsed.get('last_updated', 'unknown')}`")
+                            st.json(parsed_data)
+                            st.markdown(f"**Status:** `{parsed_record.get('status', 'unknown')}`  \n"
+                                        f"**Last Updated:** `{parsed_record.get('last_updated', 'unknown')}`")
                             from ai_parsing_engine import render_extraction_buttons
-                            render_extraction_buttons(file_data["id"], parsed.get("parsed", {}))
-
+                            render_extraction_buttons(file_data["id"], parsed_data)
+                
                 except Exception as e:
-                    st.warning(f"Could not refresh parsed data: {e}")
+                    st.warning(f"❌ Could not load parsed data: {e}")
 
-                # ✅ AI-parsed data viewer
-                parsed = file_data.get("parsed_data")
-                if parsed:
-                    with st.expander("📑 Parsed Data"):
-                        st.json(parsed.get("parsed", {}))
-                        st.markdown(f"**Status:** `{parsed.get('status', 'unknown')}`  \n"
-                                    f"**Last Updated:** `{parsed.get('last_updated', 'unknown')}`")
-                    from ai_parsing_engine import render_extraction_buttons
-                    render_extraction_buttons(file_data["id"], parsed.get("parsed", {}))
-
-            
             with col_actions:
                 if file_data.get('url'):
                     st.link_button("Download", file_data['url'], use_container_width=True)
