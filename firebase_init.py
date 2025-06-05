@@ -12,3 +12,10 @@ if not firebase_admin._apps:
 # Export Firestore + Storage
 db = firestore.client()
 bucket = storage.bucket()
+
+# Optional accessors for backward compatibility
+def get_db():
+    return db
+
+def get_bucket():
+    return bucket
