@@ -65,6 +65,35 @@ def recipes_page():
     
     with tab1:
         _browse_recipes_tab()
+        st.markdown("### ➕ Add a New Recipe")
+        
+        with st.form("add_recipe_form"):
+            name = st.text_input("Recipe Name")
+            ingredients = st.text_area("Ingredients")
+            instructions = st.text_area("Instructions")
+            tags = st.text_input("Tags (comma-separated)")
+            submitted = st.form_submit_button("Save Recipe")
+        
+            if submitted:
+                user = st.session_state.get("user", {})
+                uploaded_by = user.get("id", "unknown")
+                recipe = {
+                    "name": name,
+                    "ingredients": ingredients,
+                    "instructions": instructions,
+                    "notes": "",
+                    "created_at": datetime.utcnow(),
+                    "author_id": uploaded_by,
+                    "author_name": user.get("name", uploaded_by),
+                    "ingredients_parsed": False,
+                    "tags": [tag.strip() for tag in tags.split(",") if tag.strip()]
+                }
+                recipe_id = save_recipe_to_firestore(recipe)
+                if recipe_id:
+                    st.success(f"✅ Recipe saved! ID: {recipe_id}")
+                else:
+                    st.error("❌ Failed to save recipe.")
+
                 # Event Mode scoped ingredient list
         active_event = get_active_event_id()
         if active_event:
