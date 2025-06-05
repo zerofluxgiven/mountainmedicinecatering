@@ -58,6 +58,9 @@ def parse_file(uploaded_file, target_type="all", user_id=None, file_id=None):
         }
         try:
             db.collection("files").document(file_id).update({"parsed_data": parsed_record})
+            print("✅ Saved parsed_data to Firestore")
+            st.warning("✅ Saved parsed_data to Firestore")
+
         except Exception as e:
             print(f"Error saving parsed data to Firestore: {e}")
 
