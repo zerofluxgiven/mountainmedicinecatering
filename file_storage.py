@@ -6,7 +6,7 @@ from utils import generate_id, get_active_event_id, get_scoped_query, is_event_s
 from datetime import datetime
 import tempfile
 import os
-from db_client import db
+from firebase_init import db
 from google.cloud.firestore_v1.base_query import FieldFilter
 from firebase_init import db
 from ai_parsing_engine import parse_file

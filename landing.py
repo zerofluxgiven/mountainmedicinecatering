@@ -1,12 +1,10 @@
 # landing.py
 
 import streamlit as st
-from firebase_admin import firestore
 
 def show():
     st.set_page_config(page_title="Mountain Medicine", layout="centered")
 
-    db = firestore.client()
 
     # 📊 Replace these with live Firestore queries if needed
     meals_cooked = 3240

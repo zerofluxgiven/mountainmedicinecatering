@@ -1,7 +1,6 @@
 # notifications.py
 
 import streamlit as st
-from firebase_admin import firestore
 from typing import List
 
 # Don't create the client at import time - use a function instead

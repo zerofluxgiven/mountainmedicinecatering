@@ -1,14 +1,12 @@
 # allergies.py
 
 import streamlit as st
-from firebase_admin import firestore
 from utils import generate_id, format_date, get_active_event_id, get_event_by_id
 from auth import require_login, get_user_role
 from datetime import datetime
 from typing import List, Dict, Optional
 import re
 
-db = firestore.client()
 
 # ----------------------------
 # 🚨 Allergy Management

@@ -1,18 +1,15 @@
 # ingredients.py
 
 import streamlit as st
-from firebase_admin import firestore
 from utils import generate_id, format_date
 from auth import require_login, get_user_role
 from datetime import datetime
 from typing import List, Dict, Optional
 import re
 from google.cloud.firestore_v1.base_query import FieldFilter
-from firebase_admin import firestore
 from utils import normalize_ingredient
 
 
-db = firestore.client()
 
 # ----------------------------
 # 🥕 Ingredient Management

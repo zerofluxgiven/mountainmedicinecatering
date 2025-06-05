@@ -2,8 +2,7 @@
 
 from typing import List, Dict, Optional
 import streamlit as st
-from db_client import db  # ✅ Fixed: Use centralized database client instead of firebase_admin
-from firebase_admin import firestore
+from firebase_init import db  # ✅ Fixed: Use centralized database client instead of firebase_admin
 
 TAGS_COLLECTION = "tags"
 
@@ -49,7 +48,6 @@ def increment_tag_usage(tag: str) -> None:
 
     if tag_doc.exists:
         # ✅ Fixed: Use proper Firestore increment
-        from firebase_admin import firestore
         tag_ref.update({"count": firestore.Increment(1)})
     else:
         tag_ref.set({"display": tag.strip(), "count": 1})
@@ -91,7 +89,6 @@ def merge_tags(from_tag: str, to_tag: str) -> None:
 
         if to_doc.exists:
             # ✅ Fixed: Use proper Firestore increment
-            from firebase_admin import firestore
             to_ref.update({"count": firestore.Increment(from_count)})
         else:
             to_ref.set({

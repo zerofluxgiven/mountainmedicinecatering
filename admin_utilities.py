@@ -3,7 +3,7 @@ from datetime import datetime, timedelta
 from utils import format_timestamp
 from auth import require_role
 from notifications import send_notification
-from db_client import db
+from firebase_init import db
 from google.cloud.firestore_v1.base_query import FieldFilter
 
 # ----------------------------

@@ -1,9 +1,7 @@
 import streamlit as st
-from firebase_admin import firestore
 from auth import require_role
 
 # Firestore init
-db = firestore.client()
 
 # ----------------------------
 # 🏷️ Tag Merging UI (Admin Only)

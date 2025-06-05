@@ -1,13 +1,11 @@
 # event_modifications.py
 
 import streamlit as st
-from firebase_admin import firestore
 from auth import require_role
 from utils import format_date
 from notifications import send_notification
 from datetime import datetime
 
-db = firestore.client()
 
 # ----------------------------
 # 🔧 Suggestion Moderation UI

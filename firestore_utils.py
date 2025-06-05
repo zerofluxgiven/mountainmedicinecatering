@@ -1,5 +1,4 @@
-# firestore_utils.py
-
+from firebase_init import db
 """
 📦 Firestore Utility Functions
 Use this file for reusable Firestore access patterns such as:
@@ -8,9 +7,7 @@ Use this file for reusable Firestore access patterns such as:
 - Generic document helpers
 """
 
-from firebase_admin import firestore
-
-db = firestore.client()
+from firebase_init import db
 
 # Example: Batch update documents
 def batch_update(collection_name: str, updates: list[tuple[str, dict]]) -> None:
