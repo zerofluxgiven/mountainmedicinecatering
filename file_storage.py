@@ -473,13 +473,28 @@ def _display_files(files, role, user_id):
                     st.markdown(f"**🏷️ Tags:** {tag_html}", unsafe_allow_html=True)
                 else:
                     st.markdown("**🏷️ Tags:** None")
+
+                                    # Refresh Firestore doc to get latest parsed_data
+                    try:
+                        file_doc = db.collection("files").document(file_data["id"]).get()
+                        if file_doc.exists:
+                            file_data = file_doc.to_dict() | {"id": file_doc.id}
+                    except Exception as e:
+                        st.warning(f"Could not refresh parsed data: {e}")
+
+
+                # ✅ AI-parsed data viewer
+                parsed = file_data.get("parsed_data")
+                if parsed:
+                    with st.expander("📑 Parsed Data"):
+                        st.json(parsed.get("parsed", {}))
+                        st.markdown(f"**Status:** `{parsed.get('status', 'unknown')}`  \n"
+                                    f"**Last Updated:** `{parsed.get('last_updated', 'unknown')}`")
             
             with col_actions:
-                # Action buttons with enhanced styling
                 if file_data.get('url'):
                     st.link_button("Download", file_data['url'], use_container_width=True)
                 
-                # Edit tags button
                 if st.button("Edit Tags", key=f"edit_tags_{file_data['id']}", use_container_width=True):
                     _show_edit_tags_modal(file_data)
                 
@@ -490,7 +505,6 @@ def _display_files(files, role, user_id):
                                 st.success("File deleted")
                                 st.rerun()
                 else:
-                    # Restore option for deleted files
                     if role == "admin":
                         if st.button("Restore", key=f"restore_{file_data['id']}", use_container_width=True):
                             if restore_file(file_data['id']):
@@ -498,6 +512,7 @@ def _display_files(files, role, user_id):
                                 st.rerun()
 
             st.markdown("---")
+
 
 # ----------------------------
 # 🎛️ Helper Functions
