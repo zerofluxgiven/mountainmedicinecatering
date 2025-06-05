@@ -330,12 +330,10 @@ def event_ui(user: dict | None) -> None:
             with col2:
                 if st.button("Edit", key=f"edit_{event['id']}"):
                     st.session_state["editing_event_id"] = event["id"]
-                    if "top_nav" not in st.session_state:
-                        st.session_state["top_nav"] = "event_planner"
-                    else:
-                        st.session_state["next_nav"] = "event_planner"
-                    st.rerun()  
-                        
+                    st.session_state["top_nav"] = "Events"  # force tab to stay
+                    st.session_state["show_event_dashboard"] = True
+                    st.rerun() 
+                                        
             with col3:
                 # Only allow deletion by creator or admin
                 can_delete = (user.get("id") == event.get("created_by") or 
@@ -362,6 +360,14 @@ def event_ui(user: dict | None) -> None:
                      if st.button("Complete Event", key=f"complete_{event['id']}"):
                          if complete_event_and_end_sessions(event["id"]):
                               st.rerun()
+
+    if st.session_state.get("show_event_dashboard"):
+        from event_planning_dashboard import event_planning_dashboard
+        editing_event_id = st.session_state.get("editing_event_id")
+        if editing_event_id:
+            st.markdown("---")
+            st.markdown("## 🧭 Event Planning Dashboard")
+            event_planning_dashboard(editing_event_id)
 
     # Show event mode banner (empty function now)
     show_event_mode_banner()
