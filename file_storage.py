@@ -467,6 +467,7 @@ def _display_files(files, role, user_id):
                             st.markdown("**🎪 Event:** Not linked")
                 
                 # Enhanced tags display
+                                # Enhanced tags display
                 tags = file_data.get('tags', [])
                 if tags:
                     tag_html = " ".join([f"<span class='tag'>{tag}</span>" for tag in tags])
@@ -474,11 +475,24 @@ def _display_files(files, role, user_id):
                 else:
                     st.markdown("**🏷️ Tags:** None")
 
-                                    # Refresh Firestore doc to get latest parsed_data
-                    try:
-                        file_doc = db.collection("files").document(file_data["id"]).get()
-                        if file_doc.exists:
-                            file_data = file_doc.to_dict() | {"id": file_doc.id}
+                # ✅ Refresh Firestore doc and show parsed content with buttons
+                try:
+                    file_doc = db.collection("files").document(file_data["id"]).get()
+                    if file_doc.exists:
+                        file_data = file_doc.to_dict() | {"id": file_doc.id}
+
+                    parsed = file_data.get("parsed_data")
+                    if parsed:
+                        with st.expander("📑 Parsed Data"):
+                            st.json(parsed.get("parsed", {}))
+                            st.markdown(f"**Status:** `{parsed.get('status', 'unknown')}`  \n"
+                                        f"**Last Updated:** `{parsed.get('last_updated', 'unknown')}`")
+                            from ai_parsing_engine import render_extraction_buttons
+                            render_extraction_buttons(file_data["id"], parsed.get("parsed", {}))
+
+                except Exception as e:
+                    st.warning(f"Could not refresh parsed data: {e}")
+
                     except Exception as e:
                         st.warning(f"Could not refresh parsed data: {e}")
 
