@@ -223,9 +223,6 @@ def event_planning_dashboard_ui(event_id):
         # ✅ Show menu form if requested
         if st.session_state.get("show_menu_form"):
             _render_quick_menu_form(event_id, user)
-            
-    except Exception as e:
-        st.error(f"Failed to load menus: {e}")
 
 # ----------------------------
 # ➕ Quick Menu Form - NEW
