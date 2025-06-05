@@ -80,8 +80,9 @@ def extract_text(uploaded_file):
         print(f"Text extraction error: {e}")
         return ""
 
-# PDF using PyMuPDF
-
+# --------------------------------------------
+# 📄 PDF using PyMuPDF
+# --------------------------------------------
 def extract_text_from_pdf(uploaded_file):
     text = ""
     try:
@@ -99,8 +100,9 @@ def extract_text_from_pdf(uploaded_file):
         print(f"PDF parse error: {e}")
     return text
 
-# OCR for images
-
+# --------------------------------------------
+# 🖼️ OCR for Images
+# --------------------------------------------
 def extract_text_from_image(uploaded_file):
     try:
         image = Image.open(uploaded_file)
