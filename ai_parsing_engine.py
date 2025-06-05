@@ -6,6 +6,7 @@ import openai
 import fitz  # PyMuPDF
 from PIL import Image
 import pytesseract
+import json  
 from datetime import datetime
 from firebase_init import db, firestore
 import streamlit as st
@@ -15,21 +16,18 @@ import streamlit as st
 # --------------------------------------------
 def parse_file(uploaded_file, target_type="all", user_id=None, file_id=None):
     """
-    Parse uploaded file using AI to extract:
-    - recipes
-    - menus
-    - tags
-    - ingredients
-    - allergens
+    Parse uploaded file using AI to extract structured data
+    and save to the associated file document in Firestore.
     """
     st.warning("🧪 Running parse_file()...")
     print("📄 STARTING parse_file()")
-    
+
     raw_text = extract_text(uploaded_file)
     st.warning("📄 Extracted some text:" + raw_text[:300])
     print("📄 Extracted text:", raw_text[:300])
 
     if not raw_text:
+        st.error("❌ No text extracted from file.")
         return {}
 
     parsed = {}
@@ -148,10 +146,17 @@ Only return JSON.
         )
         print("🔍 AI raw output:", response.choices[0].message.content)
         st.warning("🔍 AI raw output:\n" + response.choices[0].message.content)
+    
+        return json.loads(response.choices[0].message.content)
 
-        return eval(response.choices[0].message.content)
+    except json.JSONDecodeError as decode_error:
+        print(f"JSON decode error: {decode_error}")
+        st.error("❌ Failed to parse AI response as valid JSON.")
+        return {}
+    
     except Exception as e:
         print(f"OpenAI error: {e}")
+        st.error(f"OpenAI error: {e}")
         return {}
 
 # --------------------------------------------
