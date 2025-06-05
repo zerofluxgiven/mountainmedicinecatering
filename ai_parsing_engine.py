@@ -46,7 +46,9 @@ def parse_file(uploaded_file, target_type="all", user_id=None, file_id=None):
 
     for t in target_types:
         parsed[t] = query_ai_parser(raw_text, t)
-
+        st.warning(f"🧪 Parsed AI content: {parsed}")
+        st.warning(f"📁 File ID for update: {file_id}")
+        
     # Optional: Store parsed result to file document in Firestore
     if file_id:
         parsed_record = {
