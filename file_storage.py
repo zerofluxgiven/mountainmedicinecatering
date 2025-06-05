@@ -8,8 +8,8 @@ import tempfile
 import os
 from db_client import db
 from google.cloud.firestore_v1.base_query import FieldFilter
-from google.cloud.firestore_v1.base_query import FieldFilter
 from firebase_admin import firestore
+from ai_parsing_engine import parse_file
 
 # ----------------------------
 # 🔍 List Uploaded Files
@@ -262,6 +262,8 @@ def file_manager_ui(user):
         # Store file data in session state temporarily
         file_data = uploaded_file.read()
         st.session_state["current_file_data"] = file_data
+        st.session_state["uploaded_file_obj"] = uploaded_file
+
         
         # File info with enhanced styling
         file_size_mb = len(file_data) / (1024 * 1024)
