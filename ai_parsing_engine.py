@@ -165,6 +165,10 @@ def render_extraction_buttons(file_id, parsed_data):
         st.info("No parsed data available.")
         return
 
+    st.warning(f"Parsed keys: {list(parsed_data.keys())}")
+    st.json(parsed_data)
+
+
     if "recipes" in parsed_data and parsed_data["recipes"]:
         if st.button("📥 Save as Recipe"):
             try:
