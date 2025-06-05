@@ -490,6 +490,9 @@ def _display_files(files, role, user_id):
                         st.json(parsed.get("parsed", {}))
                         st.markdown(f"**Status:** `{parsed.get('status', 'unknown')}`  \n"
                                     f"**Last Updated:** `{parsed.get('last_updated', 'unknown')}`")
+                    from ai_parsing_engine import render_extraction_buttons
+                    render_extraction_buttons(file_data["id"], parsed.get("parsed", {}))
+
             
             with col_actions:
                 if file_data.get('url'):
