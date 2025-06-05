@@ -8,7 +8,7 @@ import tempfile
 import os
 from db_client import db
 from google.cloud.firestore_v1.base_query import FieldFilter
-from firebase_admin import firestore
+from firebase_init import db
 from ai_parsing_engine import parse_file
 
 # ----------------------------
