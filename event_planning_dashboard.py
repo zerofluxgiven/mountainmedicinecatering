@@ -1,6 +1,4 @@
-# event_planning_dashboard.py - FIXED VERSION
-# ✅ PRESERVING: All original functionality
-# ✅ FIXING: Form state persistence, checkbox state, error handling, mobile compatibility
+
 
 import streamlit as st
 from mobile_helpers import safe_columns, safe_dataframe, safe_file_uploader
@@ -225,43 +223,6 @@ def event_planning_dashboard_ui(event_id):
     if st.checkbox("🤖 Show AI Assistant Suggestions"):
         _render_ai_suggestions(event_id)
 
-# ----------------------------
-# 🍽️ Scoped Menu Editor - NEW FIXED FUNCTION
-# ----------------------------
-def render_menu_editor_scoped(event_id: str, user: dict):
-    """Scoped menu editor that doesn't affect global event state"""
-    try:
-        # Get menus for this specific event
-        menus = db.collection("menus").where("event_id", "==", event_id).stream()
-        menu_list = [doc.to_dict() | {"id": doc.id} for doc in menus]
-        
-        if not menu_list:
-            st.info("No menu items for this event yet.")
-            if st.button("➕ Add Menu Item", key=f"add_menu_{event_id}"):
-                st.session_state["show_menu_form"] = True
-                st.rerun()
-        else:
-            st.markdown(f"Found {len(menu_list)} menu items")
-            for menu in menu_list:
-                with st.expander(f"🍽️ {menu.get('name', 'Unnamed')}"):
-                    st.write(f"**Category:** {menu.get('category', 'Unknown')}")
-                    st.write(f"**Description:** {menu.get('description', 'No description')}")
-                    st.write(f"**Ingredients:** {menu.get('ingredients', 'No ingredients')}")
-                    
-                    # ✅ FIXED: Action buttons with unique keys
-                    col1, col2 = safe_columns(2)
-                    with col1:
-                        if st.button("Edit", key=f"edit_menu_{menu['id']}"):
-                            st.info("Menu editing feature - redirect to Recipes tab")
-                    with col2:
-                        if st.button("Remove", key=f"remove_menu_{menu['id']}"):
-                            try:
-                                db.collection("menus").document(menu["id"]).delete()
-                                st.success("Menu item removed")
-                                st.rerun()
-                            except Exception as e:
-                                st.error(f"Failed to remove: {e}")
-        
         # ✅ Show menu form if requested
         if st.session_state.get("show_menu_form"):
             _render_quick_menu_form(event_id, user)
