@@ -8,6 +8,7 @@ from PIL import Image
 import pytesseract
 from datetime import datetime
 from firebase_admin import firestore
+import streamlit as st
 
 # --------------------------------------------
 # 🔌 Initialize Firestore
@@ -145,3 +146,41 @@ Only return JSON.
     except Exception as e:
         print(f"OpenAI error: {e}")
         return {}
+
+# --------------------------------------------
+# ⏬ UI Extract Buttons (called from other files)
+# --------------------------------------------
+def render_extraction_buttons(file_id, parsed_data):
+    """
+    Optionally allow user to extract specific parsed items like recipes or menus
+    """
+    st.markdown("---")
+    st.subheader("🧪 Extract From Parsed Data")
+
+    if not parsed_data:
+        st.info("No parsed data available.")
+        return
+
+    if "recipes" in parsed_data and parsed_data["recipes"]:
+        if st.button("📥 Save as Recipe"):
+            try:
+                from recipes import save_recipe_to_firestore
+                for r in parsed_data["recipes"] if isinstance(parsed_data["recipes"], list) else [parsed_data["recipes"]]:
+                    save_recipe_to_firestore(r)
+                st.success("✅ Recipes saved to database")
+            except Exception as e:
+                st.error(f"Failed to save recipes: {e}")
+
+    if "menus" in parsed_data and parsed_data["menus"]:
+        if st.button("📥 Save as Menu"):
+            try:
+                from menus import save_menu_to_firestore  # If menu saving exists
+                menus = parsed_data["menus"] if isinstance(parsed_data["menus"], list) else [parsed_data["menus"]]
+                from utils import get_active_event_id
+                from auth import get_user_id
+                for m in menus:
+                    save_menu_to_firestore(menus, get_active_event_id(), get_user_id())
+                    break  # Save all at once
+                st.success("✅ Menus saved to database")
+            except Exception as e:
+                st.error(f"Failed to save menus: {e}")
