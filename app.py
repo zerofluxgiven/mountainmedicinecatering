@@ -239,7 +239,7 @@ def main():
         if not user:
             st.warning("Please log in to view recipes.")
         else:
-            menu_editor_ui()
+            recipes_page()
 
     elif selected_tab == "Ingredients":
         # Ingredients catalogue accessible to logged-in users
