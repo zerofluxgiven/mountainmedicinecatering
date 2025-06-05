@@ -30,6 +30,8 @@ def parse_file(uploaded_file, target_type="all", user_id=None, file_id=None):
     Returns parsed JSON and also stores it under /files/{file_id}/parsed_data
     """
     raw_text = extract_text(uploaded_file)
+    print("📄 Extracted text:", raw_text[:300])
+
     if not raw_text:
         return {}
 
