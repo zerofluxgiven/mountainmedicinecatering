@@ -477,38 +477,6 @@ def render_dashboard(user):
             st.error(f"Could not load recent events: {e}")
 
 # ----------------------------
-# 📅 Event Planner Tab (PRESERVED)
-# ----------------------------
-def render_event_planner(user):
-    """Render event planner with proper checks"""
-    if not user:
-        st.warning("Please log in to use the event planner.")
-        return
-        
-    if "editing_event_id" in st.session_state:
-        event_planning_dashboard_ui(st.session_state["editing_event_id"])
-    else:
-        st.info("Select an event to edit from the Events tab.")
-        
-        # Show recent events for quick access
-        try:
-            events = get_all_events()
-            recent_events = [e for e in events if not e.get("deleted")][:5]
-            
-            if recent_events:
-                st.markdown("### 📋 Recent Events")
-                for event in recent_events:
-                    col1, col2 = st.columns([3, 1])
-                    with col1:
-                        st.write(f"**{event.get('name', 'Unnamed')}** - {event.get('status', 'planning')}")
-                    with col2:
-                        if st.button("Edit", key=f"quick_edit_{event['id']}"):
-                            st.session_state["editing_event_id"] = event["id"]
-                            st.rerun()
-        except Exception as e:
-            st.error(f"Could not load recent events: {e}")
-
-# ----------------------------
 # 📁 Enhanced Upload Tab (PRESERVED)
 # ----------------------------
 def render_upload_tab(user):
