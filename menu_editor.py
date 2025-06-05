@@ -122,10 +122,11 @@ def recipes_page():
 
     with tab3:
         _recipe_analytics_tab()
-
-    # Inline editing for selected recipe via dashboard trigger
+        
     if st.session_state.get("editing_recipe_id"):
-        from menu_editor import menu_editor_ui
+        recipe_id = st.session_state["editing_recipe_id"]
         st.markdown("---")
-        st.markdown("## 📃 Edit Recipe")
-        menu_editor_ui(None, context="recipe", recipe_id=st.session_state["editing_recipe_id"])
+        st.warning(f"Redirecting to structured editor for recipe: `{recipe_id}`")
+        st.session_state["selected_recipe"] = recipe_id
+        st.session_state["top_nav"] = "Recipes"
+        st.rerun()
