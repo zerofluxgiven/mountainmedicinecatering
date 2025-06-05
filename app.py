@@ -34,7 +34,6 @@ PUBLIC_MODE = False  # Set to True for guest access
 TABS = {
     "Dashboard": "dashboard",
     "Events": "events", 
-    "Event Planner": "event_planner",
     "Recipes": "recipes",
     "Ingredients": "ingredients",
     "Allergies": "allergies",
@@ -226,13 +225,6 @@ def main():
         else:
             render_leave_event_button("main")
             enhanced_event_ui(user)
-
-    elif selected_tab == "Event Planner":
-        # Event planner requires login
-        if not user:
-            st.warning("Please log in to use the event planner.")
-        else:
-            render_event_planner(user)
 
     elif selected_tab == "Recipes":
         # Recipes/Menu editor accessible to logged-in users
