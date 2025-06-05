@@ -146,6 +146,9 @@ Only return JSON.
             ],
             temperature=0.3
         )
+        print("🔍 AI raw output:", response.choices[0].message.content)
+        st.warning("🔍 AI raw output:\n" + response.choices[0].message.content)
+
         return eval(response.choices[0].message.content)
     except Exception as e:
         print(f"OpenAI error: {e}")
