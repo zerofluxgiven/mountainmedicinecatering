@@ -1,135 +1,131 @@
 import streamlit as st
-from db_client import db
-from utils import get_active_event_id, is_event_scoped
-from datetime import datetime
+from firebase_init import get_db
+from utils import format_date, get_active_event_id
+from ingredients import parse_recipe_ingredients, update_recipe_with_parsed_ingredients
+from allergies import render_allergy_warning
 from ingredients import get_event_ingredient_list
+from datetime import datetime
+import uuid
+import re
 
-# ----------------------------
-# 📄 Load & Save Menu from event_file
-# ----------------------------
 
-def get_event_menu(event_id):
+db = get_db()
+
+def parse_and_store_recipe_from_file(file_text: str, uploaded_by: str) -> dict:
+    """Parse a text file for recipe content and return draft dict"""
+    lines = file_text.strip().splitlines()
+    name = lines[0].strip() if lines else "Unnamed Recipe"
+
     try:
-        ref = db.collection("events").document(event_id).collection("meta").document("event_file")
-        doc = ref.get()
-        if doc.exists:
-            return doc.to_dict().get("menu", [])
-    except Exception as e:
-        st.error(f"Failed to load menu: {e}")
-    return []
+        ingredients_start = next(i for i, line in enumerate(lines) if "ingredient" in line.lower())
+    except StopIteration:
+        ingredients_start = 1
 
-def save_event_menu(event_id, menu_list):
     try:
-        ref = db.collection("events").document(event_id).collection("meta").document("event_file")
-        ref.update({"menu": menu_list})
-        return True
+        instructions_start = next(i for i, line in enumerate(lines) if "instruction" in line.lower())
+    except StopIteration:
+        instructions_start = len(lines) // 2
+
+    ingredients = "\n".join(lines[ingredients_start:instructions_start]).strip()
+    instructions = "\n".join(lines[instructions_start:]).strip()
+
+    return {
+        "name": name,
+        "ingredients": ingredients,
+        "instructions": instructions,
+        "notes": "",
+        "created_at": datetime.utcnow(),
+        "author_id": uploaded_by,
+        "author_name": uploaded_by,
+        "ingredients_parsed": False,
+    }
+
+def save_recipe_to_firestore(recipe_data: dict) -> str:
+    """Save the recipe dict to Firestore"""
+    recipe_id = str(uuid.uuid4())
+    recipe_data["id"] = recipe_id
+    try:
+        db.collection("recipes").document(recipe_id).set(recipe_data)
+        return recipe_id
     except Exception as e:
-        st.error(f"Failed to save menu: {e}")
-        return False
+        print("Error saving recipe:", e)
+        return None
 
+def get_all_recipes_for_event_menu():
+    try:
+        recipes = db.collection("recipes").stream()
+        return [{"id": r.id, **r.to_dict()} for r in recipes if not r.to_dict().get("deleted", False)]
+    except Exception as e:
+        st.error(f"Error loading recipes: {e}")
+        return []
 
 # ----------------------------
-# 📝 Menu Editor
+# 📖 Recipes Tab (Public)
 # ----------------------------
 
-def menu_editor_ui():
-    st.title("📋 Edit Menu")
+def recipes_page():
+    st.title("📋 Recipes")
 
-    
+    tab1, tab2, tab3 = st.tabs(["Browse Recipes", "Search by Ingredient", "Recipe Analytics"])
 
-    tabs = st.tabs(["📝 Edit Menu", "📦 Ingredients Preview"])
-    with tabs[0]:
-        if not is_event_scoped():
-            st.warning("Please enter Event Mode to edit a menu.")
-            return
-
-        event_id = get_active_event_id()
-        menu = get_event_menu(event_id)
-
-
-        st.markdown("### 🍽️ Current Menu")
-        new_menu = []
-
-        if not menu:
-            st.info("No menu items yet. Add your first below.")
-
-        for idx, item in enumerate(menu):
-            with st.expander(f"{item.get('day', 'Day')} - {item.get('meal', 'Meal')}", expanded=False):
-                col1, col2 = st.columns(2)
-                day = col1.text_input("Day", item.get("day", ""), key=f"day_{idx}")
-                meal = col2.text_input("Meal", item.get("meal", ""), key=f"meal_{idx}")
-                recipe = st.text_input("Recipe Name", item.get("recipe", ""), key=f"recipe_{idx}")
-                if day and meal and recipe:
-                    new_menu.append({"day": day, "meal": meal, "recipe": recipe})
+    with tab1:
+        _browse_recipes_tab()
 
         st.markdown("---")
-        with st.form("add_menu_item_form"):
-            st.subheader("➕ Add New Menu Item")
-            new_day = st.text_input("Day", key="new_day")
-            new_meal = st.text_input("Meal", key="new_meal")
-            new_recipe = st.text_input("Recipe Name", key="new_recipe")
-            submitted = st.form_submit_button("Add")
-            if submitted and new_day and new_meal and new_recipe:
-                new_menu.append({"day": new_day, "meal": new_meal, "recipe": new_recipe})
+        st.markdown("### ➕ Add a New Recipe")
 
-        if st.button("💾 Save Menu"):
-            try:
-                if save_event_menu(event_id, new_menu):
-                    st.success("✅ Menu saved successfully.")
-            except Exception as e:
-                st.error(f"❌ Failed to save menu: {e}")
+        with st.form("add_recipe_form"):
+            name = st.text_input("Recipe Name")
+            ingredients = st.text_area("Ingredients")
+            instructions = st.text_area("Instructions")
+            tags = st.text_input("Tags (comma-separated)")
+            submitted = st.form_submit_button("Save Recipe")
 
-    with tabs[1]:
-        st.subheader("📦 Ingredients Preview")
-        try:
-            ingredients = get_event_ingredient_list(get_active_event_id())
-            if ingredients:
-                for ing in ingredients:
-                    qty = ing.get("quantity", "N/A")
-                    unit = ing.get("unit", "")
-                    name = ing.get("name", "")
-                    st.write(f"- {qty} {unit} {name}")
-            else:
-                st.info("No ingredients found. Make sure recipes are linked and parsed.")
-        except Exception as e:
-            st.error(f"Failed to load ingredients: {e}")
+            if submitted:
+                user = st.session_state.get("user", {})
+                uploaded_by = user.get("id", "unknown")
+                recipe = {
+                    "name": name,
+                    "ingredients": ingredients,
+                    "instructions": instructions,
+                    "notes": "",
+                    "created_at": datetime.utcnow(),
+                    "author_id": uploaded_by,
+                    "author_name": user.get("name", uploaded_by),
+                    "ingredients_parsed": False,
+                    "tags": [tag.strip() for tag in tags.split(",") if tag.strip()]
+                }
+                recipe_id = save_recipe_to_firestore(recipe)
+                if recipe_id:
+                    st.success(f"✅ Recipe saved! ID: {recipe_id}")
+                else:
+                    st.error("❌ Failed to save recipe.")
 
-# ----------------------------
-# 🍽️ Scoped Menu Editor - Used by Dashboards
-# ----------------------------
+        active_event = get_active_event_id()
+        if active_event:
+            with st.expander("📦 Ingredients for Active Event"):
+                try:
+                    ingredients = get_event_ingredient_list(active_event)
+                    if ingredients:
+                        for ing in ingredients:
+                            qty = ing.get("quantity", "N/A")
+                            unit = ing.get("unit", "")
+                            name = ing.get("name", "")
+                            st.write(f"- {qty} {unit} {name}")
+                    else:
+                        st.info("No ingredients found. Make sure recipes are linked and parsed.")
+                except Exception as e:
+                    st.error(f"Failed to load ingredients: {e}")
 
-def render_menu_editor_scoped(event_id: str, user: dict):
-    st.subheader("📋 Scoped Menu Editor")
+    with tab2:
+        _search_by_ingredient_tab()
 
-    menu = get_event_menu(event_id)
-    if not menu:
-        st.info("No menu items for this event yet.")
+    with tab3:
+        _recipe_analytics_tab()
 
-    updated_menu = []
-
-    for idx, item in enumerate(menu):
-        with st.expander(f"{item.get('day', 'Day')} - {item.get('meal', 'Meal')}"):
-            col1, col2 = st.columns(2)
-            day = col1.text_input("Day", item.get("day", ""), key=f"scoped_day_{idx}")
-            meal = col2.text_input("Meal", item.get("meal", ""), key=f"scoped_meal_{idx}")
-            recipe = st.text_input("Recipe", item.get("recipe", ""), key=f"scoped_recipe_{idx}")
-            if day and meal and recipe:
-                updated_menu.append({"day": day, "meal": meal, "recipe": recipe})
-
-    st.markdown("### ➕ Add Menu Item")
-    with st.form(f"scoped_add_menu_item_form_{event_id}"):
-        new_day = st.text_input("Day", key=f"scoped_new_day_{event_id}")
-        new_meal = st.text_input("Meal", key=f"scoped_new_meal_{event_id}")
-        new_recipe = st.text_input("Recipe", key=f"scoped_new_recipe_{event_id}")
-        if st.form_submit_button("Add"):
-            updated_menu.append({"day": new_day, "meal": new_meal, "recipe": new_recipe})
-
-    if st.button("💾 Save Scoped Menu", key=f"scoped_save_{event_id}"):
-        if save_event_menu(event_id, updated_menu):
-            st.success("✅ Scoped menu saved")
-            st.rerun()
-
-
-
-
-
+    # Inline editing for selected recipe via dashboard trigger
+    if st.session_state.get("editing_recipe_id"):
+        from menu_editor import menu_editor_ui
+        st.markdown("---")
+        st.markdown("## 📃 Edit Recipe")
+        menu_editor_ui(None, context="recipe", recipe_id=st.session_state["editing_recipe_id"])
