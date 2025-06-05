@@ -331,6 +331,9 @@ def file_manager_ui(user):
                     if file_url:
                         # Save metadata with enhanced tags
                         if save_file_metadata(file_id, uploaded_file.name, file_url, all_tags, user_id, selected_event_id):
+                            # Trigger AI parsing after upload
+                            parse_file(uploaded_file, target_type="all", user_id=user_id, file_id=file_id)
+
                             st.success(f"✅ Successfully uploaded: **{uploaded_file.name}**")
                             
                             # Update tag usage counts
