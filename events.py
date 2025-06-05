@@ -6,7 +6,7 @@ from ui_components import show_event_mode_banner
 from layout import render_smart_event_button, render_status_indicator
 from menu_viewer import menu_viewer_ui
 from datetime import datetime
-from firebase_init import db
+from firebase_init import db, firestore, firestore
 
 # ----------------------------
 # 🔥 Get All Events
