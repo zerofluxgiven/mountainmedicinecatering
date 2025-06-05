@@ -120,7 +120,10 @@ def extract_text_from_image(uploaded_file):
 # --------------------------------------------
 from openai import OpenAI
 
-client = OpenAI()
+import os
+from openai import OpenAI
+
+client = OpenAI(api_key=os.getenv("OPENAI_API_KEY"))
 
 def query_ai_parser(raw_text, target_type):
     system_prompt = (
