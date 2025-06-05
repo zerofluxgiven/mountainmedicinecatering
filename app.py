@@ -358,7 +358,8 @@ def render_dashboard(user):
             # Quick actions
             if st.button("Edit Event", use_container_width=True):
                 st.session_state["editing_event_id"] = event["id"]
-                st.session_state["top_nav"] = "Event Planner"
+                st.session_state["show_event_dashboard"] = True
+                st.session_state["top_nav"] = "Events"
                 st.rerun()
 
         # Event metrics
