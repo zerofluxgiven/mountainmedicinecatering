@@ -13,7 +13,6 @@ from post_event import post_event_ui
 from file_storage import file_manager_ui, show_file_analytics
 from receipts import receipt_upload_ui
 from pdf_export import pdf_export_ui
-from menu_editor import menu_editor_ui
 from event_planning_dashboard import event_planning_dashboard_ui
 from event_modifications import event_modifications_ui
 from bulk_suggestions import bulk_suggestions_ui
