@@ -1,5 +1,6 @@
 import streamlit as st
 from firebase_init import get_db
+from firebase_admin import firestore
 from utils import format_date, get_active_event_id
 from ingredients import parse_recipe_ingredients, update_recipe_with_parsed_ingredients
 from allergies import render_allergy_warning
