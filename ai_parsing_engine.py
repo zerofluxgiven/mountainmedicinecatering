@@ -26,10 +26,12 @@ def parse_file(uploaded_file, target_type="all", user_id=None, file_id=None):
     - tags
     - ingredients
     - allergens
-
-    Returns parsed JSON and also stores it under /files/{file_id}/parsed_data
     """
+    st.warning("🧪 Running parse_file()...")
+    print("📄 STARTING parse_file()")
+    
     raw_text = extract_text(uploaded_file)
+    st.warning("📄 Extracted some text:" + raw_text[:300])
     print("📄 Extracted text:", raw_text[:300])
 
     if not raw_text:
