@@ -17,7 +17,7 @@ import functools
 from datetime import datetime
 
 # Use centralized database client
-from firebase_init import db
+from firebase_init import db, firestore
 
 USER_COLLECTION = "users"
 

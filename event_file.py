@@ -1,6 +1,6 @@
 # event_file.py
 
-from firebase_init import db
+from firebase_init import db, firestore
 from datetime import datetime
 from utils import generate_id
 

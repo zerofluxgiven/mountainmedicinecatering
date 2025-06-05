@@ -7,7 +7,7 @@ import fitz  # PyMuPDF
 from PIL import Image
 import pytesseract
 from datetime import datetime
-from firebase_init import db
+from firebase_init import db, firestore
 import streamlit as st
 
 # --------------------------------------------

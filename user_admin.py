@@ -3,7 +3,7 @@ from datetime import datetime, timedelta
 from utils import format_timestamp
 from notifications import send_notification
 from auth import require_role, sync_firebase_users, delete_firebase_user
-from firebase_init import db  # ✅ Fixed: Use centralized database client
+from firebase_init import db, firestore  # ✅ Fixed: Use centralized database client
 from google.cloud.firestore_v1.base_query import FieldFilter
 
 # ----------------------------

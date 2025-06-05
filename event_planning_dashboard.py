@@ -1,6 +1,6 @@
 import streamlit as st
 from mobile_helpers import safe_columns, safe_dataframe, safe_file_uploader
-from firebase_init import db
+from firebase_init import db, firestore
 from utils import session_get, generate_id, get_scoped_query, is_event_scoped, get_event_scope_message
 from menu_viewer import menu_viewer_ui
 from file_storage import save_uploaded_file

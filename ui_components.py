@@ -142,7 +142,7 @@ def render_event_controls(event_id: str, context: str = "default") -> None:
 def render_quick_event_switcher() -> None:
     """Render a quick event switcher dropdown"""
     try:
-        from firebase_init import db
+        from firebase_init import db, firestore
         
         # Get recent events
         events_docs = list(db.collection("events")

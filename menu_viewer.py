@@ -10,10 +10,11 @@ from event_file import get_event_file, update_event_file_field, initialize_event
 # ----------------------------
 
 @require_role("user")
-def menu_viewer_ui():
+def menu_viewer_ui(event_id=None):
     st.title("🍽️ Event Menu")
 
-    event_id = get_active_event_id()
+    if not event_id:
+        event_id = get_active_event_id()
     if not event_id:
         st.warning("No active event selected.")
         return

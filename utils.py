@@ -6,7 +6,7 @@ from datetime import datetime
 def get_db():
     """Get database client lazily to avoid circular imports"""
     try:
-        from firebase_init import db
+        from firebase_init import db, firestore
         return db
     except ImportError:
         st.error("❌ Database client not available")
@@ -23,7 +23,7 @@ def get_scoped_query(collection_name: str, base_query=None):
     Returns a Firestore query that's scoped to the active event if event mode is on.
     If no event mode is active, returns all data.
     """
-    from firebase_init import db
+    from firebase_init import db, firestore
     
     # Start with base query or create new one
     if base_query is None:

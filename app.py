@@ -72,7 +72,7 @@ def initialize_event_mode_state():
             
         # Try to restore last active event from Firestore user preferences
         try:
-            from firebase_init import db
+            from firebase_init import db, firestore
             user_doc = db.collection("users").document(user_id).get()
             if user_doc.exists:
                 user_data = user_doc.to_dict()
@@ -95,7 +95,7 @@ def main():
         st.stop()
                 # Ensure admin user exists with correct role
     try:
-        from firebase_init import db
+        from firebase_init import db, firestore
         admin_email = "mistermcfarland@gmail.com"
     
         # Check all users and find the admin
@@ -372,7 +372,7 @@ def render_dashboard(user):
         with col3:
             # Try to get menu count
             try:
-                from firebase_init import db
+                from firebase_init import db, firestore
                 menu_docs = list(db.collection("menus").where("event_id", "==", event["id"]).stream())
                 menu_count = len(menu_docs)
             except:
@@ -556,7 +556,7 @@ def handle_app_errors():
         
         # Log error for debugging
         try:
-            from firebase_init import db
+            from firebase_init import db, firestore
             from utils import generate_id
             error_id = generate_id("error")
             db.collection("app_errors").document(error_id).set({
@@ -584,7 +584,7 @@ def monitor_performance():
         load_time = time.time() - start_time
         if load_time > 3:  # Log slow pages
             try:
-                from firebase_init import db
+                from firebase_init import db, firestore
                 db.collection("performance_logs").add({
                     "page": st.session_state.get("top_nav", "unknown"),
                     "load_time": load_time,
