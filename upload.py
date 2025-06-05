@@ -5,7 +5,7 @@ from utils import session_get, format_date
 from mobile_helpers import safe_file_uploader
 from mobile_components import render_mobile_navigation
 from events import get_all_events
-from recipes import parse_and_store_recipe_from_file
+from recipes import parse_and_store_recipe_from_file, save_recipe_to_firestore  # ✅ ADD THIS
 
 @require_role("user")
 def upload_ui(event_id: str = None):
@@ -37,8 +37,27 @@ def upload_ui(event_id: str = None):
                 try:
                     file.seek(0)
                     contents = file.read().decode("utf-8")
-                    parsed_id = parse_and_store_recipe_from_file(contents, uploaded_by)
-                    if parsed_id:
-                        st.success(f"✅ Parsed recipe stored with ID: {parsed_id}")
+                    recipe_draft = parse_and_store_recipe_from_file(contents, uploaded_by)
+
+                    st.markdown("### 🧪 Auto-Detected Recipe Preview")
+                    with st.form("confirm_recipe_from_upload"):
+                        name = st.text_input("Recipe Name", recipe_draft["name"])
+                        ingredients = st.text_area("Ingredients", recipe_draft["ingredients"])
+                        instructions = st.text_area("Instructions", recipe_draft["instructions"])
+                        notes = st.text_area("Notes", recipe_draft.get("notes", ""))
+                        confirm = st.form_submit_button("Save Recipe")
+
+                        if confirm:
+                            recipe_draft["name"] = name
+                            recipe_draft["ingredients"] = ingredients
+                            recipe_draft["instructions"] = instructions
+                            recipe_draft["notes"] = notes
+                            recipe_draft["tags"] = []
+                            recipe_draft["author_name"] = user.get("name", uploaded_by)
+                            recipe_id = save_recipe_to_firestore(recipe_draft)
+                            if recipe_id:
+                                st.success(f"✅ Recipe saved from upload! ID: {recipe_id}")
+                            else:
+                                st.error("❌ Failed to save parsed recipe.")
                 except Exception as e:
-                    st.warning(f"⚠️ Recipe parsing failed: {e}")
+                    st.warning(f"⚠️ Could not parse recipe: {e}")
