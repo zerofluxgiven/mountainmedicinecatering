@@ -493,10 +493,6 @@ def _display_files(files, role, user_id):
                 except Exception as e:
                     st.warning(f"Could not refresh parsed data: {e}")
 
-                    except Exception as e:
-                        st.warning(f"Could not refresh parsed data: {e}")
-
-
                 # ✅ AI-parsed data viewer
                 parsed = file_data.get("parsed_data")
                 if parsed:
