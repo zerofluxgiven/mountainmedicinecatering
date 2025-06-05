@@ -70,3 +70,18 @@ def menu_viewer_ui():
 def _get_category_index(category: str):
     options = ["Appetizer", "Main", "Side", "Dessert", "Drink", "Other"]
     return options.index(category) if category in options else 0
+
+from event_file import update_event_file_field
+
+def save_menu_to_firestore(menu_data: list, event_id: str, user_id: str) -> bool:
+    """
+    Save structured menu data to the event's event_file in Firestore.
+    This overwrites the current menu.
+    """
+    try:
+        update_event_file_field(event_id, "menu", menu_data, user_id)
+        return True
+    except Exception as e:
+        print("Error saving menu:", e)
+        return False
+
