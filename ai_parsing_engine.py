@@ -68,6 +68,7 @@ def extract_text(uploaded_file):
     mime_type, _ = mimetypes.guess_type(uploaded_file.name)
 
     try:
+        uploaded_file.seek(0)
         if uploaded_file.type.startswith("text"):
             return uploaded_file.read().decode("utf-8")
 
