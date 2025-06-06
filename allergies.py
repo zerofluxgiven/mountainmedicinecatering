@@ -185,7 +185,7 @@ def get_safe_recipes_for_event(event_id: str) -> List[Dict]:
 # 🎨 Allergy Management UI
 # ----------------------------
 
-@require_login
+#@require_login
 def allergy_management_ui(user: dict):
     """Main allergy management interface"""
     st.title("🚨 Allergy Management")
