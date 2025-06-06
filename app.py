@@ -26,8 +26,23 @@ from ai_chat import ai_chat_ui
 from recipes import recipes_page
 from admin_utilities import admin_utilities_ui
 
-if "top_nav" not in st.session_state:
-    st.session_state["top_nav"] = None
+# 🔒 Initialize session state keys to prevent StreamlitAPIException
+for key, default in {
+    "top_nav": None,
+    "next_nav": None,
+    "active_event": None,
+    "active_event_id": None,
+    "recent_event_id": None,
+    "firebase_user": None,
+    "editing_event_id": None,
+    "editing_menu_event_id": None,
+    "viewing_menu_event_id": None,
+    "show_menu_form": False,
+    "current_file_data": b"",
+}.items():
+    if key not in st.session_state:
+        st.session_state[key] = default
+
     
 # ⚙️ Config
 PUBLIC_MODE = False  # Set to True for guest access
