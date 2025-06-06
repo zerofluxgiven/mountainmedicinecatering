@@ -281,3 +281,27 @@ def suggest_edit_box(
                 st.error(f"❌ Failed to submit suggestion: {e}")
     
     return current_value  # return original value, not suggested
+
+# ----------------------------
+# 📜 Role-Based Action Logger
+# ----------------------------
+
+def log_user_action(user_id: str, role: str, action_type: str, context: dict = None):
+    """Log an action performed by a user for audit trail."""
+    try:
+        db = get_db()
+        if not db:
+            return
+
+        from datetime import datetime
+        log_entry = {
+            "user_id": user_id,
+            "role": role,
+            "action_type": action_type,
+            "timestamp": datetime.utcnow(),
+            "context": context or {}
+        }
+        db.collection("logs").document().set(log_entry)
+    except Exception as e:
+        st.warning(f"Failed to log user action: {e}")
+
