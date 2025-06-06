@@ -44,10 +44,6 @@ def require_role(required_role):
         return wrapper
     return decorator
 
-# ----------------------------
-# 🔑 Google Web Auth Handler
-# ----------------------------
-
 def authenticate_user():
     """
     Handle Firebase Web Auth session via Streamlit
@@ -66,9 +62,14 @@ def authenticate_user():
             picture = decoded.get("picture", "")
             email_verified = decoded.get("email_verified", False)
 
+            # Save login time (or refresh it)
+            from datetime import datetime
+            login_time = datetime.utcnow().isoformat()
+
             # Check or create user in Firestore
             user_ref = db.collection("users").document(user_id)
             doc = user_ref.get()
+
             if not doc.exists:
                 user_ref.set({
                     "id": user_id,
@@ -77,17 +78,24 @@ def authenticate_user():
                     "role": "viewer",
                     "email_verified": email_verified,
                     "active": True,
-                    "created_at": st.session_state.get("login_time"),
+                    "created_at": login_time,
                 })
             else:
-                user_ref.update({"email_verified": email_verified})
+                user_ref.update({
+                    "email_verified": email_verified,
+                    "last_login": login_time
+                })
 
             user_data = user_ref.get().to_dict()
             session_set("firebase_user", user_data)
 
+            # Remove the token from the URL
+            st.experimental_set_query_params()
+
         except Exception as e:
             st.error(f"Authentication failed: {e}")
             st.stop()
+
 
 # ----------------------------
 # 🔁 Firebase User Sync Tool
