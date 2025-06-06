@@ -1,5 +1,6 @@
 import streamlit as st
 from firebase_init import db
+from firebase_admin import firestore
 from datetime import datetime
 from utils import get_active_event_id, generate_id
 from auth import get_user_id
@@ -33,6 +34,10 @@ def recipe_editor_ui(recipe_id=None):
         instructions = st.text_area("Instructions", value=recipe.get("instructions", ""))
         notes = st.text_area("Notes", value=recipe.get("notes", ""))
         tags = st.text_input("Tags (comma-separated)", value=", ".join(recipe.get("tags", [])))
+        if st.button("🤖 Suggest Tags with AI"):
+            st.info("🧠 AI tag suggestion coming soon...")
+        edit_note = st.text_input("📝 Edit Note (for version history)", value="", key="edit_note")
+
 
         # Variant support
         st.markdown("### 🧬 Variants (Sub-Recipes for Allergies/Diets)")
@@ -59,6 +64,8 @@ def recipe_editor_ui(recipe_id=None):
             st.success("Variant added.")
             st.experimental_rerun()
 
+        
+
         submitted = st.form_submit_button("💾 Save Changes")
         if submitted:
             version_entry = {
@@ -67,6 +74,7 @@ def recipe_editor_ui(recipe_id=None):
                 "instructions": instructions,
                 "notes": notes,
                 "tags": [t.strip() for t in tags.split(",") if t.strip()],
+                "edit_note": edit_note,
                 "timestamp": datetime.utcnow(),
                 "edited_by": user_id
             }
@@ -96,4 +104,7 @@ def recipe_editor_ui(recipe_id=None):
             st.write("**Instructions:**")
             st.code(vdata.get("instructions", ""))
             st.write("**Notes:**", vdata.get("notes", ""))
+            edit_note = vdata.get("edit_note", "")
+            if edit_note:
+                st.info(f"📝 Edit Note: {edit_note}")
             st.caption(f"Tags: {', '.join(vdata.get('tags', []))}")
