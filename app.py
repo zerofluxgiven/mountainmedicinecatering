@@ -113,6 +113,7 @@ def main():
         "viewing_menu_event_id": None,
         "show_menu_form": False,
         "current_file_data": b"",
+        "mobile_detected": detect_mobile(),
     }.items():
         if key not in st.session_state:
             st.session_state[key] = default
@@ -151,7 +152,6 @@ def main():
         initial_sidebar_state="collapsed"
     )
 
-    # 🚫 Remove sidebar completely
     st.markdown("""
         <style>
         [data-testid="stSidebar"] { display: none !important; }
@@ -159,7 +159,9 @@ def main():
         </style>
     """, unsafe_allow_html=True)
 
+    # 📱 Apply mobile theme (active now)
     mobile_layout.apply_mobile_theme()
+
     apply_theme()
     inject_layout_fixes()
     integrate_floating_chat()
@@ -259,167 +261,5 @@ def render_admin_panel(user):
         return
     admin_panel_ui()
 
-def render_dashboard(user):
-    if mobile_layout.is_mobile:
-        mobile_layout.render_mobile_dashboard(user, get_active_event())
-        return
-
-    event = get_active_event()
-    if event:
-        col1, col2 = st.columns([3, 1])
-        with col1:
-            st.success(f"📅 Active Event: **{event.get('name', 'Unnamed')}**")
-            st.markdown(f"📍 **Location:** {event.get('location', 'Unknown')}")
-            st.markdown(f"🗓️ **Date:** {format_date(event.get('start_date'))} → {format_date(event.get('end_date'))}")
-            if event.get('description'):
-                st.markdown(f"📝 **Description:** {event.get('description')}")
-
-        with col2:
-            if st.button("Edit Event", use_container_width=True):
-                st.session_state["editing_event_id"] = event["id"]
-                st.session_state["show_event_dashboard"] = True
-                st.session_state["top_nav"] = "Events"
-                st.rerun()
-
-        st.markdown("### 📈 Quick Stats")
-        col1, col2, col3, col4 = st.columns(4)
-        with col1:
-            st.metric("👥 Guests", event.get("guest_count", "-"))
-        with col2:
-            st.metric("🧑‍🍳 Staff", event.get("staff_count", "-"))
-        with col3:
-            try:
-                menu_docs = list(db.collection("menus").where("event_id", "==", event["id"]).stream())
-                menu_count = len(menu_docs)
-            except:
-                menu_count = len(event.get("menu", []))
-            st.metric("🍽️ Menu Items", menu_count)
-        with col4:
-            status = event.get("status", "planning")
-            st.metric("📊 Status", status.title())
-
-        st.markdown("### ✅ Today's Checklist")
-        checklist_items = [
-            "Prep station setup complete",
-            "Reviewed schedule with staff", 
-            "Checked inventory and supplies",
-            "Load equipment into transport",
-            "Set up dishwashing station",
-            "Final headcount confirmed"
-        ]
-        checklist_cols = st.columns(2)
-        for i, item in enumerate(checklist_items):
-            with checklist_cols[i % 2]:
-                st.checkbox(item, key=f"checklist_{i}")
-
-        st.markdown("### 🚀 Quick Actions")
-        action_cols = st.columns(4)
-        with action_cols[0]:
-            if st.button("📋 View Menu", use_container_width=True):
-                st.session_state["top_nav"] = "Recipes"
-                st.rerun()
-        with action_cols[1]:
-            if st.button("📁 Upload Files", use_container_width=True):
-                st.session_state["top_nav"] = "Upload"
-                st.rerun()
-        with action_cols[2]:
-            if st.button("📦 Packing", use_container_width=True):
-                st.session_state["top_nav"] = "Packing"
-                st.rerun()
-        with action_cols[3]:
-            if st.button("🤖 AI Assistant", use_container_width=True):
-                st.session_state["top_nav"] = "Assistant"
-                st.rerun()
-
-    else:
-        st.info("No active event is currently set.")
-        st.markdown("### 🎯 Get Started")
-        col1, col2 = st.columns(2)
-        with col1:
-            st.markdown("#### Create New Event")
-            st.markdown("Start planning your next catering event")
-            if st.button("Create Event", use_container_width=True):
-                st.session_state["top_nav"] = "Events"
-                st.rerun()
-        with col2:
-            st.markdown("#### Browse Existing Events")
-            st.markdown("Activate or review past events")
-            if st.button("View Events", use_container_width=True):
-                st.session_state["top_nav"] = "Events"
-                st.rerun()
-
-        try:
-            recent_events = get_all_events()
-            if recent_events:
-                recent_active = [e for e in recent_events if not e.get("deleted")][:3]
-                if recent_active:
-                    st.markdown("### 📅 Recent Events")
-                    for event in recent_active:
-                        col1, col2, col3 = st.columns([3, 1, 1])
-                        with col1:
-                            st.write(f"**{event.get('name', 'Unnamed')}**")
-                            st.caption(f"{event.get('location', 'Unknown')} • {event.get('guest_count', 0)} guests")
-                        with col2:
-                            status = event.get('status', 'planning')
-                            if status == 'active':
-                                st.success(status.title())
-                            elif status == 'complete':
-                                st.info(status.title())
-                            else:
-                                st.warning(status.title())
-                        with col3:
-                            if st.button("Activate", key=f"quick_activate_{event['id']}"):
-                                from events import activate_event
-                                activate_event(event['id'])
-                                st.rerun()
-        except Exception as e:
-            st.error(f"Could not load recent events: {e}")
-
-def optimize_for_mobile():
-    if detect_mobile():
-        mobile_css = """
-        <style>
-        .main .block-container {
-            padding-top: 1rem;
-            padding-left: 0.5rem;
-            padding-right: 0.5rem;
-        }
-        .stColumns {
-            flex-direction: column !important;
-        }
-        .stButton > button {
-            width: 100% !important;
-            margin-bottom: 0.5rem !important;
-        }
-        </style>
-        """
-        st.markdown(mobile_css, unsafe_allow_html=True)
-
-def handle_app_errors():
-    try:
-        main()
-    except Exception as e:
-        st.error("🚨 An unexpected error occurred")
-        st.exception(e)
-        try:
-            from firebase_init import db, firestore
-            from utils import generate_id
-            error_id = generate_id("error")
-            db.collection("app_errors").document(error_id).set({
-                "error": str(e),
-                "user": st.session_state.get("user", {}).get("id", "unknown"),
-                "timestamp": datetime.now(),
-                "page": st.session_state.get("top_nav", "unknown")
-            })
-        except:
-            pass
-
-def monitor_performance():
-    import time
-    start_time = time.time()
-    st.session_state["page_load_start"] = start_time
-
 if __name__ == "__main__":
-    optimize_for_mobile()
-    monitor_performance()
-    handle_app_errors()
+    main()
