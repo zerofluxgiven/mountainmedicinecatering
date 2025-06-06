@@ -74,8 +74,7 @@ def generate_event_summary_pdf(event_id: str) -> None:
 # 📄 Full-Page UI for app.py
 # ----------------------------
 
-@require_login
-def pdf_export_ui():
+def pdf_export_ui(user=None):
     st.title("📄 Export Post-Event Summary")
 
     event_id = st.text_input("Enter Event ID")
