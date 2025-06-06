@@ -204,11 +204,8 @@ def main():
     else:
         selected_tab = render_top_navbar(list(TABS.keys()))
     
-    # ✅ Persist tab selection across reruns
-    if selected_tab:
-        st.session_state["top_nav"] = selected_tab
-    else:
-        selected_tab = st.session_state.get("top_nav", "Dashboard")
+    selected_tab = selected_tab or st.session_state.get("top_nav", "Dashboard")
+
     
     # (optional) Debug line
     # st.caption(f"DEBUG: selected_tab = {selected_tab}")
