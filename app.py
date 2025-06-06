@@ -205,13 +205,12 @@ def main():
     else:
         selected_tab = st.radio("Navigation", list(TABS.keys()), key="top_nav", horizontal=True, label_visibility="collapsed")
     
-    # Always route using session state key
-    selected_tab = st.session_state.get("top_nav", "Dashboard")
+    # Ensure a default tab is selected
+    if st.session_state.get("top_nav") is None:
+        st.session_state["top_nav"] = "Dashboard"
 
-    
-    # (optional) Debug line
-    # st.caption(f"DEBUG: selected_tab = {selected_tab}")
-    
+    # Always route using session state key
+    selected_tab = st.session_state["top_nav"]
 
     # Sidebar for notifications and quick info
     if user:
