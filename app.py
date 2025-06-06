@@ -1,4 +1,32 @@
 import streamlit as st
+from auth import get_user, authenticate_user
+
+def handle_auth_routing():
+    query_params = st.query_params
+
+    # Logout logic
+    if query_params.get("logout") == "true":
+        st.session_state.clear()
+        st.toast("You have been logged out")
+        st.switch_page("/login")
+
+    # Token-based login
+    elif "token" in query_params:
+        token = query_params["token"]
+        result = authenticate_user(token=token)
+        if result:
+            st.session_state.user = result
+            st.toast(f"Welcome {result.get('name', 'back')} 👋")
+            st.switch_page("/")
+        else:
+            st.error("Invalid login link.")
+            st.stop()
+
+    # Not logged in and not on /login
+    elif not get_user() and st.session_state.get("page") != "login":
+        st.switch_page("/login")
+        st.stop()
+
 from mobile_layout import mobile_layout
 from mobile_components import detect_mobile, mobile_safe_columns
 from floating_ai_chat import integrate_floating_chat
@@ -88,9 +116,8 @@ def initialize_event_mode_state():
 # ----------------------------
 # 🚀 Main App
 # ----------------------------
+    handle_auth_routing()
 def main():
-    from auth import authenticate_user
-    authenticate_user()
     
     from firebase_init import db, firestore
 
