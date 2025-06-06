@@ -26,23 +26,6 @@ from ai_chat import ai_chat_ui
 from recipes import recipes_page
 from admin_utilities import admin_utilities_ui
 
-# 🔒 Initialize session state keys to prevent StreamlitAPIException
-for key, default in {
-    "top_nav": None,
-    "next_nav": None,
-    "active_event": None,
-    "active_event_id": None,
-    "recent_event_id": None,
-    "firebase_user": None,
-    "editing_event_id": None,
-    "editing_menu_event_id": None,
-    "viewing_menu_event_id": None,
-    "show_menu_form": False,
-    "current_file_data": b"",
-}.items():
-    if key not in st.session_state:
-        st.session_state[key] = default
-
     
 # ⚙️ Config
 PUBLIC_MODE = False  # Set to True for guest access
@@ -111,15 +94,33 @@ def main():
     except Exception as e:
         st.error(f"❌ Failed to initialize Firebase: {e}")
         st.stop()
-                # Ensure admin user exists with correct role
+
+    # ✅ Prevent Streamlit session state errors by initializing all used keys
+    for key, default in {
+        "top_nav": None,
+        "next_nav": None,
+        "active_event": None,
+        "active_event_id": None,
+        "recent_event_id": None,
+        "firebase_user": None,
+        "editing_event_id": None,
+        "editing_menu_event_id": None,
+        "viewing_menu_event_id": None,
+        "show_menu_form": False,
+        "current_file_data": b"",
+    }.items():
+        if key not in st.session_state:
+            st.session_state[key] = default
+
+    # ✅ Ensure admin user exists with correct role
     try:
         from firebase_init import db, firestore
         admin_email = "mistermcfarland@gmail.com"
-    
+
         # Check all users and find the admin
         users = db.collection("users").where("email", "==", admin_email).stream()
         admin_found = False
-    
+
         for user_doc in users:
             user_data = user_doc.to_dict()
             if user_data.get("role") != "admin":
@@ -127,7 +128,7 @@ def main():
                 db.collection("users").document(user_doc.id).update({"role": "admin"})
                 st.success("✅ Admin role updated for mistermcfarland@gmail.com")
             admin_found = True
-    
+
         if not admin_found:
             # If you're logged in but no user record exists, create one
             current_user = st.session_state.get("firebase_user")
@@ -145,9 +146,9 @@ def main():
     except Exception as e:
         st.warning(f"Could not verify admin role: {e}")
 
-    # Configure page
+    # ✅ Configure Streamlit page
     st.set_page_config(
-        page_title="Mountain Medicine Catering", 
+        page_title="Mountain Medicine Catering",
         layout="wide",
         initial_sidebar_state="collapsed"
     )
