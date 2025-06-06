@@ -4,6 +4,8 @@ from firebase_admin import firestore
 from datetime import datetime
 from utils import get_active_event_id, generate_id
 from auth import get_user_id
+from ingredients import parse_recipe_ingredients, update_recipe_with_parsed_ingredients
+from allergies import render_allergy_warning
 
 # ----------------------------
 # 📖 Recipe Editor UI
@@ -34,10 +36,23 @@ def recipe_editor_ui(recipe_id=None):
         instructions = st.text_area("Instructions", value=recipe.get("instructions", ""))
         notes = st.text_area("Notes", value=recipe.get("notes", ""))
         tags = st.text_input("Tags (comma-separated)", value=", ".join(recipe.get("tags", [])))
-        if st.button("🤖 Suggest Tags with AI"):
+        if st.button("🧠 Suggest Tags with AI"):
             st.info("🧠 AI tag suggestion coming soon...")
         edit_note = st.text_input("📝 Edit Note (for version history)", value="", key="edit_note")
 
+        # Allergen warnings
+        if recipe.get("ingredients_parsed"):
+            render_allergy_warning(recipe)
+
+        # Parsed ingredients view
+        if st.checkbox("Show Parsed Ingredients", value=False):
+            parsed = recipe.get("parsed_ingredients", [])
+            if parsed:
+                st.markdown("### 🌿 Parsed Ingredients")
+                for ing in parsed:
+                    st.write(f"- {ing.get('quantity', '?')} {ing.get('unit', '')} {ing.get('name', '')}")
+            else:
+                st.info("No parsed ingredients available.")
 
         # Variant support
         st.markdown("### 🧬 Variants (Sub-Recipes for Allergies/Diets)")
@@ -64,9 +79,7 @@ def recipe_editor_ui(recipe_id=None):
             st.success("Variant added.")
             st.experimental_rerun()
 
-        
-
-        submitted = st.form_submit_button("💾 Save Changes")
+        submitted = st.form_submit_button("🗕 Save Changes")
         if submitted:
             version_entry = {
                 "name": name,
@@ -78,10 +91,8 @@ def recipe_editor_ui(recipe_id=None):
                 "timestamp": datetime.utcnow(),
                 "edited_by": user_id
             }
-            # Append to version history
             doc_ref.collection("versions").document(generate_id("ver")).set(version_entry)
 
-            # Update current version
             doc_ref.update({
                 "name": name,
                 "ingredients": ingredients,
@@ -91,6 +102,9 @@ def recipe_editor_ui(recipe_id=None):
                 "updated_at": datetime.utcnow(),
                 "updated_by": user_id
             })
+
+            # Auto-update parsed ingredients
+            update_recipe_with_parsed_ingredients(recipe_id, ingredients)
             st.success("✅ Recipe updated!")
 
     # Show version history
