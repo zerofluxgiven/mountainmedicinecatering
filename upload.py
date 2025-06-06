@@ -46,6 +46,20 @@ def upload_ui(event_id: str = None):
                         instructions = st.text_area("Instructions", recipe_draft["instructions"])
                         notes = st.text_area("Notes", recipe_draft.get("notes", ""))
                         confirm = st.form_submit_button("Save Recipe")
+                        # Offer to save as event menu item if in event context
+                        if eid:
+                            from upload_integration import save_parsed_menu_ui
+                            st.markdown("### 🍽️ Save as Menu Item for Event")
+                            st.session_state["parsed_recipe_context"] = {
+                                "title": name,  # <-- was \"name\"; must be \"title\"
+                                "instructions": instructions,
+                                "notes": notes,
+                                "tags": [],
+                                "allergens": [],
+                                "event_id": eid
+                            }
+                            save_parsed_menu_ui(st.session_state["parsed_recipe_context"])
+
 
                         if confirm:
                             recipe_draft["name"] = name
