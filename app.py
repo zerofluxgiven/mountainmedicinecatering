@@ -25,6 +25,7 @@ from packing import packing_ui
 from ai_chat import ai_chat_ui
 from recipes import recipes_page
 from admin_utilities import admin_utilities_ui
+from historical_menus import historical_menus_ui
 
     
 # ⚙️ Config
@@ -37,15 +38,16 @@ TABS = {
     "Recipes": "recipes",
     "Ingredients": "ingredients",
     "Allergies": "allergies",
+    "Historical Menus": "historical_menus",
     "Upload": "files",
     "Receipts": "receipts",
-    "Packing": "packing",
-    "Post-Event": "post_event",
-    "Suggestions": "suggestions",
-    "Bulk Suggestions": "bulk_suggestions", 
-    "PDF Export": "pdf_export",
-    "Audit Logs": "audit_logs",
-    "Explore Tags": "tags",
+    #"Packing": "packing",
+    #"Post-Event": "post_event",
+    #"Suggestions": "suggestions",
+    #"Bulk Suggestions": "bulk_suggestions", 
+    #"PDF Export": "pdf_export",
+    #"Audit Logs": "audit_logs",
+    #"Explore Tags": "tags",
     "Admin Panel": "admin",
     "Assistant": "assistant"
 }
@@ -266,6 +268,13 @@ def main():
             st.warning("Please log in to manage allergies.")
         else:
             allergy_management_ui(user)
+
+    elif selected_tab == "Historical Menus":
+        # Historical menus require login
+        if not user:
+            st.warning("Please log in to view historical menus.")
+        else:
+            historical_menus_ui()
 
     elif selected_tab == "Upload":
         # File upload requires login
