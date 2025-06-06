@@ -254,7 +254,7 @@ def search_ingredients(query: str) -> List[Dict]:
 # 🎨 Ingredient Catalogue UI
 # ----------------------------
 
-@require_login
+
 def ingredient_catalogue_ui(user: dict):
     """Main ingredient catalogue interface"""
     st.title("🥕 Ingredient Catalogue")
