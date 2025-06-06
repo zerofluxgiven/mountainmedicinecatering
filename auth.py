@@ -4,6 +4,7 @@ import requests
 from firebase_admin import auth as admin_auth
 from firebase_init import db
 from utils import session_get, session_set
+from datetime import datetime
 
 # ----------------------------
 # 🔐 Web Auth Session Helpers
@@ -22,6 +23,9 @@ def get_user_id():
 def get_user_role():
     user = get_user()
     return user.get("role", "viewer") if user else "viewer"
+
+def get_current_user():
+    return get_user()
 
 def require_login():
     if not is_logged_in():
@@ -44,11 +48,11 @@ def require_role(required_role):
         return wrapper
     return decorator
 
+# ----------------------------
+# 🔑 Google Web Auth Handler
+# ----------------------------
+
 def authenticate_user():
-    """
-    Handle Firebase Web Auth session via Streamlit
-    Expects Streamlit to receive a Firebase ID token from the frontend
-    """
     if "firebase_user" in st.session_state:
         return
 
@@ -62,11 +66,8 @@ def authenticate_user():
             picture = decoded.get("picture", "")
             email_verified = decoded.get("email_verified", False)
 
-            # Save login time (or refresh it)
-            from datetime import datetime
             login_time = datetime.utcnow().isoformat()
 
-            # Check or create user in Firestore
             user_ref = db.collection("users").document(user_id)
             doc = user_ref.get()
 
@@ -89,20 +90,18 @@ def authenticate_user():
             user_data = user_ref.get().to_dict()
             session_set("firebase_user", user_data)
 
-            # Remove the token from the URL
+            # Clean up query string
             st.experimental_set_query_params()
 
         except Exception as e:
             st.error(f"Authentication failed: {e}")
             st.stop()
 
-
 # ----------------------------
 # 🔁 Firebase User Sync Tool
 # ----------------------------
 
 def sync_firebase_users():
-    """Sync all Firebase Auth users to Firestore collection `users`"""
     synced = 0
     page = admin_auth.list_users()
     while page:
