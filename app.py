@@ -228,7 +228,7 @@ def main():
 
     elif selected_tab == "Receipts":
         if user:
-        receipt_upload_ui(user)
+            receipt_upload_ui(user)
         else:
             st.warning("Please log in to manage receipts.")
 
