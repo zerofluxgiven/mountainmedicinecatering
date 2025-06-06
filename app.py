@@ -95,8 +95,9 @@ def handle_auth_routing():
             st.error("Invalid login link.")
             st.stop()
 
-    elif not get_user() and st.session_state.get("page") != "login":
-        st.switch_page("/login")
+    elif not get_user():
+        from auth import show_login_form
+        show_login_form()
         st.stop()
 
 def main():
