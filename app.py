@@ -227,8 +227,8 @@ def main():
             st.warning("Please log in to upload files.")
 
     elif selected_tab == "Receipts":
-        if user:
-            receipt_upload_ui()
+    if user:
+        receipt_upload_ui(user)
         else:
             st.warning("Please log in to manage receipts.")
 
