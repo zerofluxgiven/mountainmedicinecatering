@@ -89,6 +89,8 @@ def initialize_event_mode_state():
 # 🚀 Main App
 # ----------------------------
 def main():
+    from auth import authenticate_user
+    authenticate_user()
     
     from firebase_init import db, firestore
 
