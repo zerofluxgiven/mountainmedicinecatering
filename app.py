@@ -317,7 +317,7 @@ def main():
         if not user:
             st.warning("Please log in to manage receipts.")
         else:
-            receipt_upload_ui(user)
+            receipt_upload_ui()
 
     elif selected_tab == "Packing":
         # Packing requires login
