@@ -180,7 +180,7 @@ def main():
 
     # Show login form if no user and not in public mode
     if not user and not PUBLIC_MODE:
-        st.markdown("## 🌄 Mountain Medicine Catering")
+        st.markdown("## 🌄 Mountain Medicine")
         show_login_form()
         return
 
