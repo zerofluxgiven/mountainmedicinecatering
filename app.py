@@ -198,13 +198,15 @@ def main():
         notifications_sidebar(user)
     else:
         st.sidebar.write("👀 Viewing as guest")
-    # 🧭 Top navigation
+       
+       # 🧭 Top navigation
     if mobile_layout.is_mobile:
-        selected_tab = mobile_layout.render_mobile_navigation()
+        st.session_state["top_nav"] = mobile_layout.render_mobile_navigation()
     else:
-        selected_tab = render_top_navbar(list(TABS.keys()))
+        selected_tab = st.radio("Navigation", list(TABS.keys()), key="top_nav", horizontal=True, label_visibility="collapsed")
     
-    selected_tab = selected_tab or st.session_state.get("top_nav", "Dashboard")
+    # Always route using session state key
+    selected_tab = st.session_state.get("top_nav", "Dashboard")
 
     
     # (optional) Debug line
