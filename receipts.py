@@ -10,7 +10,6 @@ import io
 import json
 import re
 from google.cloud.firestore_v1.base_query import FieldFilter
-from firebase_init import get_db
 
 from mobile_helpers import safe_columns, safe_file_uploader
 from mobile_layout import render_mobile_navigation
