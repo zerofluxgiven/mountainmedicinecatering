@@ -1,6 +1,6 @@
 import streamlit as st
 import streamlit.components.v1 as components
-from auth import authenticate_user
+from auth import authenticate_user, get_user, get_user_id
 
 # ----------------------------
 # 🔐 Login Page with Google Sign-In
@@ -8,8 +8,31 @@ from auth import authenticate_user
 
 def login_ui():
     st.set_page_config(page_title="Login | Mountain Medicine", page_icon="🔐")
-    st.title("🔐 Welcome to Mountain Medicine")
-    st.markdown("Login to access your personalized dashboard and event tools.")
+    authenticate_user()
+
+    # Clear sidebar to simulate full-page login
+    st.markdown("""
+        <style>
+            [data-testid="stSidebar"] {
+                display: none;
+            }
+            .block-container {
+                padding-top: 2rem;
+            }
+        </style>
+    """, unsafe_allow_html=True)
+
+    # Header
+    st.markdown("<h1 style='text-align: center;'>🔐 Welcome to Mountain Medicine</h1>", unsafe_allow_html=True)
+    st.markdown("<p style='text-align: center;'>Login to access your personalized dashboard and event tools.</p>", unsafe_allow_html=True)
+
+    user = get_user()
+    if user:
+        st.success(f"✅ Logged in as {user.get('name') or user.get('email')}")
+        if st.button("🔓 Log out", key="logout_btn"):
+            st.session_state.pop("firebase_user", None)
+            st.experimental_rerun()
+        return
 
     # Inject Google Sign-In HTML + Firebase Web SDK
     components.html("""
@@ -37,11 +60,8 @@ def login_ui():
         }
       </script>
     </head>
-    <body>
+    <body style="display: flex; justify-content: center; align-items: center; height: 200px;">
       <button onclick="signInWithGoogle()" style="padding: 12px 24px; font-size: 18px; border-radius: 8px; background-color: #4285F4; color: white; border: none;">Login with Google</button>
     </body>
     </html>
-    """, height=160)
-
-    # Handle token in query param
-    authenticate_user()
+    """, height=200)
