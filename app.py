@@ -26,6 +26,9 @@ from ai_chat import ai_chat_ui
 from recipes import recipes_page
 from admin_utilities import admin_utilities_ui
 
+if "top_nav" not in st.session_state:
+    st.session_state["top_nav"] = None
+    
 # ⚙️ Config
 PUBLIC_MODE = False  # Set to True for guest access
 
