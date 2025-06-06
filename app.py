@@ -190,8 +190,12 @@ def main():
     # 🧭 Enhanced sidebar with admin tools
     render_enhanced_sidebar()
 
+    # Ensure a default tab is selected
+    if st.session_state.get("top_nav") is None:
+        st.session_state["top_nav"] = "Dashboard"
+
     # 🧭 Main navigation
-    st.markdown("## 🌄 Mountain Medicine Catering")
+    st.markdown("## 🌄 Mountain Medicine")
 
     if user:
         st.sidebar.write(f"👤 Logged in as **{user.get('name', 'User')}**")
@@ -204,10 +208,6 @@ def main():
         st.session_state["top_nav"] = mobile_layout.render_mobile_navigation()
     else:
         selected_tab = st.radio("Navigation", list(TABS.keys()), key="top_nav", horizontal=True, label_visibility="collapsed")
-    
-    # Ensure a default tab is selected
-    if st.session_state.get("top_nav") is None:
-        st.session_state["top_nav"] = "Dashboard"
 
     # Always route using session state key
     selected_tab = st.session_state["top_nav"]
