@@ -7,7 +7,7 @@ from mobile_components import detect_mobile, mobile_safe_columns
 from floating_ai_chat import integrate_floating_chat
 from notifications import notifications_sidebar
 from datetime import datetime
-from utils import format_date, get_active_event, session_get
+from utils import format_date, get_active_event, session_get, log_user_action
 from layout import apply_theme, render_top_navbar, render_enhanced_sidebar, render_leave_event_button
 from ui_components import show_event_mode_banner, inject_layout_fixes
 from landing import show as show_landing
@@ -78,6 +78,7 @@ def handle_auth_routing():
     query_params = st.query_params
 
     if query_params.get("logout") == "true":
+        log_user_action("logout")
         st.session_state.clear()
         st.toast("You have been logged out")
         st.switch_page("/login")
@@ -88,6 +89,7 @@ def handle_auth_routing():
         if result:
             st.session_state.user = result
             st.toast(f"Welcome {result.get('name', 'back')} 👋")
+            log_user_action("login")
             st.switch_page("/")
         else:
             st.error("Invalid login link.")
@@ -119,7 +121,7 @@ def main():
             st.session_state[key] = default
 
     try:
-        admin_email = "mistermcfarland@gmail.com"
+        admin_email = st.secrets.get("admin_email", "mistermcfarland@gmail.com")
         users = db.collection("users").where("email", "==", admin_email).stream()
         admin_found = False
 
@@ -127,7 +129,7 @@ def main():
             user_data = user_doc.to_dict()
             if user_data.get("role") != "admin":
                 db.collection("users").document(user_doc.id).update({"role": "admin"})
-                st.success("✅ Admin role updated for mistermcfarland@gmail.com")
+                st.success("✅ Admin role updated for admin_email")
             admin_found = True
 
         if not admin_found:
