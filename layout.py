@@ -18,7 +18,7 @@ def inject_custom_css():
         # Fallback to inline CSS if file not found
         css_content = """
         <style>
-        /* Fallback styling */
+        /* Fallback styling */\n[data-testid='stSidebar'] { display: none; }
         :root {
             --primary-purple: #6C4AB6;
             --light-purple: #B8A4D4;
@@ -1070,3 +1070,25 @@ def render_event_toolbar(event_id, context="active"):
         <small>{event.get('location', 'Unknown')} | {event.get('start_date', 'Unknown')}</small>
     </div>
     """, unsafe_allow_html=True)
+
+# ----------------------------
+# 🔓 Top-Right Login/Logout Button
+# ----------------------------
+def render_login_status_button():
+    from auth import get_user
+    user = get_user()
+    if user:
+        name = user.get("name") or user.get("email")
+        st.markdown(f"""
+        <div style='position: fixed; top: 1rem; right: 1rem; z-index: 999;'>
+            <form action='/' method='post'>
+                <button onclick=\"window.location.href='/?logout=true'\">🔓 {name}</button>
+            </form>
+        </div>
+        """, unsafe_allow_html=True)
+    else:
+        st.markdown("""
+        <div style='position: fixed; top: 1rem; right: 1rem; z-index: 999;'>
+            <button onclick=\"window.location.href='/login'\">🔐 Login</button>
+        </div>
+        """, unsafe_allow_html=True)
