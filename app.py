@@ -87,13 +87,8 @@ def initialize_event_mode_state():
 # 🚀 Main App
 # ----------------------------
 def main():
-    # ✅ Initialize Firebase first
-    try:
-        from firebase_config import initialize_firebase
-        initialize_firebase()
-    except Exception as e:
-        st.error(f"❌ Failed to initialize Firebase: {e}")
-        st.stop()
+    
+    from firebase_init import db, firestore
 
     # ✅ Prevent Streamlit session state errors by initializing all used keys
     for key, default in {
