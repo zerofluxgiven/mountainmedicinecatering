@@ -34,30 +34,34 @@ def login_ui():
             st.experimental_rerun()
         return
 
+    # Load secrets from .streamlit/secrets.toml
+    firebase_api_key = st.secrets["firebase"]["apiKey"]
+    firebase_auth_domain = st.secrets["firebase"]["authDomain"]
+
     # Inject Google Sign-In HTML + Firebase Web SDK
-    components.html("""
+    components.html(f"""
     <!DOCTYPE html>
     <html>
     <head>
       <script src="https://www.gstatic.com/firebasejs/10.1.0/firebase-app.js"></script>
       <script src="https://www.gstatic.com/firebasejs/10.1.0/firebase-auth.js"></script>
       <script>
-        const firebaseConfig = {
-          apiKey: "YOUR_FIREBASE_API_KEY",
-          authDomain: "YOUR_PROJECT.firebaseapp.com",
-        };
+        const firebaseConfig = {{
+          apiKey: "{firebase_api_key}",
+          authDomain: "{firebase_auth_domain}"
+        }};
         firebase.initializeApp(firebaseConfig);
 
-        function signInWithGoogle() {
+        function signInWithGoogle() {{
           const provider = new firebase.auth.GoogleAuthProvider();
-          firebase.auth().signInWithPopup(provider).then((result) => {
+          firebase.auth().signInWithPopup(provider).then((result) => {{
             return result.user.getIdToken();
-          }).then((idToken) => {
-            window.location.href = `/?token=${idToken}`;
-          }).catch((error) => {
+          }}).then((idToken) => {{
+            window.location.href = `/?token=${{idToken}}`;
+          }}).catch((error) => {{
             alert("Login failed: " + error.message);
-          });
-        }
+          }});
+        }}
       </script>
     </head>
     <body style="display: flex; justify-content: center; align-items: center; height: 200px;">
