@@ -198,12 +198,21 @@ def main():
         notifications_sidebar(user)
     else:
         st.sidebar.write("👀 Viewing as guest")
-
-    # Top navigation
+    # 🧭 Top navigation
     if mobile_layout.is_mobile:
         selected_tab = mobile_layout.render_mobile_navigation()
     else:
         selected_tab = render_top_navbar(list(TABS.keys()))
+    
+    # ✅ Persist tab selection across reruns
+    if selected_tab:
+        st.session_state["top_nav"] = selected_tab
+    else:
+        selected_tab = st.session_state.get("top_nav", "Dashboard")
+    
+    # (optional) Debug line
+    # st.caption(f"DEBUG: selected_tab = {selected_tab}")
+    
 
     # Sidebar for notifications and quick info
     if user:
