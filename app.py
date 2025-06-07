@@ -96,8 +96,6 @@ def handle_auth_routing():
             st.stop()
 
     elif not get_user():
-        from auth import show_login_form
-        show_login_form()
         st.stop()
 
 def main():
