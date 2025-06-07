@@ -120,7 +120,7 @@ def main():
             st.session_state[key] = default
 
     try:
-        admin_email = st.secrets.get("admin_email", "mistermcfarland@gmail.com")
+        admin_email = "mistermcfarland@gmail.com"
         users = db.collection("users").where("email", "==", admin_email).stream()
         admin_found = False
 
@@ -128,7 +128,7 @@ def main():
             user_data = user_doc.to_dict()
             if user_data.get("role") != "admin":
                 db.collection("users").document(user_doc.id).update({"role": "admin"})
-                st.success("✅ Admin role updated for admin_email")
+                st.success("✅ Admin role updated for mistermcfarland@gmail.com")
             admin_found = True
 
         if not admin_found:
@@ -152,6 +152,48 @@ def main():
         layout="wide",
         initial_sidebar_state="collapsed"
     )
+
+    st.markdown("""
+        <style>
+        [data-testid="stSidebar"] { display: none !important; }
+        .block-container { padding-top: 1rem !important; }
+        </style>
+    """, unsafe_allow_html=True)
+
+    # 📱 Apply mobile theme
+    mobile_layout.apply_mobile_theme()
+    apply_theme()
+    inject_layout_fixes()
+    integrate_floating_chat()
+
+    user = get_user()
+
+    # 🪧 Public mode
+    if PUBLIC_MODE and not user:
+        show_landing()
+        return
+
+    # 🔐 If no user and not in public mode, show login prompt
+    if not user:
+        st.markdown("## 🌄 Mountain Medicine")
+        st.markdown("Please log in to continue.")
+        login_url = st.secrets.get("auth", {}).get("login_url", "")
+        if login_url:
+            st.markdown(f"[🔐 Login with Google]({login_url})", unsafe_allow_html=True)
+        else:
+            st.error("Login URL is not configured in secrets.toml.")
+        return
+
+    initialize_event_mode_state()
+    render_top_navbar()
+
+    if st.session_state.get("top_nav") is None:
+        st.session_state["top_nav"] = "Dashboard"
+
+    selected_tab = st.radio("Navigation", list(TABS.keys()), key="top_nav", horizontal=True, label_visibility="collapsed")
+    st.session_state["top_nav"] = selected_tab
+
+    # The rest of your tab routing continues as-is...)
 
     st.markdown("""
         <style>
