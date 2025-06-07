@@ -138,10 +138,8 @@ def delete_firebase_user(uid):
 # 🧾 Streamlit Login Form UI
 # ----------------------------
 
-def show_login_form():
+def sdef show_login_form():
     st.subheader("🔐 Login Required")
-    st.markdown(
-        "To access this page, please log in using the button below."
-    )
-    st.button("Login with Google", on_click=lambda: st.switch_page("/login"))
-
+    st.markdown("Please log in to continue.")
+    if st.button("Login with Google"):
+        st.switch_page("/login")
