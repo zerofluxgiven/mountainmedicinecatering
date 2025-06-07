@@ -102,6 +102,7 @@ def main():
     handle_auth_routing()
     from firebase_init import db, firestore
 
+    # Initialize session state keys
     for key, default in {
         "top_nav": None,
         "next_nav": None,
@@ -119,6 +120,7 @@ def main():
         if key not in st.session_state:
             st.session_state[key] = default
 
+    # Make sure admin user exists
     try:
         admin_email = "mistermcfarland@gmail.com"
         users = db.collection("users").where("email", "==", admin_email).stream()
@@ -147,11 +149,63 @@ def main():
     except Exception as e:
         st.warning(f"Could not verify admin role: {e}")
 
+    # Page config
     st.set_page_config(
         page_title="Mountain Medicine Catering",
         layout="wide",
         initial_sidebar_state="collapsed"
     )
+
+    # Hide sidebar
+    st.markdown("""
+        <style>
+        [data-testid="stSidebar"] { display: none !important; }
+        .block-container { padding-top: 1rem !important; }
+        </style>
+    """, unsafe_allow_html=True)
+
+    # Theme + helpers
+    mobile_layout.apply_mobile_theme()
+    apply_theme()
+    inject_layout_fixes()
+    integrate_floating_chat()
+
+    user = get_user()
+
+    # PUBLIC_MODE landing
+    if PUBLIC_MODE and not user:
+        show_landing()
+        return
+
+    # 🛑 If user is NOT logged in — show login page
+    if not user:
+        st.title("🔐 Login Required")
+        st.markdown("Please log in to access Mountain Medicine Catering.")
+
+        login_url = st.secrets.get("auth", {}).get("login_url", "")
+        if login_url:
+            st.markdown(f"""
+                <div style="text-align:center; margin-top:2em;">
+                    <a href="{login_url}">
+                        <button style="font-size: 1.1rem; padding: 0.6em 1.5em; background: #6C4AB6; color: white; border: none; border-radius: 8px;">Login with Google</button>
+                    </a>
+                </div>
+            """, unsafe_allow_html=True)
+        else:
+            st.error("No login URL configured. Please set `auth.login_url` in secrets.toml.")
+        return
+
+    # Initialize event mode and continue
+    initialize_event_mode_state()
+    render_top_navbar()
+
+    if st.session_state.get("top_nav") is None:
+        st.session_state["top_nav"] = "Dashboard"
+
+    selected_tab = st.radio("Navigation", list(TABS.keys()), key="top_nav", horizontal=True, label_visibility="collapsed")
+    st.session_state["top_nav"] = selected_tab
+
+    # Your existing tab routing logic follows from here...)
 
     st.markdown("""
         <style>
