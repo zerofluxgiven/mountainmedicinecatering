@@ -1,0 +1,113 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Login | Mountain Medicine</title>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600&display=swap" rel="stylesheet">
+  <script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-app-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-auth-compat.js"></script>
+  <style>
+    :root {
+      --purple: #6C4AB6;
+      --light-purple: #B8A4D4;
+      --bg: #f9f9fb;
+      --text: #222;
+    }
+
+    body {
+      margin: 0;
+      padding: 0;
+      font-family: 'Inter', sans-serif;
+      background: var(--bg);
+      color: var(--text);
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      height: 100vh;
+      text-align: center;
+    }
+
+    h1 {
+      font-size: 2rem;
+      margin-bottom: 0.5rem;
+    }
+
+    p {
+      margin-top: 0;
+      color: #555;
+      font-size: 1rem;
+    }
+
+    .login-box {
+      background: white;
+      border-radius: 16px;
+      padding: 2rem;
+      box-shadow: 0 4px 12px rgba(0,0,0,0.08);
+      max-width: 360px;
+      width: 90%;
+    }
+
+    .login-button {
+      background: var(--purple);
+      color: white;
+      border: none;
+      border-radius: 8px;
+      padding: 0.75rem 1.5rem;
+      font-size: 1rem;
+      font-weight: 600;
+      cursor: pointer;
+      margin-top: 1.5rem;
+    }
+
+    .login-button:hover {
+      background: var(--light-purple);
+    }
+
+    .logo {
+      font-size: 3rem;
+      margin-bottom: 1rem;
+    }
+
+    footer {
+      position: absolute;
+      bottom: 1rem;
+      font-size: 0.8rem;
+      color: #999;
+    }
+  </style>
+  <script>
+    const firebaseConfig = {
+      apiKey: "AIzaSyBSpwzSf8hXxb4rBk-u8JPyX7Ha4kGoS8o",
+      authDomain: "mountainmedicine-6e572.firebaseapp.com",
+      projectId: "mountainmedicine-6e572",
+      storageBucket: "mountainmedicine-6e572.appspot.com",
+      messagingSenderId: "1081705872512",
+      appId: "1:1081705872512:web:0ddf126c4737e47fd9ba65",
+      measurementId: "G-NCMCE3BBPL"
+    };
+
+    firebase.initializeApp(firebaseConfig);
+
+    function login() {
+      const provider = new firebase.auth.GoogleAuthProvider();
+      firebase.auth().signInWithPopup(provider)
+        .then(result => result.user.getIdToken())
+        .then(token => {
+          window.location.href = `https://mountainmedicine.streamlit.app/?token=${token}`;
+        })
+        .catch(error => alert("Login failed: " + error.message));
+    }
+  </script>
+</head>
+<body>
+  <div class="login-box">
+    <div class="logo">⛰️</div>
+    <h1>Mountain Medicine</h1>
+    <p>Bringing humanity closer through man's original primal ceremony.</p>
+    <button class="login-button" onclick="login()">🔐 Login with Google</button>
+  </div>
+  <footer>&copy; 2025 Mountain Medicine</footer>
+</body>
+</html>
