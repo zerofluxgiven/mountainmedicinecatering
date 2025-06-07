@@ -1,13 +1,11 @@
 import streamlit as st
-import json
-import requests
 from firebase_admin import auth as admin_auth
 from firebase_init import db
 from utils import session_get, session_set
 from datetime import datetime
 
 # ----------------------------
-# 🔐 Web Auth Session Helpers
+# 🔐 Session Helpers
 # ----------------------------
 
 def is_logged_in():
@@ -27,6 +25,10 @@ def get_user_role():
 def get_current_user():
     return get_user()
 
+# ----------------------------
+# 🚫 Access Control Decorators
+# ----------------------------
+
 def require_login():
     if not is_logged_in():
         st.warning("You must be logged in to access this page.")
@@ -40,8 +42,8 @@ def require_role(required_role):
                 st.warning("You must be logged in.")
                 st.stop()
             role = user.get("role", "viewer")
-            roles_hierarchy = ["viewer", "user", "manager", "admin"]
-            if roles_hierarchy.index(role) < roles_hierarchy.index(required_role):
+            hierarchy = ["viewer", "user", "manager", "admin"]
+            if hierarchy.index(role) < hierarchy.index(required_role):
                 st.error(f"Access denied. Requires role: {required_role}")
                 st.stop()
             return func(*args, **kwargs)
@@ -49,7 +51,7 @@ def require_role(required_role):
     return decorator
 
 # ----------------------------
-# 🔑 Google Web Auth Handler
+# 🔑 Firebase Web Auth Handler
 # ----------------------------
 
 def authenticate_user():
@@ -67,7 +69,6 @@ def authenticate_user():
             email_verified = decoded.get("email_verified", False)
 
             login_time = datetime.utcnow().isoformat()
-
             user_ref = db.collection("users").document(user_id)
             doc = user_ref.get()
 
@@ -87,11 +88,14 @@ def authenticate_user():
                     "last_login": login_time
                 })
 
+            # 🔐 Auto-admin logic from secrets.toml
+            admin_email = st.secrets.get("default_admin_email")
+            if admin_email and email == admin_email:
+                user_ref.set({"role": "admin"}, merge=True)
+
             user_data = user_ref.get().to_dict()
             session_set("firebase_user", user_data)
-
-            # Clean up query string
-            st.experimental_set_query_params()
+            st.experimental_set_query_params()  # Clean up token from URL
 
         except Exception as e:
             st.error(f"Authentication failed: {e}")
@@ -133,13 +137,3 @@ def delete_firebase_user(uid):
     except Exception as e:
         st.error(f"Failed to delete user: {e}")
         return False
-
-# ----------------------------
-# 🧾 Streamlit Login Form UI
-# ----------------------------
-
-def sdef show_login_form():
-    st.subheader("🔐 Login Required")
-    st.markdown("Please log in to continue.")
-    if st.button("Login with Google"):
-        st.switch_page("/login")
