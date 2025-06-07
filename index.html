@@ -1,0 +1,75 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="UTF-8">
+  <title>Login to Mountain Medicine</title>
+  <script src="https://www.gstatic.com/firebasejs/9.6.10/firebase-app-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/9.6.10/firebase-auth-compat.js"></script>
+  <style>
+    body {
+      font-family: sans-serif;
+      text-align: center;
+      background-color: #f9f9f9;
+      padding: 40px;
+    }
+    #login-box {
+      background: white;
+      padding: 20px 40px;
+      border-radius: 12px;
+      box-shadow: 0 4px 12px rgba(0,0,0,0.1);
+      display: inline-block;
+    }
+    button {
+      font-size: 1.1rem;
+      padding: 12px 24px;
+      margin-top: 20px;
+      background-color: #6C4AB6;
+      color: white;
+      border: none;
+      border-radius: 6px;
+      cursor: pointer;
+    }
+    button:hover {
+      background-color: #563a9d;
+    }
+  </style>
+</head>
+<body>
+  <div id="login-box">
+    <h2>Welcome to Mountain Medicine</h2>
+    <p>Login with Google to continue</p>
+    <button onclick="loginWithGoogle()">Login with Google</button>
+  </div>
+
+  <script>
+    const firebaseConfig = {
+      apiKey: "AIzaSyBSpwzSf8hXxb4rBk-u8JPyX7Ha4kGoS8o",
+      authDomain: "mountainmedicine-6e572.firebaseapp.com",
+      projectId: "mountainmedicine-6e572",
+      storageBucket: "mountainmedicine-6e572.firebasestorage.app",
+      messagingSenderId: "1081705872512",
+      appId: "1:1081705872512:web:0ddf126c4737e47fd9ba65",
+      measurementId: "G-NCMCE3BBPL"
+    };
+
+    firebase.initializeApp(firebaseConfig);
+    const auth = firebase.auth();
+
+    function loginWithGoogle() {
+      const provider = new firebase.auth.GoogleAuthProvider();
+      auth.signInWithPopup(provider)
+        .then(result => {
+          return result.user.getIdToken();
+        })
+        .then(idToken => {
+          // Redirect to Streamlit with token as query param
+          window.location.href = "https://mountainmedicine.streamlit.app/?token=" + idToken;
+        })
+        .catch(error => {
+          alert("Login failed: " + error.message);
+          console.error(error);
+        });
+    }
+  </script>
+</body>
+</html>
