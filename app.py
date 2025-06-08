@@ -205,8 +205,9 @@ def main():
     
     initialize_event_mode_state()
     
-    if get_user():
+    if get_user() and st.session_state.get("top_nav") is not None:
         render_top_navbar()
+
         
     if st.session_state.get("top_nav") is None:
         st.session_state["top_nav"] = "Dashboard"
@@ -249,8 +250,9 @@ def main():
 
     initialize_event_mode_state()
     
-    if get_user() and "top_nav" in st.session_state:
+    if get_user() and st.session_state.get("top_nav") is not None:
         render_top_navbar()
+
 
 
     if st.session_state.get("top_nav") is None:
@@ -287,7 +289,7 @@ def main():
 
     initialize_event_mode_state()
     
-    if get_user() and "top_nav" in st.session_state:
+    if get_user() and st.session_state.get("top_nav") is not None:
         render_top_navbar()
 
 
