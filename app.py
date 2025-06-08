@@ -94,7 +94,7 @@ def handle_auth_routing():
                 st.toast(f"Welcome {result.get('name', 'back')} 👋")
                 log_user_action(result.get("uid", result.get("id", "unknown")), result.get("role", "viewer"), "login")
                 # Clear the token from URL
-                st.experimental_set_query_params()
+                st.query_params.clear()
                 st.rerun()
 
         else:
