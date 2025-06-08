@@ -85,12 +85,18 @@ def handle_auth_routing():
 
     elif "token" in query_params:
         token = query_params["token"]
-        result = authenticate_user(token=token)
-        if result:
-            st.session_state.user = result
-            st.toast(f"Welcome {result.get('name', 'back')} 👋")
-            log_user_action(result.get("uid", result.get("id", "unknown")), result.get("role", "viewer"), "login")
-            st.rerun()
+
+        # Only run once per session
+        if "user" not in st.session_state:
+            result = authenticate_user(token=token)
+            if result:
+                st.session_state.user = result
+                st.toast(f"Welcome {result.get('name', 'back')} 👋")
+                log_user_action(result.get("uid", result.get("id", "unknown")), result.get("role", "viewer"), "login")
+                # Clear the token from URL
+                st.experimental_set_query_params()
+                st.rerun()
+
         else:
             st.error("Invalid login link.")
             st.stop()
