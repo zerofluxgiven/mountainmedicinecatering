@@ -89,7 +89,7 @@ def handle_auth_routing():
         if result:
             st.session_state.user = result
             st.toast(f"Welcome {result.get('name', 'back')} 👋")
-            log_user_action("login")
+            log_user_action(result.get("uid", result.get("id", "unknown")), result.get("role", "viewer"), "login")
             st.switch_page("/")
         else:
             st.error("Invalid login link.")
