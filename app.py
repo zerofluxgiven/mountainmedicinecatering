@@ -90,7 +90,7 @@ def handle_auth_routing():
         if "user" not in st.session_state:
             result = authenticate_user(token=token)
             if result:
-                st.session_state.user = result
+                st.session_state.firebase_user = result
                 st.toast(f"Welcome {result.get('name', 'back')} 👋")
                 log_user_action(result.get("uid", result.get("id", "unknown")), result.get("role", "viewer"), "login")
                 # Clear the token from URL
