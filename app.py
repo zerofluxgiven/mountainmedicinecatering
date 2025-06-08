@@ -213,7 +213,6 @@ def main():
         st.session_state["top_nav"] = "Dashboard"
 
     selected_tab = st.radio("Navigation", list(TABS.keys()), key="top_nav", horizontal=True, label_visibility="collapsed")
-    st.session_state["top_nav"] = selected_tab
 
     # Your existing tab routing logic follows from here...)
 
@@ -259,7 +258,7 @@ def main():
         st.session_state["top_nav"] = "Dashboard"
 
     selected_tab = st.radio("Navigation", list(TABS.keys()), key="top_nav", horizontal=True, label_visibility="collapsed")
-    st.session_state["top_nav"] = selected_tab
+    
 
     # The rest of your tab routing continues as-is...)
 
@@ -297,7 +296,7 @@ def main():
         st.session_state["top_nav"] = "Dashboard"
 
     selected_tab = st.radio("Navigation", list(TABS.keys()), key="top_nav", horizontal=True, label_visibility="collapsed")
-    st.session_state["top_nav"] = selected_tab
+    
 
     if selected_tab == "Dashboard":
         if user:
