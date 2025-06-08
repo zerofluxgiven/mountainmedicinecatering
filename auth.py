@@ -53,6 +53,21 @@ def require_role(required_role):
 # ----------------------------
 # 🔑 Firebase Web Auth Handler
 # ----------------------------
+def authenticate_user(token: str):
+    import firebase_admin.auth as auth
+    import logging
+    
+    if not token or not isinstance(token, str):
+        logging.error(f"Invalid token input: {token} (type: {type(token)})")
+        raise ValueError("Token must be a non-empty string")
+
+    try:
+        decoded = auth.verify_id_token(token)
+        logging.info(f"Token decoded successfully: {decoded}")
+        return decoded  # or wrap into a user dict
+    except Exception as e:
+        logging.exception(f"Failed to verify token: {e}")
+        raise
 
 def authenticate_user():
     if "firebase_user" in st.session_state:
