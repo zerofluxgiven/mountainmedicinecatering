@@ -203,7 +203,8 @@ def main():
 
     # Initialize event mode and continue
     initialize_event_mode_state()
-    render_top_navbar()
+    if get_user():
+        render_top_navbar()
 
     if st.session_state.get("top_nav") is None:
         st.session_state["top_nav"] = "Dashboard"
