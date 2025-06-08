@@ -69,53 +69,6 @@ def authenticate_user(token: str):
         logging.exception(f"Failed to verify token: {e}")
         raise
 
-def authenticate_user():
-    if "firebase_user" in st.session_state:
-        return
-
-    token = st.experimental_get_query_params().get("token")
-    if token:
-        try:
-            decoded = admin_auth.verify_id_token(token[0])
-            user_id = decoded.get("uid")
-            email = decoded.get("email")
-            name = decoded.get("name", "")
-            picture = decoded.get("picture", "")
-            email_verified = decoded.get("email_verified", False)
-
-            login_time = datetime.utcnow().isoformat()
-            user_ref = db.collection("users").document(user_id)
-            doc = user_ref.get()
-
-            if not doc.exists:
-                user_ref.set({
-                    "id": user_id,
-                    "email": email,
-                    "name": name,
-                    "role": "viewer",
-                    "email_verified": email_verified,
-                    "active": True,
-                    "created_at": login_time,
-                })
-            else:
-                user_ref.update({
-                    "email_verified": email_verified,
-                    "last_login": login_time
-                })
-
-            # 🔐 Auto-admin logic from secrets.toml
-            admin_email = st.secrets.get("default_admin_email")
-            if admin_email and email == admin_email:
-                user_ref.set({"role": "admin"}, merge=True)
-
-            user_data = user_ref.get().to_dict()
-            session_set("firebase_user", user_data)
-            st.experimental_set_query_params()  # Clean up token from URL
-
-        except Exception as e:
-            st.error(f"Authentication failed: {e}")
-            st.stop()
-
 # ----------------------------
 # 🔁 Firebase User Sync Tool
 # ----------------------------
