@@ -770,16 +770,24 @@ def _get_ai_response(message: str):
 
 def render_top_navbar(tabs):
     """Render clean purple-themed navigation tabs using Streamlit native components"""
-    current_tab = st.session_state.get("top_nav", tabs[0])
-    
+    if not tabs:
+        st.warning("⚠️ No navigation tabs defined.")
+        return
+
+    default_tab = "Dashboard" if "Dashboard" in tabs else tabs[0]
+    current_tab = st.session_state.get("top_nav", default_tab)
+
     if current_tab not in tabs:
-        current_tab = tabs[0]
+        current_tab = default_tab
         st.session_state["top_nav"] = current_tab
-    
-    # Filter out admin tabs if they're in the main navigation
-    main_tabs = [tab for tab in tabs if tab not in ["Admin Panel", "Suggestions", "Bulk Suggestions", "Audit Logs", "PDF Export"]]
-    
-    # Use Streamlit's native tab component styled with CSS
+
+    main_tabs = [tab for tab in tabs if tab not in [
+        "Admin Panel", "Suggestions", "Bulk Suggestions", "Audit Logs", "PDF Export"
+    ]]
+
+    if not main_tabs:
+        main_tabs = tabs  # fallback
+
     selected = st.radio(
         "Navigation",
         main_tabs,
@@ -788,18 +796,16 @@ def render_top_navbar(tabs):
         horizontal=True,
         label_visibility="collapsed"
     )
-    
-    # Apply custom styling to make tabs look like purple buttons
+
+    # Stylize the nav bar
     st.markdown("""
     <style>
-    /* Style the radio buttons as navigation tabs */
     .stRadio > div {
         display: flex !important;
         gap: 0.5rem !important;
         flex-wrap: wrap !important;
         background: none !important;
     }
-    
     .stRadio > div > label {
         background: white !important;
         color: var(--primary-purple, #6C4AB6) !important;
@@ -816,29 +822,24 @@ def render_top_navbar(tabs):
         justify-content: center !important;
         margin-right: 0 !important;
     }
-    
     .stRadio > div > label:hover {
         background: var(--light-purple, #B8A4D4) !important;
         color: white !important;
         transform: translateY(-2px) !important;
         box-shadow: 0 2px 4px rgba(0,0,0,0.1) !important;
     }
-    
-    
     .stRadio > div > label[aria-checked="true"] {
         background: var(--primary-purple, #6C4AB6) !important;
         color: white !important;
     }
-    
-    /* Hide the circle indicators */
     .stRadio input[type="radio"] {
         display: none !important;
     }
-    
     </style>
     """, unsafe_allow_html=True)
-    
+
     return selected
+
 
 # ----------------------------
 # 🎯 Leave Event Mode Button
