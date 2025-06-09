@@ -1,6 +1,7 @@
 # layout.py - Complete redesign with all requested features
 
 import streamlit as st
+from auth import get_user_role  # ✅ Needed for dynamic Admin Panel display
 from utils import session_get, format_date, get_event_by_id, get_active_event
 from auth import get_user_role
 from datetime import datetime
