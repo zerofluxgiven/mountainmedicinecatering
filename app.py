@@ -299,65 +299,96 @@ def main():
     
 
     if selected_tab == "Dashboard":
-        if user:
-            render_dashboard(user)
-        else:
-            st.warning("Please log in to view the dashboard.")
-
+        try:
+            if user:
+                render_dashboard(user)
+            else:
+                st.warning("Please log in to view the dashboard.")
+        except Exception as e:
+            st.error(f"Dashboard tab crashed: {e}")
+    
     elif selected_tab == "Events":
-        if user:
-            render_leave_event_button("main")
-            enhanced_event_ui(user)
-        else:
-            st.warning("Please log in to view events.")
-
+        try:
+            if user:
+                render_leave_event_button("main")
+                enhanced_event_ui(user)
+            else:
+                st.warning("Please log in to view events.")
+        except Exception as e:
+            st.error(f"Events tab crashed: {e}")
+    
     elif selected_tab == "Recipes":
-        if user:
-            recipes_page()
-        else:
-            st.warning("Please log in to view recipes.")
-
+        try:
+            if user:
+                recipes_page()
+            else:
+                st.warning("Please log in to view recipes.")
+        except Exception as e:
+            st.error(f"Recipes tab crashed: {e}")
+    
     elif selected_tab == "Ingredients":
-        if user:
-            ingredient_catalogue_ui(user)
-        else:
-            st.warning("Please log in to view ingredients.")
-
+        try:
+            if user:
+                ingredient_catalogue_ui(user)
+            else:
+                st.warning("Please log in to view ingredients.")
+        except Exception as e:
+            st.error(f"Ingredients tab crashed: {e}")
+    
     elif selected_tab == "Allergies":
-        if user:
-            allergy_management_ui(user)
-        else:
-            st.warning("Please log in to manage allergies.")
-
+        try:
+            if user:
+                allergy_management_ui(user)
+            else:
+                st.warning("Please log in to manage allergies.")
+        except Exception as e:
+            st.error(f"Allergies tab crashed: {e}")
+    
     elif selected_tab == "Historical Menus":
-        if user:
-            historical_menus_ui()
-        else:
-            st.warning("Please log in to view historical menus.")
-
+        try:
+            if user:
+                historical_menus_ui()
+            else:
+                st.warning("Please log in to view historical menus.")
+        except Exception as e:
+            st.error(f"Historical Menus tab crashed: {e}")
+    
     elif selected_tab == "Upload":
-        if user:
-            render_upload_tab(user)
-        else:
-            st.warning("Please log in to upload files.")
-
+        try:
+            if user:
+                render_upload_tab(user)
+            else:
+                st.warning("Please log in to upload files.")
+        except Exception as e:
+            st.error(f"Upload tab crashed: {e}")
+    
     elif selected_tab == "Receipts":
-        if user:
-            receipt_upload_ui(user)
-        else:
-            st.warning("Please log in to manage receipts.")
-
+        try:
+            if user:
+                receipt_upload_ui(user)
+            else:
+                st.warning("Please log in to manage receipts.")
+        except Exception as e:
+            st.error(f"Receipts tab crashed: {e}")
+    
     elif selected_tab == "Admin Panel":
-        if user:
-            render_admin_panel(user)
-        else:
-            st.warning("Please log in to access admin features.")
-
+        try:
+            if user:
+                render_admin_panel(user)
+            else:
+                st.warning("Please log in to access admin features.")
+        except Exception as e:
+            st.error(f"Admin Panel tab crashed: {e}")
+    
     elif selected_tab == "Assistant":
-        if user:
-            ai_chat_ui()
-        else:
-            st.warning("Please log in to use the assistant.")
+        try:
+            if user:
+                ai_chat_ui()
+            else:
+                st.warning("Please log in to use the assistant.")
+        except Exception as e:
+            st.error(f"Assistant tab crashed: {e}")
+
 
 def render_upload_tab(user):
     upload_tab, analytics_tab = st.tabs(["📤 Upload Files", "📊 File Analytics"])
