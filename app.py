@@ -304,14 +304,15 @@ def render_upload_tab(user):
         file_manager_ui(user)
     with analytics_tab:
         show_file_analytics()
-
+        
 def render_admin_panel(user):
     role = get_user_role()
+    st.info(f"[DEBUG] Your current role is: {role}")
     if role != "admin":
         st.warning("⚠️ Admin access required.")
-        st.info(f"Your current role: {role}")
         return
     admin_panel_ui()
+
 
 if __name__ == "__main__":
     main()
