@@ -1,9 +1,7 @@
 import streamlit as st
 from event_mode import get_event_context
 from utils import format_date
-from mobile_helpers import safe_columns
-from mobile_components import mobile_card
-from mobile_layout import render_mobile_navigation
+from mobile_layout import mobile_card, render_mobile_navigation
 
 def render_dashboard(user=None):
     st.title("📊 Dashboard")
@@ -19,7 +17,7 @@ def render_dashboard(user=None):
         st.markdown(f"🗓️ Date: *{format_date(event.get('start_datetime'))} → {format_date(event.get('end_datetime'))}*")
 
         st.markdown("### 📈 Quick Stats")
-        col1, col2, col3 = safe_columns(3)
+        col1, col2, col3 = st.columns(3)
         col1.metric("👥 Guests", event.get("guest_count", "-"))
         col2.metric("🦑 Staff", event.get("staff_count", "-"))
         col3.metric("🍽️ Menu Items", len(event.get("menu", [])))
