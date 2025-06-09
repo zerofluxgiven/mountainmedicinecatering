@@ -86,17 +86,14 @@ def handle_auth_routing():
     elif "token" in query_params:
         token = query_params["token"]
 
-        # Only run once per session
         if "user" not in st.session_state:
             result = authenticate_user(token=token)
             if result:
                 st.session_state.firebase_user = result
                 st.toast(f"Welcome {result.get('name', 'back')} 👋")
                 log_user_action(result.get("uid", result.get("id", "unknown")), result.get("role", "viewer"), "login")
-                # Clear the token from URL
                 st.query_params.clear()
                 st.rerun()
-
         else:
             st.error("Invalid login link.")
             st.stop()
@@ -108,7 +105,6 @@ def main():
     handle_auth_routing()
     from firebase_init import db, firestore
 
-    # Initialize session state keys
     for key, default in {
         "top_nav": None,
         "next_nav": None,
@@ -126,7 +122,6 @@ def main():
         if key not in st.session_state:
             st.session_state[key] = default
 
-    # Make sure admin user exists
     try:
         admin_email = "mistermcfarland@gmail.com"
         users = db.collection("users").where("email", "==", admin_email).stream()
@@ -155,14 +150,12 @@ def main():
     except Exception as e:
         st.warning(f"Could not verify admin role: {e}")
 
-    # Page config
     st.set_page_config(
         page_title="Mountain Medicine Catering",
         layout="wide",
         initial_sidebar_state="collapsed"
     )
 
-    # Hide sidebar
     st.markdown("""
         <style>
         [data-testid="stSidebar"] { display: none !important; }
@@ -170,7 +163,6 @@ def main():
         </style>
     """, unsafe_allow_html=True)
 
-    # Theme + helpers
     mobile_layout.apply_mobile_theme()
     apply_theme()
     inject_layout_fixes()
@@ -178,12 +170,10 @@ def main():
 
     user = get_user()
 
-    # PUBLIC_MODE landing
     if PUBLIC_MODE and not user:
         show_landing()
         return
 
-    # 🛑 If user is NOT logged in — show login page
     if not user:
         st.title("🔐 Login Required")
         st.markdown("Please log in to access Mountain Medicine Catering.")
@@ -201,91 +191,12 @@ def main():
             st.error("No login URL configured. Please set `auth.login_url` in secrets.toml.")
         return
 
-    # Initialize event mode and continue
-    
     initialize_event_mode_state()
-    
-    if get_user() and st.session_state.get("top_nav") is not None:
-        render_top_navbar(list(TABS.keys()))
-
-    # Your existing tab routing logic follows from here...)
-
-    st.markdown("""
-        <style>
-        [data-testid="stSidebar"] { display: none !important; }
-        .block-container { padding-top: 1rem !important; }
-        </style>
-    """, unsafe_allow_html=True)
-
-    # 📱 Apply mobile theme
-    mobile_layout.apply_mobile_theme()
-    apply_theme()
-    inject_layout_fixes()
-    integrate_floating_chat()
-
-    user = get_user()
-
-    # 🪧 Public mode
-    if PUBLIC_MODE and not user:
-        show_landing()
-        return
-
-    # 🔐 If no user and not in public mode, show login prompt
-    if not user:
-        st.markdown("## 🌄 Mountain Medicine")
-        st.markdown("Please log in to continue.")
-        login_url = st.secrets.get("auth", {}).get("login_url", "")
-        if login_url:
-            st.markdown(f"[🔐 Login with Google]({login_url})", unsafe_allow_html=True)
-        else:
-            st.error("Login URL is not configured in secrets.toml.")
-        return
-
-    initialize_event_mode_state()
-    
-    if get_user() and st.session_state.get("top_nav") is not None:
-        render_top_navbar(list(TABS.keys()))
-
-
 
     if st.session_state.get("top_nav") is None:
         st.session_state["top_nav"] = "Dashboard"
-    
 
-    # The rest of your tab routing continues as-is...)
-
-    st.markdown("""
-        <style>
-        [data-testid="stSidebar"] { display: none !important; }
-        .block-container { padding-top: 1rem !important; }
-        </style>
-    """, unsafe_allow_html=True)
-
-    # 📱 Apply mobile theme (active now)
-    mobile_layout.apply_mobile_theme()
-
-    apply_theme()
-    inject_layout_fixes()
-    integrate_floating_chat()
-
-    user = get_user()
-
-    if PUBLIC_MODE and not user:
-        show_landing()
-        return
-
-    if not user and not PUBLIC_MODE:
-        st.markdown("## 🌄 Mountain Medicine")
-        return
-
-    initialize_event_mode_state()
-    
-    if get_user() and st.session_state.get("top_nav") is not None:
-        selected_tab = render_top_navbar(list(TABS.keys()))
-    else:
-        selected_tab = "Dashboard"
-
-
+    selected_tab = render_top_navbar(list(TABS.keys()))
 
     if selected_tab == "Dashboard":
         try:
@@ -295,7 +206,7 @@ def main():
                 st.warning("Please log in to view the dashboard.")
         except Exception as e:
             st.error(f"Dashboard tab crashed: {e}")
-    
+
     elif selected_tab == "Events":
         try:
             if user:
@@ -305,7 +216,7 @@ def main():
                 st.warning("Please log in to view events.")
         except Exception as e:
             st.error(f"Events tab crashed: {e}")
-    
+
     elif selected_tab == "Recipes":
         try:
             if user:
@@ -314,7 +225,7 @@ def main():
                 st.warning("Please log in to view recipes.")
         except Exception as e:
             st.error(f"Recipes tab crashed: {e}")
-    
+
     elif selected_tab == "Ingredients":
         try:
             if user:
@@ -323,7 +234,7 @@ def main():
                 st.warning("Please log in to view ingredients.")
         except Exception as e:
             st.error(f"Ingredients tab crashed: {e}")
-    
+
     elif selected_tab == "Allergies":
         try:
             if user:
@@ -332,7 +243,7 @@ def main():
                 st.warning("Please log in to manage allergies.")
         except Exception as e:
             st.error(f"Allergies tab crashed: {e}")
-    
+
     elif selected_tab == "Historical Menus":
         try:
             if user:
@@ -341,7 +252,7 @@ def main():
                 st.warning("Please log in to view historical menus.")
         except Exception as e:
             st.error(f"Historical Menus tab crashed: {e}")
-    
+
     elif selected_tab == "Upload":
         try:
             if user:
@@ -350,7 +261,7 @@ def main():
                 st.warning("Please log in to upload files.")
         except Exception as e:
             st.error(f"Upload tab crashed: {e}")
-    
+
     elif selected_tab == "Receipts":
         try:
             if user:
@@ -359,7 +270,7 @@ def main():
                 st.warning("Please log in to manage receipts.")
         except Exception as e:
             st.error(f"Receipts tab crashed: {e}")
-    
+
     elif selected_tab == "Admin Panel":
         try:
             if user:
@@ -368,7 +279,7 @@ def main():
                 st.warning("Please log in to access admin features.")
         except Exception as e:
             st.error(f"Admin Panel tab crashed: {e}")
-    
+
     elif selected_tab == "Assistant":
         try:
             if user:
@@ -378,9 +289,8 @@ def main():
         except Exception as e:
             st.error(f"Assistant tab crashed: {e}")
 
-
 def render_upload_tab(user):
-    upload_tab, analytics_tab = st.tabs(["📤 Upload Files", "📊 File Analytics"])
+    upload_tab, analytics_tab = st.tabs(["📄 Upload Files", "📊 File Analytics"])
     with upload_tab:
         file_manager_ui(user)
     with analytics_tab:
