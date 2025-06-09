@@ -1,9 +1,10 @@
 # ingredients.py
-
 import streamlit as st
 from firebase_init import get_db
+db = get_db()
+
 from firebase_admin import firestore
-from utils import generate_id, format_date
+from utils import generate_id, format_date, normalize_ingredient
 from auth import require_login, get_user_role
 from datetime import datetime
 from typing import List, Dict, Optional
