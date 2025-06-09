@@ -283,8 +283,8 @@ def main():
     if get_user() and st.session_state.get("top_nav") is not None:
         render_top_navbar(list(TABS.keys()))
 
-    if st.session_state.get("top_nav") is None:
-        st.session_state["top_nav"] = "Dashboard"
+    selected_tab = render_top_navbar(list(TABS.keys()))
+
 
     if selected_tab == "Dashboard":
         try:
