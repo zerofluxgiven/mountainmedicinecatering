@@ -99,9 +99,6 @@ def handle_auth_routing():
         else:
             st.error("Invalid login link.")
             st.stop()
-        else:
-            st.error("Invalid login link.")
-            st.stop()
 
     elif not get_user():
         st.stop()
