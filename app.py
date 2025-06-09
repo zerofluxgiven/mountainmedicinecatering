@@ -212,10 +212,10 @@ def main():
     visible_tabs = list(TABS.keys())
         
         # 🔒 Hide admin-only tabs for non-admins
-        if role != "admin":
-            for admin_tab in ["Admin Panel", "Suggestions", "Bulk Suggestions", "Audit Logs", "PDF Export"]:
-                if admin_tab in visible_tabs:
-                    visible_tabs.remove(admin_tab)
+    if role != "admin":
+        for admin_tab in ["Admin Panel", "Suggestions", "Bulk Suggestions", "Audit Logs", "PDF Export"]:
+            if admin_tab in visible_tabs:
+                visible_tabs.remove(admin_tab)
     
         selected_tab = render_top_navbar(visible_tabs)
 
