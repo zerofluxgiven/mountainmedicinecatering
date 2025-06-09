@@ -281,7 +281,6 @@ def main():
     initialize_event_mode_state()
     
     if get_user() and st.session_state.get("top_nav") is not None:
-        render_top_navbar(list(TABS.keys()))
 
     selected_tab = render_top_navbar(list(TABS.keys()))
 
