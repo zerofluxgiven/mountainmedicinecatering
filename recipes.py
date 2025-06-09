@@ -61,7 +61,7 @@ def parse_and_store_recipe_from_file(file_text: str, uploaded_by: str) -> str | 
 def recipes_page():
     st.title("📚 Recipes")
 
-    query_params = st.experimental_get_query_params()
+    query_params = stst.query_params
     if "recipe_id" in query_params:
         recipe_id = query_params["recipe_id"][0]
         recipe_editor_ui(recipe_id)
