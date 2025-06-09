@@ -13,9 +13,10 @@ def is_logged_in():
 
 def get_user():
     return st.session_state.get("firebase_user")
-
-def get_user_id():
-    user = get_user()
+    
+def get_user_id(user=None):
+    if user is None:
+        user = st.session_state.get("firebase_user") or st.session_state.get("user", {})
     return user.get("id") if user else None
     
 def get_user_role(user=None):
