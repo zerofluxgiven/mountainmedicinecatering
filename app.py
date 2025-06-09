@@ -206,7 +206,7 @@ def main():
     initialize_event_mode_state()
     
     if get_user() and st.session_state.get("top_nav") is not None:
-        render_top_navbar()
+        render_top_navbar(list(TABS.keys()))
 
         
     if st.session_state.get("top_nav") is None:
@@ -250,7 +250,7 @@ def main():
     initialize_event_mode_state()
     
     if get_user() and st.session_state.get("top_nav") is not None:
-        render_top_navbar()
+        render_top_navbar(list(TABS.keys()))
 
 
 
@@ -289,7 +289,7 @@ def main():
     initialize_event_mode_state()
     
     if get_user() and st.session_state.get("top_nav") is not None:
-        render_top_navbar()
+        render_top_navbar(list(TABS.keys()))
 
 
     if st.session_state.get("top_nav") is None:
