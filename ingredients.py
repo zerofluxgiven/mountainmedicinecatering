@@ -2,6 +2,7 @@
 
 import streamlit as st
 from db_client import db
+from firebase_admin import firestore
 from utils import generate_id, format_date
 from auth import require_login, get_user_role
 from datetime import datetime
