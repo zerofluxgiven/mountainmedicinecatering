@@ -767,9 +767,6 @@ def _get_ai_response(message: str):
 # ----------------------------
 # 🧭 Purple Tab Navigation
 # ----------------------------
-# Updated render_top_navbar function for layout.py
-# Replace the existing render_top_navbar function with this:
-
 def render_top_navbar(tabs):
     """Render clean purple-themed navigation tabs using Streamlit native components"""
     if not tabs:
@@ -782,11 +779,17 @@ def render_top_navbar(tabs):
     if current_tab not in tabs:
         current_tab = default_tab
         st.session_state["top_nav"] = current_tab
-        
-    main_tabs = [tab for tab in tabs if tab not in [
-        "Admin Panel", "Suggestions", "Bulk Suggestions", "Audit Logs", "PDF Export",
-    ]]
-    
+
+    user = get_user()
+    role = get_user_role(user)
+
+    if role == "admin":
+        main_tabs = tabs
+    else:
+        main_tabs = [tab for tab in tabs if tab not in [
+            "Admin Panel", "Suggestions", "Bulk Suggestions", "Audit Logs", "PDF Export"
+        ]]
+
     if not main_tabs:
         main_tabs = tabs  # fallback
 
