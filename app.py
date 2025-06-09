@@ -208,12 +208,6 @@ def main():
     if get_user() and st.session_state.get("top_nav") is not None:
         render_top_navbar(list(TABS.keys()))
 
-        
-    if st.session_state.get("top_nav") is None:
-        st.session_state["top_nav"] = "Dashboard"
-
-    selected_tab = st.radio("Navigation", list(TABS.keys()), key="top_nav", horizontal=True, label_visibility="collapsed")
-
     # Your existing tab routing logic follows from here...)
 
     st.markdown("""
