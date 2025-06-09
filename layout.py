@@ -2,7 +2,7 @@
 
 import streamlit as st
 from utils import session_get, format_date, get_event_by_id, get_active_event
-from auth import get_user_role
+from auth import get_user_role, get_user
 from datetime import datetime
 
 
