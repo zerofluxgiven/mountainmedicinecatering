@@ -205,11 +205,11 @@ def main():
 
     initialize_event_mode_state()
 
-        if st.session_state.get("top_nav") is None:
-            st.session_state["top_nav"] = "Dashboard"
+    if st.session_state.get("top_nav") is None:
+        st.session_state["top_nav"] = "Dashboard"
     
-        role = get_user_role(user)
-        visible_tabs = list(TABS.keys())
+    role = get_user_role(user)
+    visible_tabs = list(TABS.keys())
         
         # 🔒 Hide admin-only tabs for non-admins
         if role != "admin":
