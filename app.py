@@ -1,11 +1,14 @@
 import streamlit as st
 
-# ✅ Set Streamlit page config early
+# ✅ Correct Streamlit config placed immediately after import
 st.set_page_config(
     page_title="Mountain Medicine Catering",
     layout="wide",
     initial_sidebar_state="collapsed"
 )
+
+
+# ✅ Set Streamlit page config early
 
 import streamlit.components.v1 as components
 from auth import get_user, get_user_role
@@ -160,10 +163,6 @@ def main():
     except Exception as e:
         st.warning(f"Could not verify admin role: {e}")
 
-        page_title="Mountain Medicine Catering",
-        layout="wide",
-        initial_sidebar_state="collapsed"
-    )
 
     st.markdown("""
         <style>
