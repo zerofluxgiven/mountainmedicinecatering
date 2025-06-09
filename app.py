@@ -220,7 +220,7 @@ def main():
         selected_tab = render_top_navbar(visible_tabs)
 
     
-        if selected_tab == "Dashboard":
+    if selected_tab == "Dashboard":
         try:
             if user:
                 render_dashboard(user)
