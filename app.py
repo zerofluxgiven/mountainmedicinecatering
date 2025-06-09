@@ -205,12 +205,22 @@ def main():
 
     initialize_event_mode_state()
 
-    if st.session_state.get("top_nav") is None:
-        st.session_state["top_nav"] = "Dashboard"
+        if st.session_state.get("top_nav") is None:
+            st.session_state["top_nav"] = "Dashboard"
+    
+        role = get_user_role(user)
+        visible_tabs = list(TABS.keys())
+    
+        # 🔒 Hide admin-only tabs for non-admins
+        if role != "admin":
+            for admin_tab in ["Admin Panel", "Suggestions", "Bulk Suggestions", "Audit Logs", "PDF Export"]:
+                if admin_tab in visible_tabs:
+                    visible_tabs.remove(admin_tab)
+    
+        selected_tab = render_top_navbar(visible_tabs)
 
-    selected_tab = render_top_navbar(list(TABS.keys()))
-
-    if selected_tab == "Dashboard":
+    
+        if selected_tab == "Dashboard":
         try:
             if user:
                 render_dashboard(user)
