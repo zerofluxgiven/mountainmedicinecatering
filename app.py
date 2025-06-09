@@ -86,7 +86,6 @@ def handle_auth_routing():
 
     elif "token" in query_params:
         token = query_params["token"]
-    
         if "user" not in st.session_state:
             user = enrich_session_from_token(token)
             if user:
@@ -97,6 +96,9 @@ def handle_auth_routing():
             else:
                 st.error("Login failed. Invalid or expired token.")
                 st.stop()
+        else:
+            st.error("Invalid login link.")
+            st.stop()
         else:
             st.error("Invalid login link.")
             st.stop()
