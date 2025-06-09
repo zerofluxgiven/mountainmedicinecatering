@@ -784,7 +784,8 @@ def render_top_navbar(tabs):
         st.session_state["top_nav"] = current_tab
 
     main_tabs = [tab for tab in tabs if tab not in [
-        "Admin Panel", "Suggestions", "Bulk Suggestions", "Audit Logs", "PDF Export"
+    if "Admin Panel" not in main_tabs and get_user_role() == "admin":
+        main_tabs.append("Admin Panel")
     ]]
 
     if not main_tabs:
