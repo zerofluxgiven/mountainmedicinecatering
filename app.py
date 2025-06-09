@@ -1,7 +1,10 @@
 import streamlit as st
 st.set_page_config(
+    page_title="Mountain Medicine Catering",
+    layout="wide",
+    initial_sidebar_state="collapsed"
+)
     page_title='Mountain Medicine Catering',
-    layout='wide',
     initial_sidebar_state='collapsed'
 )
 import streamlit.components.v1 as components
@@ -158,7 +161,6 @@ def main():
         st.warning(f"Could not verify admin role: {e}")
 
         page_title="Mountain Medicine Catering",
-        layout="wide",
         initial_sidebar_state="collapsed"
     )
 
