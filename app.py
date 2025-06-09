@@ -35,6 +35,10 @@ from historical_menus import historical_menus_ui
 PUBLIC_MODE = False  # Set to True for guest access
 
 TABS = {
+
+role = get_user_role()
+if role == "admin":
+    TABS["Admin Panel"] = "admin"
     "Dashboard": "dashboard",
     "Events": "events", 
     "Recipes": "recipes",
