@@ -1,4 +1,4 @@
-# floating_chat_refactored.py
+# floating_ai_chat.py (Refactored)
 
 import streamlit as st
 from datetime import datetime
@@ -6,11 +6,11 @@ from ai_chat import get_openai_response, log_conversation
 from auth import get_user_role
 
 # ----------------------------
-# 💬 Floating Chat - Refactored to use real AI backend
+# 💬 Floating Chat - Refactored to use real AI backend only
 # ----------------------------
 
 def render_floating_ai_chat():
-    """Render a floating AI chat bubble that connects to real OpenAI logic."""
+    """Render a floating AI chat interface in the sidebar using real OpenAI logic."""
     user = st.session_state.get("firebase_user")
     if not user:
         return
