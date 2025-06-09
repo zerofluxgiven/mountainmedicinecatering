@@ -2,7 +2,8 @@ import streamlit as st
 from event_mode import get_event_context
 from utils import format_date
 from mobile_helpers import safe_columns
-from mobile_layout import render_mobile_navigation, mobile_card
+from mobile_components import mobile_card
+from mobile_layout import render_mobile_navigation
 
 def render_dashboard(user=None):
     st.title("📊 Dashboard")
