@@ -1,7 +1,6 @@
 # layout.py - Complete redesign with all requested features
 
 import streamlit as st
-from auth import get_user_role  # ✅ Needed for dynamic Admin Panel display
 from utils import session_get, format_date, get_event_by_id, get_active_event
 from auth import get_user_role
 from datetime import datetime
@@ -784,10 +783,9 @@ def render_top_navbar(tabs):
         current_tab = default_tab
         st.session_state["top_nav"] = current_tab
 
-    main_tabs = [tab for tab in tabs if tab not in [
-    if "Admin Panel" not in main_tabs and get_user_role() == "admin":
-        main_tabs.append("Admin Panel")
-    ]]
+main_tabs = [tab for tab in tabs if tab not in [
+    "Admin Panel", "Suggestions", "Bulk Suggestions", "Audit Logs", "PDF Export",
+]]
 
     if not main_tabs:
         main_tabs = tabs  # fallback
