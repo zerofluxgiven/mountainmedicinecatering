@@ -1,5 +1,5 @@
 import streamlit as st
-st.set_page_config(page_title='Mountain Medicine Catering', layout='wide')
+st.set_page_config(page_title='Mountain Medicine Catering', layout='wide', initial_sidebar_state='collapsed')
 import streamlit.components.v1 as components
 from auth import get_user, get_user_role
 from user_session_initializer import enrich_session_from_token
@@ -23,7 +23,7 @@ from event_modifications import event_modifications_ui
 from bulk_suggestions import bulk_suggestions_ui
 from audit import audit_log_ui
 from tag_merging import tag_merging_ui
-from user_admin import enhanced_user_admin_ui as admin_panel_ui
+from roles import role_admin_ui as admin_panel_ui
 from ingredients import ingredient_catalogue_ui
 from allergies import allergy_management_ui
 from packing import packing_ui
@@ -47,9 +47,6 @@ TABS = {
     "Admin Panel": "admin",
     "Assistant": "assistant"
 }
-
-if get_user_role() == "admin":
-    TABS["Admin Panel"] = "admin"
 
 def initialize_event_mode_state():
     user = session_get("user")
@@ -156,7 +153,6 @@ def main():
     except Exception as e:
         st.warning(f"Could not verify admin role: {e}")
 
-    st.set_page_config(
         page_title="Mountain Medicine Catering",
         layout="wide",
         initial_sidebar_state="collapsed"
@@ -309,7 +305,7 @@ def render_admin_panel(user):
         st.warning("⚠️ Admin access required.")
         st.info(f"Your current role: {role}")
         return
-from user_admin import enhanced_user_admin_ui as admin_panel_ui
+    admin_panel_ui()
 
 if __name__ == "__main__":
     main()
