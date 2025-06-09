@@ -1,5 +1,9 @@
 import streamlit as st
-st.set_page_config(page_title='Mountain Medicine Catering', layout='wide', initial_sidebar_state='collapsed')
+st.set_page_config(
+    page_title='Mountain Medicine Catering',
+    layout='wide',
+    initial_sidebar_state='collapsed'
+)
 import streamlit.components.v1 as components
 from auth import get_user, get_user_role
 from user_session_initializer import enrich_session_from_token
