@@ -1,6 +1,7 @@
 import streamlit as st
 import streamlit.components.v1 as components
-from auth import get_user, authenticate_user, get_user_role
+from auth import get_user, get_user_role
+from user_session_initializer import enrich_session_from_token
 from dashboard import render_dashboard 
 from mobile_layout import mobile_layout
 from mobile_components import detect_mobile, mobile_safe_columns
@@ -85,15 +86,17 @@ def handle_auth_routing():
 
     elif "token" in query_params:
         token = query_params["token"]
-
+    
         if "user" not in st.session_state:
-            result = authenticate_user(token=token)
-            if result:
-                st.session_state.firebase_user = result
-                st.toast(f"Welcome {result.get('name', 'back')} 👋")
-                log_user_action(result.get("uid", result.get("id", "unknown")), result.get("role", "viewer"), "login")
+            user = enrich_session_from_token(token)
+            if user:
+                st.toast(f"Welcome {user.get('name', 'back')} 👋")
+                log_user_action(user.get("id", "unknown"), user.get("role", "viewer"), "login")
                 st.query_params.clear()
                 st.rerun()
+            else:
+                st.error("Login failed. Invalid or expired token.")
+                st.stop()
         else:
             st.error("Invalid login link.")
             st.stop()
