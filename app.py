@@ -210,6 +210,7 @@ def main():
     
     role = get_user_role(user)
     visible_tabs = list(TABS.keys())
+    selected_tab = render_top_navbar(visible_tabs)
         
         # 🔒 Hide admin-only tabs for non-admins
     if role != "admin":
@@ -217,7 +218,7 @@ def main():
             if admin_tab in visible_tabs:
                 visible_tabs.remove(admin_tab)
     
-        selected_tab = render_top_navbar(visible_tabs)
+        
 
     
     if selected_tab == "Dashboard":
