@@ -210,7 +210,7 @@ def main():
     
         role = get_user_role(user)
         visible_tabs = list(TABS.keys())
-    
+        
         # 🔒 Hide admin-only tabs for non-admins
         if role != "admin":
             for admin_tab in ["Admin Panel", "Suggestions", "Bulk Suggestions", "Audit Logs", "PDF Export"]:
