@@ -5,6 +5,7 @@ from firebase_init import db
 from datetime import datetime
 import streamlit as st
 from utils import session_set
+from ai_chat import get_openai_response, log_conversation  # ✅ New for floating AI
 
 def enrich_session_from_token(token: str):
     """
