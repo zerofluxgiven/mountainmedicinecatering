@@ -35,10 +35,21 @@ from historical_menus import historical_menus_ui
 PUBLIC_MODE = False  # Set to True for guest access
 
 TABS = {
+    "Dashboard": "dashboard",
+    "Events": "events", 
+    "Recipes": "recipes",
+    "Ingredients": "ingredients",
+    "Allergies": "allergies",
+    "Historical Menus": "historical_menus",
+    "Upload": "files",
+    "Receipts": "receipts",
+    "Admin Panel": "admin",
+    "Assistant": "assistant"
+}
 
-role = get_user_role()
-if role == "admin":
-    TABS["Admin Panel"] = "admin"
+    # Dynamically append Admin tab for admins
+    if get_user_role() == "admin":
+        TABS["Admin Panel"] = "admin"
     "Dashboard": "dashboard",
     "Events": "events", 
     "Recipes": "recipes",
