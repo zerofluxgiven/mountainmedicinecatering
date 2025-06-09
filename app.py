@@ -1,7 +1,7 @@
 import streamlit as st
 import streamlit.components.v1 as components
 from auth import get_user, authenticate_user, get_user_role
-
+from dashboard import render_dashboard 
 from mobile_layout import mobile_layout
 from mobile_components import detect_mobile, mobile_safe_columns
 from floating_ai_chat import integrate_floating_chat
