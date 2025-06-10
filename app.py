@@ -21,6 +21,13 @@ from notifications import notifications_sidebar
 from datetime import datetime
 from utils import format_date, get_active_event, session_get, log_user_action
 from layout import apply_theme, render_top_navbar, render_enhanced_sidebar, render_leave_event_button
+
+import inspect
+import layout  # included here for introspection
+
+st.markdown("### 🔍 Layout Debug Info")
+st.text(f"layout module location: {inspect.getfile(layout)}")
+
 from ui_components import show_event_mode_banner, inject_layout_fixes
 from landing import show as show_landing
 from events import enhanced_event_ui, get_all_events
