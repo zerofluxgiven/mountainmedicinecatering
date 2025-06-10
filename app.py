@@ -7,7 +7,6 @@ st.set_page_config(
     initial_sidebar_state="collapsed"
 )
 
-
 # ✅ Set Streamlit page config early
 
 import streamlit.components.v1 as components
@@ -163,7 +162,6 @@ def main():
     except Exception as e:
         st.warning(f"Could not verify admin role: {e}")
 
-
     st.markdown("""
         <style>
         [data-testid="stSidebar"] { display: none !important; }
@@ -176,11 +174,7 @@ def main():
     inject_layout_fixes()
     render_floating_ai_chat()
 
-
     user = get_user()
-
-    st.write("👤 [DEBUG] User object:", user)
-    st.write("🛡️ [DEBUG] User role:", get_user_role(user))
 
     if PUBLIC_MODE and not user:
         show_landing()
@@ -189,7 +183,6 @@ def main():
     if not user:
         st.title("🔐 Login Required")
         st.markdown("Please log in to access Mountain Medicine Catering.")
-
         login_url = st.secrets.get("auth", {}).get("login_url", "")
         if login_url:
             st.markdown(f"""
@@ -207,20 +200,17 @@ def main():
 
     if st.session_state.get("top_nav") is None:
         st.session_state["top_nav"] = "Dashboard"
-    
+
     role = get_user_role(user)
     visible_tabs = list(TABS.keys())
     selected_tab = render_top_navbar(visible_tabs)
-        
-        # 🔒 Hide admin-only tabs for non-admins
+
+    # 🔒 Hide admin-only tabs for non-admins
     if role != "admin":
         for admin_tab in ["Admin Panel", "Suggestions", "Bulk Suggestions", "Audit Logs", "PDF Export"]:
             if admin_tab in visible_tabs:
                 visible_tabs.remove(admin_tab)
-    
-        
 
-    
     if selected_tab == "Dashboard":
         try:
             if user:
@@ -321,12 +311,10 @@ def render_upload_tab(user):
         
 def render_admin_panel(user):
     role = get_user_role()
-    st.info(f"[DEBUG] Your current role is: {role}")
     if role != "admin":
         st.warning("⚠️ Admin access required.")
         return
     admin_panel_ui()
-
 
 if __name__ == "__main__":
     main()
