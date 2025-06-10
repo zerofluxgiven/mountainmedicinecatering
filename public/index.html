@@ -44,7 +44,7 @@
         console.log("Redirect result error or not triggered:", error.message);
       });
 
-    function login() {
+    window.login = function () {
       signInWithRedirect(auth, provider);
     }
   </script>
