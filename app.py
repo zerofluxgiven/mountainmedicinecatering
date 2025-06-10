@@ -1,7 +1,9 @@
+# ✅ FINAL PATCHED app.py (persistent login without rerun)
 import streamlit as st
 
+# ✅ Correct Streamlit config placed immediately after import
 st.set_page_config(
-    page_title="Mountain ⛰️ Medicine",
+    page_title="Mountain Medicine Catering",
     layout="wide",
     initial_sidebar_state="collapsed"
 )
@@ -38,7 +40,7 @@ from admin_utilities import admin_utilities_ui
 from historical_menus import historical_menus_ui
 
 # ⚙️ Config
-PUBLIC_MODE = False  # Set to True for guest access
+PUBLIC_MODE = False
 
 TABS = {
     "Dashboard": "dashboard",
@@ -81,8 +83,22 @@ def initialize_event_mode_state():
         except Exception:
             pass
 
+import streamlit.components.v1 as components
+
 def handle_auth_routing():
     query_params = st.query_params
+
+    # 🔍 Fallback to localStorage if token/device not passed via query
+    if "token" not in query_params:
+        components.html('''
+            <script>
+              const token = localStorage.getItem("mm_token") || "";
+              const device = localStorage.getItem("mm_device") || "desktop";
+              const query = `?token=${token}&device=${device}`;
+              if (token) window.location.href = window.location.pathname + query;
+            </script>
+        ''', height=0)
+        st.stop()
 
     if query_params.get("logout") == ["true"]:
         log_user_action("logout")
@@ -90,24 +106,20 @@ def handle_auth_routing():
         st.toast("You have been logged out")
         st.switch_page("/login")
 
-    elif "token" in query_params:
-        token = query_params["token"][0]  # ✅ FIXED: extract string
+    elif "token" in query_params and "user" not in st.session_state:
+        token = query_params["token"][0]
         device = query_params.get("device", ["desktop"])[0]
         st.session_state["device_type"] = device
         st.session_state["mobile_mode"] = (device == "mobile")
 
-        if "user" not in st.session_state:
-            user = enrich_session_from_token(token)
-            if user:
-                st.toast(f"Welcome {user.get('name', 'back')} ὄb")
-                log_user_action(user.get("id", "unknown"), user.get("role", "viewer"), "login")
-                st.query_params.clear()
-                st.rerun()
-            else:
-                st.error("Login failed. Invalid or expired token.")
-                st.stop()
+        user = enrich_session_from_token(token)
+        if user:
+            st.session_state["user"] = user  # ✅ Ensure session holds user
+            st.toast(f"Welcome {user.get('name', 'back')} 👋")
+            log_user_action(user.get("id", "unknown"), user.get("role", "viewer"), "login")
+            st.experimental_set_query_params()  # ✅ Clear token from URL without rerun
         else:
-            st.error("Invalid login link.")
+            st.error("Login failed. Invalid or expired token.")
             st.stop()
 
     elif not get_user():
@@ -277,7 +289,6 @@ def render_upload_tab(user):
         file_manager_ui(user)
     with analytics_tab:
         show_file_analytics()
-
 
 def render_admin_panel(user):
     role = get_user_role()
