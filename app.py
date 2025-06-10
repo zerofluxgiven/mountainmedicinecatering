@@ -273,6 +273,7 @@ def main():
         del st.session_state["next_nav"]
     
 selected_tab = render_top_navbar(visible_tabs)
+if selected_tab: st.session_state["top_nav"] = selected_tab
 if selected_tab:
     st.session_state["top_nav"] = selected_tab
 
