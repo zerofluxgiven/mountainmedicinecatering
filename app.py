@@ -1,3 +1,4 @@
+# ✅ PATCHED app.py (unified user session logic)
 import streamlit as st
 
 # ✅ Correct Streamlit config placed immediately after import
@@ -7,12 +8,11 @@ st.set_page_config(
     initial_sidebar_state="collapsed"
 )
 
-import streamlit.components.v1 as components
 from auth import get_user, get_user_role
 from user_session_initializer import enrich_session_from_token
-from dashboard import render_dashboard 
+from dashboard import render_dashboard
 from mobile_layout import mobile_layout
-from mobile_components import detect_mobile, mobile_safe_columns
+from mobile_components import mobile_safe_columns
 from floating_ai_chat import render_floating_ai_chat
 from notifications import notifications_sidebar
 from datetime import datetime
@@ -44,7 +44,7 @@ PUBLIC_MODE = False  # Set to True for guest access
 
 TABS = {
     "Dashboard": "dashboard",
-    "Events": "events", 
+    "Events": "events",
     "Recipes": "recipes",
     "Ingredients": "ingredients",
     "Allergies": "allergies",
@@ -84,7 +84,7 @@ def initialize_event_mode_state():
             pass
 
 def handle_auth_routing():
-    query_params = st.experimental_get_query_params()  # ✅ PATCHED
+    query_params = st.query_params
 
     if query_params.get("logout") == "true":
         log_user_action("logout")
@@ -98,10 +98,10 @@ def handle_auth_routing():
         st.session_state["device_type"] = device
         st.session_state["mobile_mode"] = (device == "mobile")
 
-        if "firebase_user" not in st.session_state:  # ✅ PATCHED
+        if "user" not in st.session_state:
             user = enrich_session_from_token(token)
             if user:
-                st.toast(f"Welcome {user.get('name', 'back')} 👋")
+                st.toast(f"Welcome {user.get('name', 'back')} ὄb")
                 log_user_action(user.get("id", "unknown"), user.get("role", "viewer"), "login")
                 st.query_params.clear()
                 st.rerun()
@@ -125,13 +125,13 @@ def main():
         "active_event": None,
         "active_event_id": None,
         "recent_event_id": None,
-        "firebase_user": None,
+        "user": None,
         "editing_event_id": None,
         "editing_menu_event_id": None,
         "viewing_menu_event_id": None,
         "show_menu_form": False,
         "current_file_data": b"",
-        "mobile_detected": detect_mobile(),
+        "mobile_detected": st.session_state.get("mobile_mode", False),
     }.items():
         if key not in st.session_state:
             st.session_state[key] = default
@@ -149,7 +149,7 @@ def main():
             admin_found = True
 
         if not admin_found:
-            current_user = st.session_state.get("firebase_user")
+            current_user = st.session_state.get("user")
             if current_user and current_user.get("email") == admin_email:
                 db.collection("users").document(current_user["id"]).set({
                     "id": current_user["id"],
@@ -279,7 +279,8 @@ def render_upload_tab(user):
         file_manager_ui(user)
     with analytics_tab:
         show_file_analytics()
-        
+
+
 def render_admin_panel(user):
     role = get_user_role()
     if role != "admin":
