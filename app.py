@@ -186,6 +186,54 @@ def main():
 """, unsafe_allow_html=True)
     render_floating_ai_chat()
 
+    user = get_user()
+    role = get_user_role(user) if user else "viewer"
+
+    if role == "admin":
+        st.markdown("""
+        <style>
+        [data-testid="stSidebar"] {
+            background-color: #f9f9fa;
+            border-right: 1px solid #ddd;
+            display: block !important;
+        }
+        .block-container {
+            padding-top: 1rem !important;
+        }
+        .stButton:has([data-testid*="floating_chat_toggle"]) {
+            position: fixed !important;
+            bottom: 1.5rem !important;
+            left: 1.5rem !important;
+            z-index: 1000 !important;
+            width: 50px !important;
+            height: 50px !important;
+        }
+        </style>
+        """, unsafe_allow_html=True)
+    else:
+        st.markdown("""
+        <style>
+        [data-testid="stSidebar"] {
+            display: none !important;
+        }
+        .block-container {
+            padding-top: 1rem !important;
+        }
+        </style>
+        """, unsafe_allow_html=True)
+
+
+    st.markdown("""
+    <div style="text-align: center; margin-top: 1rem;">
+        <div style="font-size: 3rem;">⛰️</div>
+        <h1 style="margin-bottom: 0; color: #6C4AB6;">Mountain Medicine</h1>
+        <p style="font-style: italic; font-size: 1.1rem;">
+            Bringing humanity closer through man's original primal ceremony.
+        </p>
+    </div>
+    """, unsafe_allow_html=True)
+
+
 
     user = get_user()
 
@@ -335,11 +383,12 @@ def render_upload_tab(user):
         
 def render_admin_panel(user):
     role = get_user_role()
-    st.info(f"[DEBUG] Your current role is: {role}")
+    
     if role != "admin":
         st.warning("⚠️ Admin access required.")
         return
-    admin_panel_ui()
+    from user_admin import enhanced_user_admin_ui
+    enhanced_user_admin_ui()
 
 
 if __name__ == "__main__":
