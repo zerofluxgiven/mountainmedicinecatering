@@ -21,9 +21,6 @@ from notifications import notifications_sidebar
 from datetime import datetime
 from utils import format_date, get_active_event, session_get, log_user_action
 from layout import apply_theme, render_top_navbar, render_enhanced_sidebar, render_leave_event_button
-
-
-
 from ui_components import show_event_mode_banner, inject_layout_fixes
 from landing import show as show_landing
 from events import enhanced_event_ui, get_all_events
@@ -167,76 +164,23 @@ def main():
         st.warning(f"Could not verify admin role: {e}")
 
 
-    
+    st.markdown("""
+        <style>
+        [data-testid="stSidebar"] { display: none !important; }
+        .block-container { padding-top: 1rem !important; }
+        </style>
+    """, unsafe_allow_html=True)
 
     mobile_layout.apply_mobile_theme()
     apply_theme()
     inject_layout_fixes()
-    st.markdown("""
-    <style>
-    /* Restore sidebar visibility and style */
-    [data-testid="stSidebar"] {
-        background-color: #f9f9fa;
-        border-right: 1px solid #ddd;
-    }
-    .block-container {
-        padding-top: 1rem !important;
-    }
-    </style>
-""", unsafe_allow_html=True)
     render_floating_ai_chat()
 
-    user = get_user()
-    role = get_user_role(user) if user else "viewer"
-
-    if role == "admin":
-        st.markdown("""
-        <style>
-        [data-testid="stSidebar"] {
-            background-color: #f9f9fa;
-            border-right: 1px solid #ddd;
-            display: block !important;
-        }
-        .block-container {
-            padding-top: 1rem !important;
-        }
-        .stButton:has([data-testid*="floating_chat_toggle"]) {
-            position: fixed !important;
-            bottom: 1.5rem !important;
-            left: 1.5rem !important;
-            z-index: 1000 !important;
-            width: 50px !important;
-            height: 50px !important;
-        }
-        </style>
-        """, unsafe_allow_html=True)
-    else:
-        st.markdown("""
-        <style>
-        [data-testid="stSidebar"] {
-            display: none !important;
-        }
-        .block-container {
-            padding-top: 1rem !important;
-        }
-        </style>
-        """, unsafe_allow_html=True)
-
-
-    st.markdown("""
-    <div style="text-align: center; margin-top: 1rem;">
-        <div style="font-size: 3rem;">⛰️</div>
-        <h1 style="margin-bottom: 0; color: #6C4AB6;">Mountain Medicine</h1>
-        <p style="font-style: italic; font-size: 1.1rem;">
-            Bringing humanity closer through man's original primal ceremony.
-        </p>
-    </div>
-    """, unsafe_allow_html=True)
-
-
 
     user = get_user()
 
+    st.write("👤 [DEBUG] User object:", user)
+    st.write("🛡️ [DEBUG] User role:", get_user_role(user))
 
     if PUBLIC_MODE and not user:
         show_landing()
@@ -266,17 +210,7 @@ def main():
     
     role = get_user_role(user)
     visible_tabs = list(TABS.keys())
-
-    # ✅ Safe navigation handoff
-    if "next_nav" in st.session_state:
-        st.session_state["top_nav"] = st.session_state["next_nav"]
-        del st.session_state["next_nav"]
-    
-selected_tab = render_top_navbar(visible_tabs)
-if selected_tab: st.session_state["top_nav"] = selected_tab
-if selected_tab:
-    st.session_state["top_nav"] = selected_tab
-
+    selected_tab = render_top_navbar(visible_tabs)
         
         # 🔒 Hide admin-only tabs for non-admins
     if role != "admin":
@@ -285,10 +219,9 @@ if selected_tab:
                 visible_tabs.remove(admin_tab)
     
         
-    render_enhanced_sidebar()
 
     
-    if st.session_state["top_nav"] == "Dashboard":
+    if selected_tab == "Dashboard":
         try:
             if user:
                 render_dashboard(user)
@@ -297,7 +230,7 @@ if selected_tab:
         except Exception as e:
             st.error(f"Dashboard tab crashed: {e}")
 
-    elif st.session_state["top_nav"] == "Events":
+    elif selected_tab == "Events":
         try:
             if user:
                 render_leave_event_button("main")
@@ -307,7 +240,7 @@ if selected_tab:
         except Exception as e:
             st.error(f"Events tab crashed: {e}")
 
-    elif st.session_state["top_nav"] == "Recipes":
+    elif selected_tab == "Recipes":
         try:
             if user:
                 recipes_page()
@@ -316,7 +249,7 @@ if selected_tab:
         except Exception as e:
             st.error(f"Recipes tab crashed: {e}")
 
-    elif st.session_state["top_nav"] == "Ingredients":
+    elif selected_tab == "Ingredients":
         try:
             if user:
                 ingredient_catalogue_ui(user)
@@ -325,7 +258,7 @@ if selected_tab:
         except Exception as e:
             st.error(f"Ingredients tab crashed: {e}")
 
-    elif st.session_state["top_nav"] == "Allergies":
+    elif selected_tab == "Allergies":
         try:
             if user:
                 allergy_management_ui(user)
@@ -334,7 +267,7 @@ if selected_tab:
         except Exception as e:
             st.error(f"Allergies tab crashed: {e}")
 
-    elif st.session_state["top_nav"] == "Historical Menus":
+    elif selected_tab == "Historical Menus":
         try:
             if user:
                 historical_menus_ui()
@@ -343,7 +276,7 @@ if selected_tab:
         except Exception as e:
             st.error(f"Historical Menus tab crashed: {e}")
 
-    elif st.session_state["top_nav"] == "Upload":
+    elif selected_tab == "Upload":
         try:
             if user:
                 render_upload_tab(user)
@@ -352,7 +285,7 @@ if selected_tab:
         except Exception as e:
             st.error(f"Upload tab crashed: {e}")
 
-    elif st.session_state["top_nav"] == "Receipts":
+    elif selected_tab == "Receipts":
         try:
             if user:
                 receipt_upload_ui(user)
@@ -361,7 +294,7 @@ if selected_tab:
         except Exception as e:
             st.error(f"Receipts tab crashed: {e}")
 
-    elif st.session_state["top_nav"] == "Admin Panel":
+    elif selected_tab == "Admin Panel":
         try:
             if user:
                 render_admin_panel(user)
@@ -370,7 +303,7 @@ if selected_tab:
         except Exception as e:
             st.error(f"Admin Panel tab crashed: {e}")
 
-    elif st.session_state["top_nav"] == "Assistant":
+    elif selected_tab == "Assistant":
         try:
             if user:
                 ai_chat_ui()
@@ -388,12 +321,11 @@ def render_upload_tab(user):
         
 def render_admin_panel(user):
     role = get_user_role()
-    
+    st.info(f"[DEBUG] Your current role is: {role}")
     if role != "admin":
         st.warning("⚠️ Admin access required.")
         return
-    from user_admin import enhanced_user_admin_ui
-    enhanced_user_admin_ui()
+    admin_panel_ui()
 
 
 if __name__ == "__main__":
