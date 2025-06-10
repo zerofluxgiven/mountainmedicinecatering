@@ -84,7 +84,7 @@ def initialize_event_mode_state():
             pass
 
 def handle_auth_routing():
-    query_params = st.query_params
+    query_params = st.experimental_get_query_params()  # ✅ PATCHED
 
     if query_params.get("logout") == "true":
         log_user_action("logout")
@@ -98,7 +98,7 @@ def handle_auth_routing():
         st.session_state["device_type"] = device
         st.session_state["mobile_mode"] = (device == "mobile")
 
-        if "user" not in st.session_state:
+        if "firebase_user" not in st.session_state:  # ✅ PATCHED
             user = enrich_session_from_token(token)
             if user:
                 st.toast(f"Welcome {user.get('name', 'back')} 👋")
