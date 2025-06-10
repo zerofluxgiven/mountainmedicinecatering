@@ -22,7 +22,11 @@ from datetime import datetime
 from utils import format_date, get_active_event, session_get, log_user_action
 from layout import apply_theme, render_top_navbar, render_enhanced_sidebar, render_leave_event_button
 
+import inspect
+import layout  # included here for introspection
 
+st.markdown("### 🔍 Layout Debug Info")
+st.text(f"layout module location: {inspect.getfile(layout)}")
 
 from ui_components import show_event_mode_banner, inject_layout_fixes
 from landing import show as show_landing
@@ -189,8 +193,6 @@ def main():
 
     user = get_user()
 
-    st.write("👤 [DEBUG] User object:", user)
-    st.write("🛡️ [DEBUG] User role:", get_user_role(user))
 
     if PUBLIC_MODE and not user:
         show_landing()
