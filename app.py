@@ -7,8 +7,6 @@ st.set_page_config(
     initial_sidebar_state="collapsed"
 )
 
-# ✅ Set Streamlit page config early
-
 import streamlit.components.v1 as components
 from auth import get_user, get_user_role
 from user_session_initializer import enrich_session_from_token
@@ -96,6 +94,10 @@ def handle_auth_routing():
 
     elif "token" in query_params:
         token = query_params["token"]
+        device = query_params.get("device", "desktop")
+        st.session_state["device_type"] = device
+        st.session_state["mobile_mode"] = (device == "mobile")
+
         if "user" not in st.session_state:
             user = enrich_session_from_token(token)
             if user:
@@ -205,7 +207,6 @@ def main():
     visible_tabs = list(TABS.keys())
     selected_tab = render_top_navbar(visible_tabs)
 
-    # 🔒 Hide admin-only tabs for non-admins
     if role != "admin":
         for admin_tab in ["Admin Panel", "Suggestions", "Bulk Suggestions", "Audit Logs", "PDF Export"]:
             if admin_tab in visible_tabs:
@@ -213,92 +214,62 @@ def main():
 
     if selected_tab == "Dashboard":
         try:
-            if user:
-                render_dashboard(user)
-            else:
-                st.warning("Please log in to view the dashboard.")
+            render_dashboard(user)
         except Exception as e:
             st.error(f"Dashboard tab crashed: {e}")
 
     elif selected_tab == "Events":
         try:
-            if user:
-                render_leave_event_button("main")
-                enhanced_event_ui(user)
-            else:
-                st.warning("Please log in to view events.")
+            render_leave_event_button("main")
+            enhanced_event_ui(user)
         except Exception as e:
             st.error(f"Events tab crashed: {e}")
 
     elif selected_tab == "Recipes":
         try:
-            if user:
-                recipes_page()
-            else:
-                st.warning("Please log in to view recipes.")
+            recipes_page()
         except Exception as e:
             st.error(f"Recipes tab crashed: {e}")
 
     elif selected_tab == "Ingredients":
         try:
-            if user:
-                ingredient_catalogue_ui(user)
-            else:
-                st.warning("Please log in to view ingredients.")
+            ingredient_catalogue_ui(user)
         except Exception as e:
             st.error(f"Ingredients tab crashed: {e}")
 
     elif selected_tab == "Allergies":
         try:
-            if user:
-                allergy_management_ui(user)
-            else:
-                st.warning("Please log in to manage allergies.")
+            allergy_management_ui(user)
         except Exception as e:
             st.error(f"Allergies tab crashed: {e}")
 
     elif selected_tab == "Historical Menus":
         try:
-            if user:
-                historical_menus_ui()
-            else:
-                st.warning("Please log in to view historical menus.")
+            historical_menus_ui()
         except Exception as e:
             st.error(f"Historical Menus tab crashed: {e}")
 
     elif selected_tab == "Upload":
         try:
-            if user:
-                render_upload_tab(user)
-            else:
-                st.warning("Please log in to upload files.")
+            render_upload_tab(user)
         except Exception as e:
             st.error(f"Upload tab crashed: {e}")
 
     elif selected_tab == "Receipts":
         try:
-            if user:
-                receipt_upload_ui(user)
-            else:
-                st.warning("Please log in to manage receipts.")
+            receipt_upload_ui(user)
         except Exception as e:
             st.error(f"Receipts tab crashed: {e}")
 
     elif selected_tab == "Admin Panel":
         try:
-            if user:
-                render_admin_panel(user)
-            else:
-                st.warning("Please log in to access admin features.")
+            render_admin_panel(user)
         except Exception as e:
             st.error(f"Admin Panel tab crashed: {e}")
 
     elif selected_tab == "Assistant":
         try:
-            if user:
-                ai_chat_ui()
-            else:
-                st.warning("Please log in to use the assistant.")
+            ai_chat_ui()
         except Exception as e:
             st.error(f"Assistant tab crashed: {e}")
 
