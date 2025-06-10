@@ -189,8 +189,6 @@ def main():
 
     user = get_user()
 
-    st.write("👤 [DEBUG] User object:", user)
-    st.write("🛡️ [DEBUG] User role:", get_user_role(user))
 
     if PUBLIC_MODE and not user:
         show_landing()
