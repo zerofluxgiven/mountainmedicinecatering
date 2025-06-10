@@ -169,6 +169,18 @@ def main():
     mobile_layout.apply_mobile_theme()
     apply_theme()
     inject_layout_fixes()
+    st.markdown("""
+    <style>
+    /* Restore sidebar visibility and style */
+    [data-testid="stSidebar"] {
+        background-color: #f9f9fa;
+        border-right: 1px solid #ddd;
+    }
+    .block-container {
+        padding-top: 1rem !important;
+    }
+    </style>
+""", unsafe_allow_html=True)
     render_floating_ai_chat()
 
 
