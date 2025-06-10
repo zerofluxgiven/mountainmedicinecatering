@@ -271,11 +271,7 @@ def main():
     if "next_nav" in st.session_state:
         st.session_state["top_nav"] = st.session_state["next_nav"]
         del st.session_state["next_nav"]
-    
-selected_tab = render_top_navbar(visible_tabs)
-if selected_tab:
-    st.session_state["top_nav"] = selected_tab
-
+    selected_tab = render_top_navbar(visible_tabs)
         
         # 🔒 Hide admin-only tabs for non-admins
     if role != "admin":
@@ -287,7 +283,7 @@ if selected_tab:
     render_enhanced_sidebar()
 
     
-    if st.session_state["top_nav"] == "Dashboard":
+    if selected_tab == "Dashboard":
         try:
             if user:
                 render_dashboard(user)
@@ -296,7 +292,7 @@ if selected_tab:
         except Exception as e:
             st.error(f"Dashboard tab crashed: {e}")
 
-    elif st.session_state["top_nav"] == "Events":
+    elif selected_tab == "Events":
         try:
             if user:
                 render_leave_event_button("main")
@@ -306,7 +302,7 @@ if selected_tab:
         except Exception as e:
             st.error(f"Events tab crashed: {e}")
 
-    elif st.session_state["top_nav"] == "Recipes":
+    elif selected_tab == "Recipes":
         try:
             if user:
                 recipes_page()
@@ -315,7 +311,7 @@ if selected_tab:
         except Exception as e:
             st.error(f"Recipes tab crashed: {e}")
 
-    elif st.session_state["top_nav"] == "Ingredients":
+    elif selected_tab == "Ingredients":
         try:
             if user:
                 ingredient_catalogue_ui(user)
@@ -324,7 +320,7 @@ if selected_tab:
         except Exception as e:
             st.error(f"Ingredients tab crashed: {e}")
 
-    elif st.session_state["top_nav"] == "Allergies":
+    elif selected_tab == "Allergies":
         try:
             if user:
                 allergy_management_ui(user)
@@ -333,7 +329,7 @@ if selected_tab:
         except Exception as e:
             st.error(f"Allergies tab crashed: {e}")
 
-    elif st.session_state["top_nav"] == "Historical Menus":
+    elif selected_tab == "Historical Menus":
         try:
             if user:
                 historical_menus_ui()
@@ -342,7 +338,7 @@ if selected_tab:
         except Exception as e:
             st.error(f"Historical Menus tab crashed: {e}")
 
-    elif st.session_state["top_nav"] == "Upload":
+    elif selected_tab == "Upload":
         try:
             if user:
                 render_upload_tab(user)
@@ -351,7 +347,7 @@ if selected_tab:
         except Exception as e:
             st.error(f"Upload tab crashed: {e}")
 
-    elif st.session_state["top_nav"] == "Receipts":
+    elif selected_tab == "Receipts":
         try:
             if user:
                 receipt_upload_ui(user)
@@ -360,7 +356,7 @@ if selected_tab:
         except Exception as e:
             st.error(f"Receipts tab crashed: {e}")
 
-    elif st.session_state["top_nav"] == "Admin Panel":
+    elif selected_tab == "Admin Panel":
         try:
             if user:
                 render_admin_panel(user)
@@ -369,7 +365,7 @@ if selected_tab:
         except Exception as e:
             st.error(f"Admin Panel tab crashed: {e}")
 
-    elif st.session_state["top_nav"] == "Assistant":
+    elif selected_tab == "Assistant":
         try:
             if user:
                 ai_chat_ui()
