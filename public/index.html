@@ -90,12 +90,18 @@
 
     firebase.initializeApp(firebaseConfig);
 
+    function detectDeviceType() {
+      const ua = navigator.userAgent.toLowerCase();
+      return /iphone|ipad|android/.test(ua) ? "mobile" : "desktop";
+    }
+
     function login() {
+      const deviceType = detectDeviceType();
       const provider = new firebase.auth.GoogleAuthProvider();
       firebase.auth().signInWithPopup(provider)
         .then(result => result.user.getIdToken())
         .then(token => {
-          window.location.href = `https://mountainmedicine.streamlit.app/?token=${token}`;
+          window.location.href = `https://mountainmedicine.streamlit.app/?token=${token}&device=${deviceType}`;
         })
         .catch(error => alert("Login failed: " + error.message));
     }
