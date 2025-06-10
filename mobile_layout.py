@@ -98,6 +98,8 @@ class MobileLayout:
         return self._is_mobile
     
     def apply_mobile_theme(self):
+        if not st.session_state.get("mobile_mode", False):
+            return
         """Apply mobile-specific CSS and optimizations"""
         mobile_css = """
         <style>
