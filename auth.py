@@ -1,3 +1,4 @@
+# ✅ PATCHED auth.py (session key standardized to 'user')
 import streamlit as st
 from firebase_admin import auth as admin_auth
 from firebase_init import db
@@ -9,19 +10,19 @@ from datetime import datetime
 # ----------------------------
 
 def is_logged_in():
-    return "firebase_user" in st.session_state
+    return "user" in st.session_state
 
 def get_user():
-    return st.session_state.get("firebase_user")
-    
+    return st.session_state.get("user")
+
 def get_user_id(user=None):
     if user is None:
-        user = st.session_state.get("firebase_user") or st.session_state.get("user", {})
+        user = st.session_state.get("user", {})
     return user.get("id") if user else None
-    
+
 def get_user_role(user=None):
     if user is None:
-        user = st.session_state.get("firebase_user") or st.session_state.get("user", {})
+        user = st.session_state.get("user", {})
     return user.get("role", "viewer")
 
 def get_current_user():
@@ -55,10 +56,11 @@ def require_role(required_role):
 # ----------------------------
 # 🔑 Firebase Web Auth Handler
 # ----------------------------
+
 def authenticate_user(token: str):
     import firebase_admin.auth as auth
     import logging
-    
+
     if not token or not isinstance(token, str):
         logging.error(f"Invalid token input: {token} (type: {type(token)})")
         raise ValueError("Token must be a non-empty string")
@@ -66,7 +68,7 @@ def authenticate_user(token: str):
     try:
         decoded = auth.verify_id_token(token)
         logging.info(f"Token decoded successfully: {decoded}")
-        return decoded  # or wrap into a user dict
+        return decoded
     except Exception as e:
         logging.exception(f"Failed to verify token: {e}")
         raise
