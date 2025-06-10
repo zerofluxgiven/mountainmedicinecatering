@@ -1,7 +1,5 @@
-# ✅ PATCHED app.py (unified user session logic)
 import streamlit as st
 
-# ✅ Correct Streamlit config placed immediately after import
 st.set_page_config(
     page_title="Mountain Medicine Catering",
     layout="wide",
@@ -86,15 +84,15 @@ def initialize_event_mode_state():
 def handle_auth_routing():
     query_params = st.query_params
 
-    if query_params.get("logout") == "true":
+    if query_params.get("logout") == ["true"]:
         log_user_action("logout")
         st.session_state.clear()
         st.toast("You have been logged out")
         st.switch_page("/login")
 
     elif "token" in query_params:
-        token = query_params["token"]
-        device = query_params.get("device", "desktop")
+        token = query_params["token"][0]  # ✅ FIXED: extract string
+        device = query_params.get("device", ["desktop"])[0]
         st.session_state["device_type"] = device
         st.session_state["mobile_mode"] = (device == "mobile")
 
