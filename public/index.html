@@ -38,7 +38,7 @@
       })
       .then((token) => {
         const deviceType = detectDeviceType();
-        window.parent.location.href = `https://mountainmedicine.streamlit.app/?token=${token}&device=${deviceType}`;
+        window.location.href = `/redirect.html?token=${token}&device=${deviceType}`;
       })
       .catch((error) => {
         console.log("Redirect result error or not triggered:", error.message);
