@@ -964,23 +964,23 @@ def render_enhanced_sidebar():
         if user_role in ["admin", "manager"]:
             st.markdown("---")
             if st.button("🔐 Admin Panel", key="sidebar_admin"):
-                st.session_state["top_nav"] = "Admin Panel"
+                st.session_state["next_nav"] = "Admin Panel"
                 st.rerun()
             
             if st.button("📝 Suggestions", key="sidebar_suggestions"):
-                st.session_state["top_nav"] = "Suggestions"
+                st.session_state["next_nav"] = "Suggestions"
                 st.rerun()
             
             if st.button("🧠 Bulk Suggestions", key="sidebar_bulk"):
-                st.session_state["top_nav"] = "Bulk Suggestions"
+                st.session_state["next_nav"] = "Bulk Suggestions"
                 st.rerun()
             
             if st.button("📜 Audit Logs", key="sidebar_audit"):
-                st.session_state["top_nav"] = "Audit Logs"
+                st.session_state["next_nav"] = "Audit Logs"
                 st.rerun()
             
             if st.button("📄 PDF Export", key="sidebar_pdf"):
-                st.session_state["top_nav"] = "PDF Export"
+                st.session_state["next_nav"] = "PDF Export"
                 st.rerun()
         
         # User info at bottom
