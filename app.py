@@ -224,7 +224,7 @@ def main():
             if admin_tab in visible_tabs:
                 visible_tabs.remove(admin_tab)
     
-        selected_tab = render_top_navbar(visible_tabs)
+        
     render_enhanced_sidebar()
 
     
