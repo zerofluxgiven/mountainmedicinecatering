@@ -217,6 +217,11 @@ def main():
     
     role = get_user_role(user)
     visible_tabs = list(TABS.keys())
+
+    # ✅ Safe navigation handoff
+    if "next_nav" in st.session_state:
+        st.session_state["top_nav"] = st.session_state["next_nav"]
+        del st.session_state["next_nav"]
     selected_tab = render_top_navbar(visible_tabs)
         
         # 🔒 Hide admin-only tabs for non-admins
