@@ -28,7 +28,6 @@
       return /iphone|ipad|android/.test(ua) ? "mobile" : "desktop";
     }
 
-    // Handle return from redirect
     getRedirectResult(auth)
       .then((result) => {
         if (result && result.user) {
@@ -38,7 +37,9 @@
       })
       .then((token) => {
         const deviceType = detectDeviceType();
-        window.location.href = `/redirect.html?token=${token}&device=${deviceType}`;
+        localStorage.setItem("mm_token", token);
+        localStorage.setItem("mm_device", deviceType);
+        window.location.href = `/`;
       })
       .catch((error) => {
         console.log("Redirect result error or not triggered:", error.message);
@@ -129,4 +130,3 @@
   <footer>&copy; 2025 Mountain Medicine</footer>
 </body>
 </html>
- 
