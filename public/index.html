@@ -3,8 +3,7 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
-  <title>Login | Mountain Medicine</title>
-  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600&display=swap" rel="stylesheet">
+  <title>Login | Debug Mode</title>
   <script type="module">
     import { initializeApp } from "https://www.gstatic.com/firebasejs/10.11.0/firebase-app.js";
     import { getAuth, GoogleAuthProvider, signInWithRedirect, getRedirectResult } from "https://www.gstatic.com/firebasejs/10.11.0/firebase-auth.js";
@@ -28,105 +27,37 @@
       return /iphone|ipad|android/.test(ua) ? "mobile" : "desktop";
     }
 
+    console.log("[MM] Waiting for Firebase redirect result...");
     getRedirectResult(auth)
       .then((result) => {
+        console.log("[MM] Firebase redirect result:", result);
         if (result && result.user) {
           return result.user.getIdToken();
         }
-        throw new Error("No result from redirect");
+        throw new Error("No result.user from Firebase redirect.");
       })
       .then((token) => {
         const deviceType = detectDeviceType();
+        console.log("[MM] Device type:", deviceType);
+        console.log("[MM] Token acquired:", token);
         localStorage.setItem("mm_token", token);
         localStorage.setItem("mm_device", deviceType);
-        window.location.href = `/`;
+        window.location.href = "/";
       })
       .catch((error) => {
-        console.log("Redirect result error or not triggered:", error.message);
+        console.error("[MM] Firebase redirect error:", error.code, error.message);
+        document.body.innerHTML += `<p style="color: red;"><strong>Redirect error:</strong> ${error.message}</p>`;
       });
 
     window.login = function () {
+      console.log("[MM] Initiating login redirect...");
       signInWithRedirect(auth, provider);
-    }
+    };
   </script>
-  <style>
-    :root {
-      --purple: #6C4AB6;
-      --light-purple: #B8A4D4;
-      --bg: #f9f9fb;
-      --text: #222;
-    }
-
-    body {
-      margin: 0;
-      padding: 0;
-      font-family: 'Inter', sans-serif;
-      background: var(--bg);
-      color: var(--text);
-      display: flex;
-      flex-direction: column;
-      align-items: center;
-      justify-content: center;
-      height: 100vh;
-      text-align: center;
-    }
-
-    h1 {
-      font-size: 2rem;
-      margin-bottom: 0.5rem;
-    }
-
-    p {
-      margin-top: 0;
-      color: #555;
-      font-size: 1rem;
-    }
-
-    .login-box {
-      background: white;
-      border-radius: 16px;
-      padding: 2rem;
-      box-shadow: 0 4px 12px rgba(0,0,0,0.08);
-      max-width: 360px;
-      width: 90%;
-    }
-
-    .login-button {
-      background: var(--purple);
-      color: white;
-      border: none;
-      border-radius: 8px;
-      padding: 0.75rem 1.5rem;
-      font-size: 1rem;
-      font-weight: 600;
-      cursor: pointer;
-      margin-top: 1.5rem;
-    }
-
-    .login-button:hover {
-      background: var(--light-purple);
-    }
-
-    .logo {
-      font-size: 3rem;
-      margin-bottom: 1rem;
-    }
-
-    footer {
-      position: absolute;
-      bottom: 1rem;
-      font-size: 0.8rem;
-      color: #999;
-    }
-  </style>
 </head>
 <body>
-  <div class="login-box">
-    <div class="logo">⛰️</div>
-    <h1>Mountain Medicine</h1>
-    <p>Bringing humanity closer through man's original primal ceremony.</p>
-    <button class="login-button" onclick="login()">🔐 Login with Google</button>
-  </div>
-  <footer>&copy; 2025 Mountain Medicine</footer>
+  <h1>Login with Google</h1>
+  <button onclick="login()">Start Login</button>
+  <p id="status">Logging status will appear in console.</p>
 </body>
 </html>
