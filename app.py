@@ -123,7 +123,6 @@ def handle_auth_routing():
             st.toast(f"Welcome {user.get('name', 'back')} 👋")
             log_user_action(user.get("id", "unknown"), user.get("role", "viewer"), "login")
             st.query_params.clear()
-         else:
             st.error("Login failed. Invalid or expired token.")
             st.stop()
 
@@ -238,7 +237,6 @@ try:
         receipt_upload_ui(user)
         render_admin_panel(user)
         ai_chat_ui()
- else:
         st.warning("⚠️ Unknown tab selected.")
 except Exception as e:
     st.error(f"🚨 Failed to render '{selected_tab}' tab: {e}")
