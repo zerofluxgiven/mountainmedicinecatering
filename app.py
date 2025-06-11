@@ -192,7 +192,7 @@ def main():
     mobile_layout.apply_mobile_theme()
     apply_theme()
     inject_layout_fixes()
-    render_floating_ai_chat()
+    #render_floating_ai_chat()
 
     user = get_user()
 
