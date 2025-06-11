@@ -71,33 +71,33 @@ def initialize_event_mode_state():
             st.session_state["active_event"] = None
 
         try:
-            from firebase_init import db, firestore
-            user_doc = db.collection("users").document(user_id).get()
-            if user_doc.exists:
-                user_data = user_doc.to_dict()
-                last_event = user_data.get("last_active_event")
-                if last_event:
-                    st.session_state["recent_event_id"] = last_event
-        except Exception:
-            pass
-
-import streamlit.components.v1 as components
-
-def handle_auth_routing():
-    query_params = st.query_params
-
-    if "token" not in query_params:
+        from firebase_init import db, firestore
+        user_doc = db.collection("users").document(user_id).get()
+        if user_doc.exists:
+        user_data = user_doc.to_dict()
+        last_event = user_data.get("last_active_event")
+        if last_event:
+        st.session_state["recent_event_id"] = last_event
+    except Exception:
+        pass
+        
+        import streamlit.components.v1 as components
+        
+        def handle_auth_routing():
+        query_params = st.query_params
+        
+        if "token" not in query_params:
         components.html('''
-            <script>
-              const token = localStorage.getItem("mm_token") || "";
-              const device = localStorage.getItem("mm_device") || "desktop";
-              const query = `?token=${token}&device=${device}`;
-              if (token) window.location.href = window.location.pathname + query;
-            </script>
+        <script>
+        const token = localStorage.getItem("mm_token") || "";
+        const device = localStorage.getItem("mm_device") || "desktop";
+        const query = `?token=${token}&device=${device}`;
+        if (token) window.location.href = window.location.pathname + query;
+        </script>
         ''', height=0)
         st.stop()
-
-    if query_params.get("logout") == ["true"]:
+        
+        if query_params.get("logout") == ["true"]:
         log_user_action("logout")
         keys_to_preserve = ["top_nav"]
         preserved = {k: st.session_state[k] for k in keys_to_preserve if k in st.session_state}
@@ -105,37 +105,37 @@ def handle_auth_routing():
         st.session_state.update(preserved)
         st.toast("You have been logged out")
         st.switch_page("/login")
-
-    elif "token" in query_params and "user" not in st.session_state:
+        
+        elif "token" in query_params and "user" not in st.session_state:
         token = query_params.get("token")
         if isinstance(token, list):
-            token = token[0]
+        token = token[0]
         if not isinstance(token, str) or "." not in token:
-            st.error("Malformed or missing token.")
-            st.stop()
+        st.error("Malformed or missing token.")
+        st.stop()
         device = query_params.get("device", ["desktop"])[0]
         st.session_state["device_type"] = device
         st.session_state["mobile_mode"] = (device == "mobile")
-
+        
         user = enrich_session_from_token(token)
         if user:
-            st.session_state["user"] = user
-            st.toast(f"Welcome {user.get('name', 'back')} 👋")
-            log_user_action(user.get("id", "unknown"), user.get("role", "viewer"), "login")
-            st.query_params.clear()
-            st.error("Login failed. Invalid or expired token.")
-            st.stop()
-
-    elif not get_user():
+        st.session_state["user"] = user
+        st.toast(f"Welcome {user.get('name', 'back')} 👋")
+        log_user_action(user.get("id", "unknown"), user.get("role", "viewer"), "login")
+        st.query_params.clear()
+        st.error("Login failed. Invalid or expired token.")
+        st.stop()
+        
+        elif not get_user():
         st.title("🔐 Login Required")
         st.warning("Please log in to continue.")
         return
-
-def main():
-    handle_auth_routing()
-    from firebase_init import db, firestore
-
-    default_state = {
+        
+        def main():
+        handle_auth_routing()
+        from firebase_init import db, firestore
+        
+        default_state = {
         "top_nav": "Dashboard",
         "next_nav": None,
         "active_event": None,
@@ -147,84 +147,84 @@ def main():
         "show_menu_form": False,
         "current_file_data": b"",
         "mobile_detected": st.session_state.get("mobile_mode", False),
-    }
-
-    for key, default in default_state.items():
+        }
+        
+        for key, default in default_state.items():
         if key not in st.session_state:
-            st.session_state[key] = default
-
+        st.session_state[key] = default
+        
     try:
         admin_email = "mistermcfarland@gmail.com"
         users = db.collection("users").where("email", "==", admin_email).stream()
         admin_found = False
-
+        
         for user_doc in users:
-            user_data = user_doc.to_dict()
-            if user_data.get("role") != "admin":
-                db.collection("users").document(user_doc.id).update({"role": "admin"})
-                st.success(f"✅ Admin role updated for {admin_email}")
-            admin_found = True
-
+        user_data = user_doc.to_dict()
+        if user_data.get("role") != "admin":
+        db.collection("users").document(user_doc.id).update({"role": "admin"})
+        st.success(f"✅ Admin role updated for {admin_email}")
+        admin_found = True
+        
         if not admin_found:
-            current_user = st.session_state.get("user")
-            if current_user and current_user.get("email") == admin_email:
-                db.collection("users").document(current_user["id"]).set({
-                    "id": current_user["id"],
-                    "email": admin_email,
-                    "name": current_user.get("name", "Admin"),
-                    "role": "admin",
-                    "created_at": datetime.utcnow(),
-                    "active": True,
-                    "email_verified": True
-                }, merge=True)
-                st.success("✅ Admin user created")
+        current_user = st.session_state.get("user")
+        if current_user and current_user.get("email") == admin_email:
+        db.collection("users").document(current_user["id"]).set({
+        "id": current_user["id"],
+        "email": admin_email,
+        "name": current_user.get("name", "Admin"),
+        "role": "admin",
+        "created_at": datetime.utcnow(),
+        "active": True,
+        "email_verified": True
+        }, merge=True)
+        st.success("✅ Admin user created")
     except Exception as e:
         st.warning(f"Could not verify admin role: {e}")
-
-    st.markdown("""
+        
+        st.markdown("""
         <style>
         [data-testid="stSidebar"] { display: none !important; }
         .block-container { padding-top: 1rem !important; }
         </style>
-    """, unsafe_allow_html=True)
-
-    mobile_layout.apply_mobile_theme()
-    apply_theme()
-    inject_layout_fixes()
-    #render_floating_ai_chat()
-
-    user = get_user()
-
-    if PUBLIC_MODE and not user:
+        """, unsafe_allow_html=True)
+        
+        mobile_layout.apply_mobile_theme()
+        apply_theme()
+        inject_layout_fixes()
+        #render_floating_ai_chat()
+        
+        user = get_user()
+        
+        if PUBLIC_MODE and not user:
         show_landing()
         return
-
-    initialize_event_mode_state()
-
-st.sidebar.markdown("### Debug Info")
-st.sidebar.write("Selected Tab:", st.session_state.get("top_nav"))
-st.sidebar.write("User:", st.session_state.get("user"))
-st.sidebar.write("Event ID:", st.session_state.get("active_event_id"))
-TABS = {
-    "Dashboard": "dashboard",
-    "Events": "events",
-    "Recipes": "recipes",
-    "Ingredients": "ingredients",
-    "Allergies": "allergies",
-    "Historical Menus": "historical_menus",
-    "Upload": "files",
-    "Receipts": "receipts",
-    "Admin Panel": "admin",
-    "Assistant": "assistant"
-}
-visible_tabs = list(TABS.keys())
-user = st.session_state.get("user")
-role = user.get("role", "viewer") if user else "viewer"
-if role != "admin":
-    for admin_tab in ["Admin Panel", "Suggestions", "Bulk Suggestions", "Audit Logs", "PDF Export"]:
+        
+        initialize_event_mode_state()
+        
+        st.sidebar.markdown("### Debug Info")
+        st.sidebar.write("Selected Tab:", st.session_state.get("top_nav"))
+        st.sidebar.write("User:", st.session_state.get("user"))
+        st.sidebar.write("Event ID:", st.session_state.get("active_event_id"))
+        TABS = {
+        "Dashboard": "dashboard",
+        "Events": "events",
+        "Recipes": "recipes",
+        "Ingredients": "ingredients",
+        "Allergies": "allergies",
+        "Historical Menus": "historical_menus",
+        "Upload": "files",
+        "Receipts": "receipts",
+        "Admin Panel": "admin",
+        "Assistant": "assistant"
+        }
+        visible_tabs = list(TABS.keys())
+        user = st.session_state.get("user")
+        role = user.get("role", "viewer") if user else "viewer"
+        if role != "admin":
+        for admin_tab in ["Admin Panel", "Suggestions", "Bulk Suggestions", "Audit Logs", "PDF Export"]:
         if admin_tab in visible_tabs:
-            visible_tabs.remove(admin_tab)
-selected_tab = render_top_navbar(visible_tabs)
+        visible_tabs.remove(admin_tab)
+        selected_tab = render_top_navbar(visible_tabs)
 try:
         render_dashboard(user)
         render_leave_event_button("main")
@@ -238,8 +238,8 @@ try:
         render_admin_panel(user)
         ai_chat_ui()
         st.warning("⚠️ Unknown tab selected.")
-except Exception as e:
-    st.error(f"🚨 Failed to render '{selected_tab}' tab: {e}")
+    except Exception as e:
+        st.error(f"🚨 Failed to render '{selected_tab}' tab: {e}")
         render_leave_event_button("main")
         enhanced_event_ui(user)
         recipes_page()
@@ -250,20 +250,20 @@ except Exception as e:
         receipt_upload_ui(user)
         render_admin_panel(user)
         ai_chat_ui()
-
-def render_upload_tab(user):
-    upload_tab, analytics_tab = st.tabs(["📄 Upload Files", "📊 File Analytics"])
-    with upload_tab:
+        
+        def render_upload_tab(user):
+        upload_tab, analytics_tab = st.tabs(["📄 Upload Files", "📊 File Analytics"])
+        with upload_tab:
         file_manager_ui(user)
-    with analytics_tab:
+        with analytics_tab:
         show_file_analytics()
-
-def render_admin_panel(user):
-    role = get_user_role()
-    if role != "admin":
+        
+        def render_admin_panel(user):
+        role = get_user_role()
+        if role != "admin":
         st.warning("⚠️ Admin access required.")
         return
-    admin_panel_ui()
-
-if __name__ == "__main__":
-    main()
+        admin_panel_ui()
+        
+        if __name__ == "__main__":
+        main()
