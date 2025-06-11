@@ -30,10 +30,8 @@
     const alreadyHandled = localStorage.getItem("mm_token_handled");
 
     if (!alreadyHandled) {
-      console.log("[MM] Checking Firebase redirect result...");
       getRedirectResult(auth)
         .then((result) => {
-          console.log("[MM] Firebase redirect result:", result);
           if (result && result.user) {
             return result.user.getIdToken();
           }
@@ -41,27 +39,18 @@
         })
         .then((token) => {
           const deviceType = detectDeviceType();
-          console.log("[MM] Token acquired:", token);
-          console.log("[MM] Device type:", deviceType);
           localStorage.setItem("mm_token", token);
           localStorage.setItem("mm_device", deviceType);
           localStorage.setItem("mm_token_handled", "true");
-          window.location.href = "/";
+          window.location.href = `https://mountainmedicine.streamlit.app/?token=${token}&device=${deviceType}`;
         })
         .catch((error) => {
           console.error("[MM] Redirect error:", error.code, error.message);
-          document.body.innerHTML += `<p style='color:red'><strong>Redirect error:</strong> ${error.message}</p>`;
         });
-    } else {
-      console.log("[MM] Skipping redirect result — already handled.");
     }
 
     window.startLogin = function () {
-      console.log("[MM] Login button clicked. Calling signInWithRedirect...");
       signInWithRedirect(auth, provider)
-        .then(() => {
-          console.log("[MM] Redirect initiated.");
-        })
         .catch((error) => {
           console.error("[MM] Redirect call failed:", error.code, error.message);
         });
@@ -90,6 +79,5 @@
 <body>
   <h1>Login with Google</h1>
   <button onclick="startLogin()">🔐 Login with Google</button>
-  <p>Console output will reveal login flow status.</p>
 </body>
 </html>
