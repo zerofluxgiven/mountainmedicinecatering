@@ -210,7 +210,6 @@ def main():
         for admin_tab in ["Admin Panel", "Suggestions", "Bulk Suggestions", "Audit Logs", "PDF Export"]:
             if admin_tab in TABS:
                 TABS.pop(admin_tab)
-
     if selected_tab == "Dashboard":
         st.markdown("### ✅ Reached tab rendering phase")
         st.write("Current tab:", selected_tab)
