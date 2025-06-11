@@ -27,32 +27,39 @@
       return /iphone|ipad|android/.test(ua) ? "mobile" : "desktop";
     }
 
-    const alreadyHandled = localStorage.getItem("mm_token_handled");
-
-    if (!alreadyHandled) {
-      getRedirectResult(auth)
-        .then((result) => {
-          if (result && result.user) {
-            return result.user.getIdToken();
-          }
-          throw new Error("No result.user from Firebase redirect.");
-        })
-        .then((token) => {
-          const deviceType = detectDeviceType();
-          localStorage.setItem("mm_token", token);
-          localStorage.setItem("mm_device", deviceType);
-          localStorage.setItem("mm_token_handled", "true");
-          window.location.href = `https://mountainmedicine.streamlit.app/?token=${token}&device=${deviceType}`;
-        })
-        .catch((error) => {
-          console.error("[MM] Redirect error:", error.code, error.message);
-        });
-    }
+    getRedirectResult(auth)
+      .then((result) => {
+        if (result && result.user) {
+          return result.user.getIdToken();
+        } else {
+          console.warn("[MM] No user returned from redirect.");
+        }
+      })
+      .then((token) => {
+        if (!token) return;
+        const deviceType = detectDeviceType();
+        localStorage.setItem("mm_token", token);
+        localStorage.setItem("mm_device", deviceType);
+        localStorage.setItem("mm_token_handled", "true");
+        window.location.href = `https://mountainmedicine.streamlit.app/?token=${token}&device=${deviceType}`;
+      })
+      .catch((error) => {
+        console.error("[MM] Redirect error:", error.code, error.message);
+        const output = document.createElement("p");
+        output.style.color = "red";
+        output.innerHTML = `<strong>Login failed:</strong> ${error.message || "Unknown error"}`;
+        document.body.appendChild(output);
+      });
 
     window.startLogin = function () {
+      console.log("[MM] Initiating redirect to Google...");
       signInWithRedirect(auth, provider)
         .catch((error) => {
-          console.error("[MM] Redirect call failed:", error.code, error.message);
+          console.error("[MM] Redirect initiation failed:", error.code, error.message);
+          const err = document.createElement("p");
+          err.style.color = "red";
+          err.innerText = "Could not redirect to Google login.";
+          document.body.appendChild(err);
         });
     };
   </script>
