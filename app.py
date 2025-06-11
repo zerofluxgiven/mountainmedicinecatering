@@ -227,49 +227,30 @@ if role != "admin":
             visible_tabs.remove(admin_tab)
 selected_tab = render_top_navbar(visible_tabs)
 try:
-    if selected_tab == "Dashboard":
         render_dashboard(user)
-    elif selected_tab == "Events":
         render_leave_event_button("main")
         enhanced_event_ui(user)
-    elif selected_tab == "Recipes":
         recipes_page()
-    elif selected_tab == "Ingredients":
         ingredient_catalogue_ui(user)
-    elif selected_tab == "Allergies":
         allergy_management_ui(user)
-    elif selected_tab == "Historical Menus":
         historical_menus_ui()
-    elif selected_tab == "Upload":
         render_upload_tab(user)
-    elif selected_tab == "Receipts":
         receipt_upload_ui(user)
-    elif selected_tab == "Admin Panel":
         render_admin_panel(user)
-    elif selected_tab == "Assistant":
         ai_chat_ui()
     else:
         st.warning("⚠️ Unknown tab selected.")
 except Exception as e:
     st.error(f"🚨 Failed to render '{selected_tab}' tab: {e}")
-    elif selected_tab == "Events":
         render_leave_event_button("main")
         enhanced_event_ui(user)
-    elif selected_tab == "Recipes":
         recipes_page()
-    elif selected_tab == "Ingredients":
         ingredient_catalogue_ui(user)
-    elif selected_tab == "Allergies":
         allergy_management_ui(user)
-    elif selected_tab == "Historical Menus":
         historical_menus_ui()
-    elif selected_tab == "Upload":
         render_upload_tab(user)
-    elif selected_tab == "Receipts":
         receipt_upload_ui(user)
-    elif selected_tab == "Admin Panel":
         render_admin_panel(user)
-    elif selected_tab == "Assistant":
         ai_chat_ui()
 
 def render_upload_tab(user):
