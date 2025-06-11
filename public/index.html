@@ -27,30 +27,35 @@
       return /iphone|ipad|android/.test(ua) ? "mobile" : "desktop";
     }
 
-    // ⏪ Check for redirect result
-    console.log("[MM] Checking Firebase redirect result...");
-    getRedirectResult(auth)
-      .then((result) => {
-        console.log("[MM] Firebase redirect result:", result);
-        if (result && result.user) {
-          return result.user.getIdToken();
-        }
-        throw new Error("No result.user from Firebase redirect.");
-      })
-      .then((token) => {
-        const deviceType = detectDeviceType();
-        console.log("[MM] Token acquired:", token);
-        console.log("[MM] Device type:", deviceType);
-        localStorage.setItem("mm_token", token);
-        localStorage.setItem("mm_device", deviceType);
-        window.location.href = "/";
-      })
-      .catch((error) => {
-        console.error("[MM] Redirect error:", error.code, error.message);
-        document.body.innerHTML += `<p style='color:red'><strong>Redirect error:</strong> ${error.message}</p>`;
-      });
+    const alreadyHandled = localStorage.getItem("mm_token_handled");
 
-    // 🧠 Explicit button-based login trigger
+    if (!alreadyHandled) {
+      console.log("[MM] Checking Firebase redirect result...");
+      getRedirectResult(auth)
+        .then((result) => {
+          console.log("[MM] Firebase redirect result:", result);
+          if (result && result.user) {
+            return result.user.getIdToken();
+          }
+          throw new Error("No result.user from Firebase redirect.");
+        })
+        .then((token) => {
+          const deviceType = detectDeviceType();
+          console.log("[MM] Token acquired:", token);
+          console.log("[MM] Device type:", deviceType);
+          localStorage.setItem("mm_token", token);
+          localStorage.setItem("mm_device", deviceType);
+          localStorage.setItem("mm_token_handled", "true");
+          window.location.href = "/";
+        })
+        .catch((error) => {
+          console.error("[MM] Redirect error:", error.code, error.message);
+          document.body.innerHTML += `<p style='color:red'><strong>Redirect error:</strong> ${error.message}</p>`;
+        });
+    } else {
+      console.log("[MM] Skipping redirect result — already handled.");
+    }
+
     window.startLogin = function () {
       console.log("[MM] Login button clicked. Calling signInWithRedirect...");
       signInWithRedirect(auth, provider)
