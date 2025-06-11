@@ -176,6 +176,11 @@ def main():
             if admin_tab in visible_tabs:
                 visible_tabs.remove(admin_tab)
 
+    # Safely handle external tab override without rerun
+    next_nav = st.session_state.pop("next_nav", None)
+    if next_nav in visible_tabs:
+        st.session_state["top_nav"] = next_nav
+
     selected_tab = render_top_navbar(visible_tabs)
 
     try:
