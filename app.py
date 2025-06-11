@@ -107,7 +107,12 @@ def handle_auth_routing():
         st.switch_page("/login")
 
     elif "token" in query_params and "user" not in st.session_state:
-        token = query_params["token"][0]
+        token = query_params.get("token")
+        if isinstance(token, list):
+            token = token[0]
+        if not isinstance(token, str) or "." not in token:
+            st.error("Malformed or missing token.")
+            st.stop()
         device = query_params.get("device", ["desktop"])[0]
         st.session_state["device_type"] = device
         st.session_state["mobile_mode"] = (device == "mobile")
