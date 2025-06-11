@@ -256,7 +256,6 @@ def _display_receipts(receipts: list) -> None:
                 try:
                     get_db().collection("receipts").document(receipt['id']).delete()
                     st.success("Receipt deleted")
-                    st.rerun()
                 except Exception as e:
                     st.error(f"Failed to delete: {e}")
 
@@ -301,7 +300,6 @@ def _upload_receipt_section(user: dict) -> None:
                     }
 
                     st.success("✅ Receipt parsed! Review and edit below.")
-                    st.rerun()
 
     if 'parsed_receipt' in st.session_state:
         parsed = st.session_state['parsed_receipt']['parsed_data']
@@ -369,7 +367,6 @@ def _upload_receipt_section(user: dict) -> None:
                     with st.spinner("Re-analyzing..."):
                         new_parsed = _parse_receipt_with_ai(st.session_state['parsed_receipt']['tmp_path'])
                         st.session_state['parsed_receipt']['parsed_data'] = new_parsed
-                        st.rerun()
 
             if save_button:
                 try:
@@ -410,7 +407,6 @@ def _upload_receipt_section(user: dict) -> None:
 
                     st.success("✅ Receipt saved successfully!")
                     st.balloons()
-                    st.rerun()
 
                 except Exception as e:
                     st.error(f"❌ Failed to save receipt: {e}")
