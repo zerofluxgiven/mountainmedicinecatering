@@ -202,18 +202,56 @@ def main():
 
     initialize_event_mode_state()
 
-    selected_tab = render_top_navbar(list(TABS.keys()))
-
-    role = get_user_role(user)
-
-    if role != "admin":
-        for admin_tab in ["Admin Panel", "Suggestions", "Bulk Suggestions", "Audit Logs", "PDF Export"]:
-            if admin_tab in TABS:
-                TABS.pop(admin_tab)
+st.sidebar.markdown("### Debug Info")
+st.sidebar.write("Selected Tab:", st.session_state.get("top_nav"))
+st.sidebar.write("User:", st.session_state.get("user"))
+st.sidebar.write("Event ID:", st.session_state.get("active_event_id"))
+TABS = {
+    "Dashboard": "dashboard",
+    "Events": "events",
+    "Recipes": "recipes",
+    "Ingredients": "ingredients",
+    "Allergies": "allergies",
+    "Historical Menus": "historical_menus",
+    "Upload": "files",
+    "Receipts": "receipts",
+    "Admin Panel": "admin",
+    "Assistant": "assistant"
+}
+visible_tabs = list(TABS.keys())
+user = st.session_state.get("user")
+role = user.get("role", "viewer") if user else "viewer"
+if role != "admin":
+    for admin_tab in ["Admin Panel", "Suggestions", "Bulk Suggestions", "Audit Logs", "PDF Export"]:
+        if admin_tab in visible_tabs:
+            visible_tabs.remove(admin_tab)
+selected_tab = render_top_navbar(visible_tabs)
+try:
     if selected_tab == "Dashboard":
-        st.markdown("### ✅ Reached tab rendering phase")
-        st.write("Current tab:", selected_tab)
         render_dashboard(user)
+    elif selected_tab == "Events":
+        render_leave_event_button("main")
+        enhanced_event_ui(user)
+    elif selected_tab == "Recipes":
+        recipes_page()
+    elif selected_tab == "Ingredients":
+        ingredient_catalogue_ui(user)
+    elif selected_tab == "Allergies":
+        allergy_management_ui(user)
+    elif selected_tab == "Historical Menus":
+        historical_menus_ui()
+    elif selected_tab == "Upload":
+        render_upload_tab(user)
+    elif selected_tab == "Receipts":
+        receipt_upload_ui(user)
+    elif selected_tab == "Admin Panel":
+        render_admin_panel(user)
+    elif selected_tab == "Assistant":
+        ai_chat_ui()
+    else:
+        st.warning("⚠️ Unknown tab selected.")
+except Exception as e:
+    st.error(f"🚨 Failed to render '{selected_tab}' tab: {e}")
     elif selected_tab == "Events":
         render_leave_event_button("main")
         enhanced_event_ui(user)
