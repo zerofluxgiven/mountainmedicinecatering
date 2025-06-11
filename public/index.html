@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
-  <title>Login | Debug Mode</title>
+  <title>Login | Mountain Medicine</title>
   <script type="module">
     import { initializeApp } from "https://www.gstatic.com/firebasejs/10.11.0/firebase-app.js";
     import { getAuth, GoogleAuthProvider, signInWithRedirect, getRedirectResult } from "https://www.gstatic.com/firebasejs/10.11.0/firebase-auth.js";
@@ -27,7 +27,8 @@
       return /iphone|ipad|android/.test(ua) ? "mobile" : "desktop";
     }
 
-    console.log("[MM] Waiting for Firebase redirect result...");
+    // ⏪ Check for redirect result
+    console.log("[MM] Checking Firebase redirect result...");
     getRedirectResult(auth)
       .then((result) => {
         console.log("[MM] Firebase redirect result:", result);
@@ -38,26 +39,52 @@
       })
       .then((token) => {
         const deviceType = detectDeviceType();
-        console.log("[MM] Device type:", deviceType);
         console.log("[MM] Token acquired:", token);
+        console.log("[MM] Device type:", deviceType);
         localStorage.setItem("mm_token", token);
         localStorage.setItem("mm_device", deviceType);
         window.location.href = "/";
       })
       .catch((error) => {
-        console.error("[MM] Firebase redirect error:", error.code, error.message);
-        document.body.innerHTML += `<p style="color: red;"><strong>Redirect error:</strong> ${error.message}</p>`;
+        console.error("[MM] Redirect error:", error.code, error.message);
+        document.body.innerHTML += `<p style='color:red'><strong>Redirect error:</strong> ${error.message}</p>`;
       });
 
-    window.login = function () {
-      console.log("[MM] Initiating login redirect...");
-      signInWithRedirect(auth, provider);
+    // 🧠 Explicit button-based login trigger
+    window.startLogin = function () {
+      console.log("[MM] Login button clicked. Calling signInWithRedirect...");
+      signInWithRedirect(auth, provider)
+        .then(() => {
+          console.log("[MM] Redirect initiated.");
+        })
+        .catch((error) => {
+          console.error("[MM] Redirect call failed:", error.code, error.message);
+        });
     };
   </script>
+  <style>
+    body {
+      font-family: sans-serif;
+      text-align: center;
+      padding-top: 4em;
+    }
+    button {
+      padding: 1em 2em;
+      font-size: 1.2em;
+      background: #6C4AB6;
+      color: white;
+      border: none;
+      border-radius: 8px;
+      cursor: pointer;
+    }
+    button:hover {
+      background: #563a9d;
+    }
+  </style>
 </head>
 <body>
   <h1>Login with Google</h1>
-  <button onclick="login()">Start Login</button>
-  <p id="status">Logging status will appear in console.</p>
+  <button onclick="startLogin()">🔐 Login with Google</button>
+  <p>Console output will reveal login flow status.</p>
 </body>
 </html>
