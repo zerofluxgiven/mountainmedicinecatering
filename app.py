@@ -122,7 +122,7 @@ def handle_auth_routing():
             st.session_state["user"] = user  # ✅ Ensure session holds user
             st.toast(f"Welcome {user.get('name', 'back')} 👋")
             log_user_action(user.get("id", "unknown"), user.get("role", "viewer"), "login")
-            st.experimental_set_query_params()  # ✅ Clear token from URL without rerun
+            st.query_params.clear()  # safely clears URL without rerun  # ✅ Clear token from URL without rerun
         else:
             st.error("Login failed. Invalid or expired token.")
             st.stop()
