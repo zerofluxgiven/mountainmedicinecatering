@@ -1,4 +1,3 @@
-# ✅ FINAL PATCHED app.py (persistent login without rerun)
 import streamlit as st
 
 # ✅ Correct Streamlit config placed immediately after import
@@ -39,7 +38,6 @@ from recipes import recipes_page
 from admin_utilities import admin_utilities_ui
 from historical_menus import historical_menus_ui
 
-# ⚙️ Config
 PUBLIC_MODE = False
 
 TABS = {
@@ -88,7 +86,6 @@ import streamlit.components.v1 as components
 def handle_auth_routing():
     query_params = st.query_params
 
-    # 🔍 Fallback to localStorage if token/device not passed via query
     if "token" not in query_params:
         components.html('''
             <script>
@@ -102,7 +99,10 @@ def handle_auth_routing():
 
     if query_params.get("logout") == ["true"]:
         log_user_action("logout")
+        keys_to_preserve = ["top_nav"]
+        preserved = {k: st.session_state[k] for k in keys_to_preserve if k in st.session_state}
         st.session_state.clear()
+        st.session_state.update(preserved)
         st.toast("You have been logged out")
         st.switch_page("/login")
 
@@ -119,35 +119,38 @@ def handle_auth_routing():
 
         user = enrich_session_from_token(token)
         if user:
-            st.session_state["user"] = user  # ✅ Ensure session holds user
+            st.session_state["user"] = user
             st.toast(f"Welcome {user.get('name', 'back')} 👋")
             log_user_action(user.get("id", "unknown"), user.get("role", "viewer"), "login")
-            st.query_params.clear()  # safely clears URL without rerun  # ✅ Clear token from URL without rerun
+            st.query_params.clear()
         else:
             st.error("Login failed. Invalid or expired token.")
             st.stop()
 
     elif not get_user():
-        st.stop()
+        st.title("🔐 Login Required")
+        st.warning("Please log in to continue.")
+        return
 
 def main():
     handle_auth_routing()
     from firebase_init import db, firestore
 
-    for key, default in {
-        "top_nav": None,
+    default_state = {
+        "top_nav": "Dashboard",
         "next_nav": None,
         "active_event": None,
         "active_event_id": None,
         "recent_event_id": None,
-        "user": None,
         "editing_event_id": None,
         "editing_menu_event_id": None,
         "viewing_menu_event_id": None,
         "show_menu_form": False,
         "current_file_data": b"",
         "mobile_detected": st.session_state.get("mobile_mode", False),
-    }.items():
+    }
+
+    for key, default in default_state.items():
         if key not in st.session_state:
             st.session_state[key] = default
 
@@ -160,7 +163,7 @@ def main():
             user_data = user_doc.to_dict()
             if user_data.get("role") != "admin":
                 db.collection("users").document(user_doc.id).update({"role": "admin"})
-                st.success("✅ Admin role updated for mistermcfarland@gmail.com")
+                st.success(f"✅ Admin role updated for {admin_email}")
             admin_found = True
 
         if not admin_found:
@@ -197,96 +200,38 @@ def main():
         show_landing()
         return
 
-    if not user:
-        st.title("🔐 Login Required")
-        st.markdown("Please log in to access Mountain Medicine Catering.")
-        login_url = st.secrets.get("auth", {}).get("login_url", "")
-        if login_url:
-            st.markdown(f"""
-                <div style="text-align:center; margin-top:2em;">
-                    <a href="{login_url}">
-                        <button style="font-size: 1.1rem; padding: 0.6em 1.5em; background: #6C4AB6; color: white; border: none; border-radius: 8px;">Login with Google</button>
-                    </a>
-                </div>
-            """, unsafe_allow_html=True)
-        else:
-            st.error("No login URL configured. Please set `auth.login_url` in secrets.toml.")
-        return
-
     initialize_event_mode_state()
 
-    if st.session_state.get("top_nav") is None:
-        st.session_state["top_nav"] = "Dashboard"
+    selected_tab = render_top_navbar(list(TABS.keys()))
 
     role = get_user_role(user)
-    visible_tabs = list(TABS.keys())
-    selected_tab = render_top_navbar(visible_tabs)
 
     if role != "admin":
         for admin_tab in ["Admin Panel", "Suggestions", "Bulk Suggestions", "Audit Logs", "PDF Export"]:
-            if admin_tab in visible_tabs:
-                visible_tabs.remove(admin_tab)
+            if admin_tab in TABS:
+                TABS.pop(admin_tab)
 
     if selected_tab == "Dashboard":
-        try:
-            render_dashboard(user)
-        except Exception as e:
-            st.error(f"Dashboard tab crashed: {e}")
-
+        render_dashboard(user)
     elif selected_tab == "Events":
-        try:
-            render_leave_event_button("main")
-            enhanced_event_ui(user)
-        except Exception as e:
-            st.error(f"Events tab crashed: {e}")
-
+        render_leave_event_button("main")
+        enhanced_event_ui(user)
     elif selected_tab == "Recipes":
-        try:
-            recipes_page()
-        except Exception as e:
-            st.error(f"Recipes tab crashed: {e}")
-
+        recipes_page()
     elif selected_tab == "Ingredients":
-        try:
-            ingredient_catalogue_ui(user)
-        except Exception as e:
-            st.error(f"Ingredients tab crashed: {e}")
-
+        ingredient_catalogue_ui(user)
     elif selected_tab == "Allergies":
-        try:
-            allergy_management_ui(user)
-        except Exception as e:
-            st.error(f"Allergies tab crashed: {e}")
-
+        allergy_management_ui(user)
     elif selected_tab == "Historical Menus":
-        try:
-            historical_menus_ui()
-        except Exception as e:
-            st.error(f"Historical Menus tab crashed: {e}")
-
+        historical_menus_ui()
     elif selected_tab == "Upload":
-        try:
-            render_upload_tab(user)
-        except Exception as e:
-            st.error(f"Upload tab crashed: {e}")
-
+        render_upload_tab(user)
     elif selected_tab == "Receipts":
-        try:
-            receipt_upload_ui(user)
-        except Exception as e:
-            st.error(f"Receipts tab crashed: {e}")
-
+        receipt_upload_ui(user)
     elif selected_tab == "Admin Panel":
-        try:
-            render_admin_panel(user)
-        except Exception as e:
-            st.error(f"Admin Panel tab crashed: {e}")
-
+        render_admin_panel(user)
     elif selected_tab == "Assistant":
-        try:
-            ai_chat_ui()
-        except Exception as e:
-            st.error(f"Assistant tab crashed: {e}")
+        ai_chat_ui()
 
 def render_upload_tab(user):
     upload_tab, analytics_tab = st.tabs(["📄 Upload Files", "📊 File Analytics"])
