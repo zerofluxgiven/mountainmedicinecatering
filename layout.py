@@ -777,6 +777,7 @@ def render_top_navbar(tabs):
     current_tab = st.session_state.get("top_nav", default_tab)
 
     if current_tab not in tabs:
+        current_tab = tabs[0] if tabs else "Dashboard"
         current_tab = default_tab
         st.session_state["top_nav"] = current_tab
 
