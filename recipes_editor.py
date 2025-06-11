@@ -77,7 +77,6 @@ def recipe_editor_ui(recipe_id=None):
             }
             doc_ref.update({"variants": firestore.ArrayUnion([variant])})
             st.success("Variant added.")
-            st.experimental_rerun()
 
         submitted = st.form_submit_button("🗕 Save Changes")
         if submitted:
