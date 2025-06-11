@@ -4,15 +4,10 @@
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
   <title>Login | Mountain Medicine</title>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600&display=swap" rel="stylesheet">
   <script type="module">
     import { initializeApp } from "https://www.gstatic.com/firebasejs/10.11.0/firebase-app.js";
-    import {
-      getAuth,
-      GoogleAuthProvider,
-      signInWithRedirect,
-      getRedirectResult,
-      signOut
-    } from "https://www.gstatic.com/firebasejs/10.11.0/firebase-auth.js";
+    import { getAuth, GoogleAuthProvider, signInWithRedirect, getRedirectResult } from "https://www.gstatic.com/firebasejs/10.11.0/firebase-auth.js";
 
     const firebaseConfig = {
       apiKey: "AIzaSyBSpwzSf8hXxb4rBk-u8JPyX7Ha4kGoS8o",
@@ -33,17 +28,10 @@
       return /iphone|ipad|android/.test(ua) ? "mobile" : "desktop";
     }
 
-    console.log("[MM] Checking redirect result...");
-    console.log("[MM] sessionStorage keys before:", Object.keys(sessionStorage));
-    console.log("[MM] localStorage keys before:", Object.keys(localStorage));
-
     getRedirectResult(auth)
       .then((result) => {
         if (result && result.user) {
-          console.log("[MM] Firebase user object:", result.user);
           return result.user.getIdToken();
-        } else {
-          console.warn("[MM] No user returned from redirect.");
         }
       })
       .then((token) => {
@@ -52,68 +40,94 @@
         localStorage.setItem("mm_token", token);
         localStorage.setItem("mm_device", deviceType);
         localStorage.setItem("mm_token_handled", "true");
-        console.log("[MM] Token acquired:", token);
         window.location.href = `https://mountainmedicine.streamlit.app/?token=${token}&device=${deviceType}`;
       })
-      .catch((error) => {
-        console.error("[MM] Redirect error:", error.code, error.message);
-        const output = document.createElement("p");
-        output.style.color = "red";
-        output.innerHTML = `<strong>Login failed:</strong> ${error.message || "Unknown error"}`;
-        document.body.appendChild(output);
+      .catch(() => {
+        // Silent fail
       });
 
-    window.startLogin = function () {
-      console.log("[MM] Initiating Google sign-in with redirect...");
-      signInWithRedirect(auth, provider).catch((error) => {
-        console.error("[MM] Redirect initiation failed:", error.code, error.message);
-        alert("Redirect failed: " + error.message);
-      });
-    };
-
-    window.resetLogin = function () {
-      console.log("[MM] Resetting login state...");
-      sessionStorage.clear();
-      localStorage.removeItem("mm_token");
-      localStorage.removeItem("mm_device");
-      localStorage.removeItem("mm_token_handled");
-      signOut(auth).then(() => {
-        location.reload();
-      });
-    };
+    window.login = function () {
+      signInWithRedirect(auth, provider);
+    }
   </script>
   <style>
-    body {
-      font-family: sans-serif;
-      text-align: center;
-      padding-top: 4em;
+    :root {
+      --purple: #6C4AB6;
+      --light-purple: #B8A4D4;
+      --bg: #f9f9fb;
+      --text: #222;
     }
-    button {
-      padding: 1em 2em;
-      font-size: 1.2em;
-      margin: 0.5em;
+
+    body {
+      margin: 0;
+      padding: 0;
+      font-family: 'Inter', sans-serif;
+      background: var(--bg);
+      color: var(--text);
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      height: 100vh;
+      text-align: center;
+    }
+
+    h1 {
+      font-size: 2rem;
+      margin-bottom: 0.5rem;
+    }
+
+    p {
+      margin-top: 0;
+      color: #555;
+      font-size: 1rem;
+    }
+
+    .login-box {
+      background: white;
+      border-radius: 16px;
+      padding: 2rem;
+      box-shadow: 0 4px 12px rgba(0,0,0,0.08);
+      max-width: 360px;
+      width: 90%;
+    }
+
+    .login-button {
+      background: var(--purple);
+      color: white;
       border: none;
       border-radius: 8px;
+      padding: 0.75rem 1.5rem;
+      font-size: 1rem;
+      font-weight: 600;
       cursor: pointer;
+      margin-top: 1.5rem;
     }
-    .login-button {
-      background: #6C4AB6;
-      color: white;
-    }
+
     .login-button:hover {
-      background: #563a9d;
+      background: var(--light-purple);
     }
-    .reset-button {
-      background: #ccc;
+
+    .logo {
+      font-size: 3rem;
+      margin-bottom: 1rem;
     }
-    .reset-button:hover {
-      background: #bbb;
+
+    footer {
+      position: absolute;
+      bottom: 1rem;
+      font-size: 0.8rem;
+      color: #999;
     }
   </style>
 </head>
 <body>
-  <h1>Login with Google</h1>
-  <button class="login-button" onclick="startLogin()">🔐 Login with Google</button>
-  <button class="reset-button" onclick="resetLogin()">🧹 Reset Login State</button>
+  <div class="login-box">
+    <div class="logo">⛰️</div>
+    <h1>Mountain Medicine</h1>
+    <p>Bringing humanity closer through man's original primal ceremony.</p>
+    <button class="login-button" onclick="login()">🔐 Login with Google</button>
+  </div>
+  <footer>&copy; 2025 Mountain Medicine</footer>
 </body>
 </html>
