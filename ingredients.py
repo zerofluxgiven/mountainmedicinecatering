@@ -371,8 +371,7 @@ def _ingredient_search_tab():
                             with col1:
                                 if st.button("View Recipe", key=f"view_recipe_{recipe['id']}"):
                                     st.session_state["selected_recipe"] = recipe['id']
-                                    st.session_state["top_nav"] = "Recipes"
-                                    st.rerun()
+                                    st.session_state["next_nav"] = "Recipes"
                 else:
                     st.info(f"No recipes found with {selected_ingredient['name']}")
         else:
@@ -452,7 +451,6 @@ def _parse_recipes_tab(user: dict):
                             if st.button("💾 Save Parsed Data"):
                                 if update_recipe_with_parsed_ingredients(selected_recipe['id'], parsed):
                                     st.success("✅ Recipe updated with parsed ingredients!")
-                                    st.rerun()
                         else:
                             st.warning("No ingredients could be parsed")
         
@@ -496,7 +494,6 @@ def _show_ingredient_details(ingredient: Dict):
                     'substitutes': current_subs
                 })
                 st.success("Substitute added!")
-                st.rerun()
             except Exception as e:
                 st.error(f"Failed to add substitute: {e}")
 
