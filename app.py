@@ -107,16 +107,16 @@ def handle_auth_routing():
     query_params = st.query_params
 
     if "token" not in query_params:
-        components.html('''
+components.html("""
         st.stop()
-        components.html('''
+components.html("""
         <script>
         const token = localStorage.getItem("mm_token") || "";
         const device = localStorage.getItem("mm_device") || "desktop";
         const query = `?token=${token}&device=${device}`;
         if (token) window.location.href = window.location.pathname + query;
         </script>
-        ''', height=0)
+        """, height=0)
 
     if query_params.get("logout") == ["true"]:
         log_user_action("logout")
