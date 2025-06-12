@@ -264,7 +264,6 @@ def event_ui(user: dict | None) -> None:
                     event_id = create_event(event_data, user["id"])
                     if event_id:
                         st.success(f"✅ Event created: {name}")
-                        st.rerun()
 
     st.markdown("---")
     
@@ -329,9 +328,8 @@ def event_ui(user: dict | None) -> None:
             with col2:
                 if st.button("Edit", key=f"edit_{event['id']}"):
                     st.session_state["editing_event_id"] = event["id"]
-                    st.session_state["top_nav"] = "Events"  # force tab to stay
+                    st.session_state["next_nav"] = "Events"  # force tab to stay
                     st.session_state["show_event_dashboard"] = True
-                    st.rerun() 
                                         
             with col3:
                 # Only allow deletion by creator or admin
@@ -346,7 +344,6 @@ def event_ui(user: dict | None) -> None:
                             if delete_event(event["id"]):
                                 st.success("Event deleted")
                                 st.session_state[confirm_key] = False
-                                st.rerun()
                         else:
                             st.session_state[confirm_key] = True
                             st.warning("Click Delete again to confirm")
@@ -358,7 +355,6 @@ def event_ui(user: dict | None) -> None:
                 if current_status == 'active':
                      if st.button("Complete Event", key=f"complete_{event['id']}"):
                          if complete_event_and_end_sessions(event["id"]):
-                              st.rerun()
 
     if st.session_state.get("show_event_dashboard"):
         from event_planning_dashboard import event_planning_dashboard
