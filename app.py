@@ -115,13 +115,6 @@ components.html("""
         if (token) window.location.href = window.location.pathname + query;
         </script>
         """, height=0)
-        <script>
-        const token = localStorage.getItem("mm_token") || "";
-        const device = localStorage.getItem("mm_device") || "desktop";
-        const query = `?token=${token}&device=${device}`;
-        if (token) window.location.href = window.location.pathname + query;
-        </script>
-        """, height=0)
 
     if query_params.get("logout") == ["true"]:
         log_user_action("logout")
