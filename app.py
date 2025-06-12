@@ -7,7 +7,6 @@ st.set_page_config(
     initial_sidebar_state="collapsed"
 )
 
-# 🔧 Patch: Hide radio label gap globally
 st.markdown("""
 <style>
 div[data-testid='stRadio'] > label {
@@ -15,19 +14,18 @@ div[data-testid='stRadio'] > label {
 }
 </style>
 """, unsafe_allow_html=True)
+import streamlit.components.v1 as components
 
-# 🔁 Force login retry if no session and localStorage token is present
-st.markdown("""
+components.html("""
 <script>
-  const token = localStorage.getItem("mm_token") || "";
-  const device = localStorage.getItem("mm_device") || "desktop";
+  const token = localStorage.getItem('mm_token') || "";
+  const device = localStorage.getItem('mm_device') || "desktop";
   const query = `?token=${token}&device=${device}`;
   if (!window.location.search.includes("token=") && token) {
     window.location.href = window.location.pathname + query;
   }
 </script>
-""", unsafe_allow_html=True)
-
+""", height=0)
 from auth import get_user, get_user_role
 from user_session_initializer import enrich_session_from_token
 from dashboard import render_dashboard
@@ -107,14 +105,17 @@ def handle_auth_routing():
     query_params = st.query_params
 
     if "token" not in query_params:
-components.html("""
+        components.html('''
+        st.stop()
         <script>
         const token = localStorage.getItem("mm_token") || "";
         const device = localStorage.getItem("mm_device") || "desktop";
         const query = `?token=${token}&device=${device}`;
         if (token) window.location.href = window.location.pathname + query;
         </script>
-        """, height=0)
+        ''', height=0)
+        pass
+        return
 
     if query_params.get("logout") == ["true"]:
         log_user_action("logout")
@@ -131,6 +132,7 @@ components.html("""
             token = token[0]
         if not isinstance(token, str) or "." not in token:
             st.error("Malformed or missing token.")
+            return
         device = query_params.get("device", ["desktop"])[0]
         st.session_state["device_type"] = device
         st.session_state["mobile_mode"] = (device == "mobile")
@@ -143,10 +145,12 @@ components.html("""
             st.query_params.clear()
         else:
             st.error("Login failed. Invalid or expired token.")
+            return
 
     elif not get_user():
         st.title("🔐 Login Required")
         st.warning("Please log in to continue.")
+        return
 
 def validate_tab_state(visible_tabs):
     if "top_nav" not in st.session_state or st.session_state["top_nav"] not in visible_tabs:
@@ -159,6 +163,7 @@ def main():
     handle_auth_routing()
     if not get_user():
         st.error("🚫 Login failed or not completed. Please refresh or reauthenticate.")
+        return
 
     from firebase_init import db, firestore
 
@@ -186,6 +191,7 @@ def main():
 
     if PUBLIC_MODE and not user:
         show_landing()
+        return
 
     initialize_event_mode_state()
 
@@ -256,6 +262,7 @@ def render_admin_panel(user):
     role = get_user_role()
     if role != "admin":
         st.warning("Access denied. Admins only.")
+        return
     admin_panel_ui()
 
 if __name__ == "__main__":
