@@ -94,7 +94,8 @@ def handle_auth_routing():
         if (token) window.location.href = window.location.pathname + query;
         </script>
         ''', height=0)
-        st.stop()
+        st.warning("🔁 Attempting auto-login...")
+        return
 
     if query_params.get("logout") == ["true"]:
         log_user_action("logout")
@@ -111,7 +112,7 @@ def handle_auth_routing():
             token = token[0]
         if not isinstance(token, str) or "." not in token:
             st.error("Malformed or missing token.")
-            st.stop()
+            return
         device = query_params.get("device", ["desktop"])[0]
         st.session_state["device_type"] = device
         st.session_state["mobile_mode"] = (device == "mobile")
@@ -124,7 +125,7 @@ def handle_auth_routing():
             st.query_params.clear()
         else:
             st.error("Login failed. Invalid or expired token.")
-            st.stop()
+            return
 
     elif not get_user():
         st.title("🔐 Login Required")
@@ -140,6 +141,10 @@ def validate_tab_state(visible_tabs):
 
 def main():
     handle_auth_routing()
+    if not get_user():
+        st.error("🚫 Login failed or not completed. Please refresh or reauthenticate.")
+        return
+
     from firebase_init import db, firestore
 
     default_state = {
