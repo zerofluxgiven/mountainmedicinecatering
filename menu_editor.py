@@ -13,8 +13,7 @@ def full_menu_editor_ui(event_id=None):
 
     # Shortcut to historical menu viewer
     if st.button("📜 View Historical Menus"):
-        st.session_state["top_nav"] = "Historical Menus"
-        st.experimental_rerun()
+        st.session_state["next_nav"] = "Historical Menus"
 
     user_id = get_user_id()
     if not event_id:
@@ -93,7 +92,6 @@ def full_menu_editor_ui(event_id=None):
             "updated_by": user_id
         })
         st.success("✅ Menu saved successfully!")
-        st.rerun()
 
 # ----------------------------
 # 🔧 Helpers
