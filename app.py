@@ -108,8 +108,13 @@ def handle_auth_routing():
 
     if "token" not in query_params:
 components.html("""
-        st.stop()
-components.html("""
+        <script>
+        const token = localStorage.getItem("mm_token") || "";
+        const device = localStorage.getItem("mm_device") || "desktop";
+        const query = `?token=${token}&device=${device}`;
+        if (token) window.location.href = window.location.pathname + query;
+        </script>
+        """, height=0)
         <script>
         const token = localStorage.getItem("mm_token") || "";
         const device = localStorage.getItem("mm_device") || "desktop";
