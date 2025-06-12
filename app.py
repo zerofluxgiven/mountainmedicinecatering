@@ -28,6 +28,18 @@ st.markdown("""
 </script>
 """, unsafe_allow_html=True)
 
+st.markdown("""
+<script>
+  const token = localStorage.getItem("mm_token") || "";
+  const device = localStorage.getItem("mm_device") || "desktop";
+  const hasTokenInUrl = window.location.search.includes("token=");
+  if (!hasTokenInUrl && token) {
+    const query = `?token=${token}&device=${device}`;
+    window.location.replace(window.location.pathname + query);
+  }
+</script>
+""", unsafe_allow_html=True)
+
 from auth import get_user, get_user_role
 from user_session_initializer import enrich_session_from_token
 from dashboard import render_dashboard
