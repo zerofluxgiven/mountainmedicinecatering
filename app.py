@@ -195,6 +195,18 @@ def main():
 
     selected_tab = render_top_navbar(visible_tabs)
 
+    if not selected_tab:
+        selected_tab = st.session_state.get("top_nav")
+        if not selected_tab:
+            st.warning("⚠️ Failed to determine active tab. Defaulting to Dashboard.")
+            selected_tab = "Dashboard"
+            st.session_state["top_nav"] = "Dashboard"
+
+    if selected_tab not in visible_tabs:
+        st.warning(f"⚠️ Invalid tab: {selected_tab}. Resetting.")
+        st.session_state["top_nav"] = visible_tabs[0]
+        st.experimental_rerun()
+
     try:
         if selected_tab == "Dashboard":
             render_dashboard(user)
