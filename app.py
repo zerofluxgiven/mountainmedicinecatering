@@ -131,6 +131,13 @@ def handle_auth_routing():
         st.warning("Please log in to continue.")
         return
 
+def validate_tab_state(visible_tabs):
+    if "top_nav" not in st.session_state or st.session_state["top_nav"] not in visible_tabs:
+        if visible_tabs:
+            st.session_state["top_nav"] = visible_tabs[0]
+        else:
+            st.session_state["top_nav"] = "Dashboard"
+
 def main():
     handle_auth_routing()
     from firebase_init import db, firestore
@@ -155,7 +162,6 @@ def main():
 
     apply_theme()
     inject_layout_fixes()
-    # render_floating_ai_chat()  # optional
     user = get_user()
 
     if PUBLIC_MODE and not user:
@@ -176,10 +182,11 @@ def main():
             if admin_tab in visible_tabs:
                 visible_tabs.remove(admin_tab)
 
-    # Safely handle external tab override without rerun
     next_nav = st.session_state.pop("next_nav", None)
     if next_nav in visible_tabs:
         st.session_state["top_nav"] = next_nav
+
+    validate_tab_state(visible_tabs)
 
     selected_tab = render_top_navbar(visible_tabs)
 
