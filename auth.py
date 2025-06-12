@@ -4,6 +4,7 @@ from firebase_admin import auth as admin_auth
 from firebase_init import db
 from utils import session_get, session_set
 from datetime import datetime
+from streamlit.runtime.secrets import secrets
 
 # ----------------------------
 # 🔐 Session Helpers
@@ -72,6 +73,54 @@ def authenticate_user(token: str):
     except Exception as e:
         logging.exception(f"Failed to verify token: {e}")
         raise
+
+# ----------------------------
+# ✅ ENRICH AND REGISTER SESSION USER
+# ----------------------------
+
+def enrich_session_from_token(token: str) -> dict | None:
+    try:
+        decoded_token = admin_auth.verify_id_token(token)
+        user_id = decoded_token["uid"]
+        email = decoded_token.get("email", "").lower()
+        email_verified = decoded_token.get("email_verified", False)
+
+        st.session_state["_auth_debug"] = {
+            "decoded_uid": user_id,
+            "email": email,
+            "verified": email_verified,
+            "timestamp": str(datetime.utcnow())
+        }
+
+        doc_ref = db.collection("users").document(user_id)
+        doc = doc_ref.get()
+
+        if doc.exists:
+            user_data = doc.to_dict()
+            st.session_state["_auth_debug"]["found_in_firestore"] = True
+            st.session_state["_auth_debug"]["role"] = user_data.get("role", "none")
+            return user_data
+
+        # Not in DB → create new user
+        is_admin = email == secrets.get("admin", {}).get("email", "").lower()
+        user_data = {
+            "id": user_id,
+            "email": email,
+            "created_at": datetime.utcnow(),
+            "role": "admin" if is_admin else "viewer",
+            "active": True,
+            "email_verified": email_verified
+        }
+        doc_ref.set(user_data)
+
+        st.session_state["_auth_debug"]["created_new_user"] = True
+        st.session_state["_auth_debug"]["assigned_role"] = user_data["role"]
+        return user_data
+
+    except Exception as e:
+        st.session_state["_auth_debug"] = {"error": str(e), "timestamp": str(datetime.utcnow())}
+        print(f"[Auth] Token enrichment failed: {e}")
+        return None
 
 # ----------------------------
 # 🔁 Firebase User Sync Tool
