@@ -94,7 +94,7 @@ def handle_auth_routing():
         if (token) window.location.href = window.location.pathname + query;
         </script>
         ''', height=0)
-        st.warning("🔁 Attempting auto-login...")
+        pass
         return
 
     if query_params.get("logout") == ["true"]:
