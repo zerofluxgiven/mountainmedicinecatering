@@ -7,39 +7,6 @@ st.set_page_config(
     initial_sidebar_state="collapsed"
 )
 
-# 🔧 Patch: Hide radio label gap globally
-st.markdown("""
-<style>
-div[data-testid='stRadio'] > label {
-    display: none;
-}
-</style>
-""", unsafe_allow_html=True)
-
-# 🔁 Force login retry if no session and localStorage token is present
-st.markdown("""
-<script>
-  const token = localStorage.getItem("mm_token") || "";
-  const device = localStorage.getItem("mm_device") || "desktop";
-  const query = `?token=${token}&device=${device}`;
-  if (!window.location.search.includes("token=") && token) {
-    window.location.href = window.location.pathname + query;
-  }
-</script>
-""", unsafe_allow_html=True)
-
-st.markdown("""
-<script>
-  const token = localStorage.getItem("mm_token") || "";
-  const device = localStorage.getItem("mm_device") || "desktop";
-  const hasTokenInUrl = window.location.search.includes("token=");
-  if (!hasTokenInUrl && token) {
-    const query = `?token=${token}&device=${device}`;
-    window.location.replace(window.location.pathname + query);
-  }
-</script>
-""", unsafe_allow_html=True)
-
 from auth import get_user, get_user_role
 from user_session_initializer import enrich_session_from_token
 from dashboard import render_dashboard
