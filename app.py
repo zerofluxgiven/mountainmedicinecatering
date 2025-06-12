@@ -479,7 +479,7 @@ def main():
 
     except Exception as e:
 
-        st.error(f"🚨 Failed to render '{selected_tab}' tab: {e}")
+        st.error(f"🚨 Failed to render '{selected_tab}' tab: {e}")More actions
 
 
 
