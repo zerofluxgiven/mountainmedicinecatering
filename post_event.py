@@ -79,7 +79,6 @@ def _show_completed_events_list(user: dict) -> None:
                 
                 if st.button(f"Provide Feedback", key=f"feedback_{event['id']}"):
                     st.session_state["post_event_selected"] = event['id']
-                    st.rerun()
     
     # Show events with existing feedback
     if events_with_feedback:
@@ -97,7 +96,6 @@ def _show_completed_events_list(user: dict) -> None:
                 with col1:
                     if st.button(f"View/Edit Feedback", key=f"edit_{event['id']}"):
                         st.session_state["post_event_selected"] = event['id']
-                        st.rerun()
                 
                 with col2:
                     if st.button(f"📄 Download PDF", key=f"pdf_{event['id']}"):
@@ -234,7 +232,6 @@ def _render_post_event_form(event_id: str, event_data: dict, user: dict) -> None
                     if st.button("🔄 Continue to Another Event"):
                         if "post_event_selected" in st.session_state:
                             del st.session_state["post_event_selected"]
-                        st.rerun()
                 
             except Exception as e:
                 st.error(f"❌ Failed to save post-event summary: {e}")
