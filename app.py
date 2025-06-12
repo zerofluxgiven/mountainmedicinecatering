@@ -16,6 +16,18 @@ div[data-testid="stRadio"] > label {
 </style>
 """, unsafe_allow_html=True)
 
+# 🔁 Force login retry if no session and localStorage token is present
+st.markdown("""
+<script>
+  const token = localStorage.getItem("mm_token") || "";
+  const device = localStorage.getItem("mm_device") || "desktop";
+  const query = `?token=${token}&device=${device}`;
+  if (!window.location.search.includes("token=") && token) {
+    window.location.href = window.location.pathname + query;
+  }
+</script>
+""", unsafe_allow_html=True)
+
 from auth import get_user, get_user_role
 from user_session_initializer import enrich_session_from_token
 from dashboard import render_dashboard
