@@ -355,6 +355,7 @@ def event_ui(user: dict | None) -> None:
                 if current_status == 'active':
                      if st.button("Complete Event", key=f"complete_{event['id']}"):
                          if complete_event_and_end_sessions(event["id"]):
+                            st.success("✅ Event marked as complete.")
 
     if st.session_state.get("show_event_dashboard"):
         from event_planning_dashboard import event_planning_dashboard
