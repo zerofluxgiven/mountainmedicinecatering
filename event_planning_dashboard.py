@@ -182,7 +182,6 @@ def event_planning_dashboard_ui(event_id):
                     st.success("✅ Event details updated successfully!")
                     # Reset form state to show updated values
                     st.session_state[f"{form_key}_initialized"] = False
-                    st.rerun()
 
     # Separate sections for different components
     st.markdown("---")
@@ -264,7 +263,6 @@ def _render_quick_menu_form(event_id: str, user: dict):
                         db.collection("menus").document(menu_id).set(menu_data)
                         st.success(f"✅ Added: {name}")
                         st.session_state["show_menu_form"] = False
-                        st.rerun()
                         
                     except Exception as e:
                         st.error(f"Failed to add menu item: {e}")
@@ -272,7 +270,6 @@ def _render_quick_menu_form(event_id: str, user: dict):
         with col2:
             if st.form_submit_button("Cancel"):
                 st.session_state["show_menu_form"] = False
-                st.rerun()
 
 # ----------------------------
 # 🛒 Shopping List Editor - FIXED
@@ -309,7 +306,6 @@ def _render_shopping_list_editor(event_id):
                 if new_state != current_state:
                     try:
                         shopping_ref.document(item['id']).update({"purchased": new_state})
-                        st.rerun()
                     except Exception as e:
                         st.error(f"Failed to update: {e}")
             with col4:
@@ -317,7 +313,6 @@ def _render_shopping_list_editor(event_id):
                     try:
                         shopping_ref.document(item['id']).delete()
                         st.success("Item deleted")
-                        st.rerun()
                     except Exception as e:
                         st.error(f"Failed to delete: {e}")
     
@@ -351,7 +346,6 @@ def _render_shopping_list_editor(event_id):
                         "created_at": datetime.utcnow()
                     })
                     st.success(f"Added: {item_name}")
-                    st.rerun()
                 except Exception as e:
                     st.error(f"Failed to add item: {e}")
 
@@ -390,7 +384,6 @@ def _render_equipment_list_editor(event_id):
                 if new_state != current_state:
                     try:
                         equipment_ref.document(item['id']).update({"packed": new_state})
-                        st.rerun()
                     except Exception as e:
                         st.error(f"Failed to update: {e}")
             with col4:
@@ -398,7 +391,6 @@ def _render_equipment_list_editor(event_id):
                     try:
                         equipment_ref.document(item['id']).delete()
                         st.success("Equipment removed")
-                        st.rerun()
                     except Exception as e:
                         st.error(f"Failed to delete: {e}")
     
@@ -429,7 +421,6 @@ def _render_equipment_list_editor(event_id):
                         "created_at": datetime.utcnow()
                     })
                     st.success(f"Added: {equipment_name}")
-                    st.rerun()
                 except Exception as e:
                     st.error(f"Failed to add equipment: {e}")
 
@@ -464,7 +455,6 @@ def _render_task_list_editor(event_id):
                 if new_state != current_state:
                     try:
                         tasks_ref.document(task['id']).update({"done": new_state})
-                        st.rerun()
                     except Exception as e:
                         st.error(f"Failed to update task: {e}")
             
@@ -473,7 +463,6 @@ def _render_task_list_editor(event_id):
                     try:
                         tasks_ref.document(task['id']).delete()
                         st.success("Task deleted")
-                        st.rerun()
                     except Exception as e:
                         st.error(f"Failed to delete task: {e}")
     
@@ -497,7 +486,6 @@ def _render_task_list_editor(event_id):
                         "created_at": datetime.utcnow()
                     })
                     st.success(f"Added task: {task_label}")
-                    st.rerun()
                 except Exception as e:
                     st.error(f"Failed to add task: {e}")
 
@@ -545,7 +533,6 @@ def _render_allergies_section(event_id, user):
                         try:
                             if delete_allergy(event_id, allergy['id']):
                                 st.success("Allergy removed")
-                                st.rerun()
                         except Exception as e:
                             st.error(f"Failed to delete allergy: {e}")
         else:
@@ -583,15 +570,13 @@ def _render_allergies_section(event_id, user):
                         
                         if add_allergy_to_event(event_id, allergy_data):
                             st.success(f"Added allergy info for {person_name}")
-                            st.rerun()
                     except Exception as e:
                         st.error(f"Failed to add allergy: {e}")
         
         # Link to full allergy management - FIXED
         if st.button("🔍 Advanced Allergy Management", key=f"advanced_allergies_{event_id}"):
             st.session_state["active_event_id"] = event_id
-            st.session_state["top_nav"] = "Allergies"
-            st.rerun()
+            st.session_state["next_nav"] = "Allergies"
             
     except Exception as e:
         st.error(f"Error in allergies section: {e}")
@@ -643,7 +628,6 @@ def _render_file_upload_section(event_id, user):
                     file_id = save_uploaded_file(uploaded_file, event_id, get_user_id(user))
                     if file_id:
                         st.success("File uploaded successfully!")
-                        st.rerun()
                     else:
                         st.error("Failed to upload file")
                 except Exception as e:
