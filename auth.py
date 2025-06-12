@@ -4,7 +4,7 @@ from firebase_admin import auth as admin_auth
 from firebase_init import db
 from utils import session_get, session_set
 from datetime import datetime
-from streamlit.runtime.secrets import secrets
+import streamlit as st
 
 # ----------------------------
 # 🔐 Session Helpers
@@ -102,7 +102,8 @@ def enrich_session_from_token(token: str) -> dict | None:
             return user_data
 
         # Not in DB → create new user
-        is_admin = email == secrets.get("admin", {}).get("email", "").lower()
+        admin_email = st.secrets.get("admin", {}).get("email", "").lower()
+        is_admin = email == admin_email
         user_data = {
             "id": user_id,
             "email": email,
