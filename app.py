@@ -14,6 +14,7 @@ div[data-testid='stRadio'] > label {
 }
 </style>
 """, unsafe_allow_html=True)
+
 import streamlit.components.v1 as components
 
 components.html("""
@@ -26,6 +27,7 @@ components.html("""
   }
 </script>
 """, height=0)
+
 from auth import get_user, get_user_role
 from user_session_initializer import enrich_session_from_token
 from dashboard import render_dashboard
