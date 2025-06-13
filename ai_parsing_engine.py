@@ -170,6 +170,29 @@ def query_ai_parser(raw_text, target_type):
 # ⏬ UI Extract Buttons (called from other files)
 # --------------------------------------------
 def render_extraction_buttons(file_id, parsed_data):
+
+    if parsed_data:
+        with st.expander('💾 Save Options', expanded=False):
+            if st.button('📥 Save as Recipe'):
+                from recipes import save_recipe_to_firestore
+                for r in parsed_data['recipes'] if isinstance(parsed_data['recipes'], list) else [parsed_data['recipes']]:
+                    save_recipe_to_firestore(r)
+                st.success('✅ Recipes saved to database')
+            if st.button('📥 Save as Menu'):
+                from menu_editor import save_menu_to_firestore
+                from utils import get_active_event_id
+                event_id = get_active_event_id()
+                if not event_id:
+                    event_id = st.selectbox('Assign to Event', options=get_all_events(), format_func=lambda e: e['name'])
+                save_menu_to_firestore(parsed_data, event_id=event_id)
+                st.success('✅ Menu saved to database')
+            if st.button('📥 Save as Ingredient'):
+                from ingredients import save_ingredient_to_firestore
+                if 'ingredients' in parsed_data:
+                    for ing in parsed_data['ingredients']:
+                        save_ingredient_to_firestore(ing)
+                st.success('✅ Ingredients saved to database')
+
     """
     Optionally allow user to extract specific parsed items like recipes or menus
     """
