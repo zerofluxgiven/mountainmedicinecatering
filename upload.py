@@ -1,10 +1,10 @@
+from ai_parsing_engine import parse_file
 import streamlit as st
 from auth import require_role
 from file_storage import save_uploaded_file
 from utils import session_get, format_date
 from mobile_helpers import safe_file_uploader
 from events import get_all_events
-from recipes import parse_and_store_recipe_from_file, save_recipe_to_firestore  # ✅ ADD THIS
 
 @require_role("user")
 def upload_ui(event_id: str = None):
