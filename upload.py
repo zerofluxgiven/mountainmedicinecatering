@@ -85,7 +85,7 @@ from upload_integration import save_parsed_menu_ui
 from ui_components import render_tag_group, edit_metadata_ui
 
 def upload_ui():
-    from mobile_components import render_mobile_navigation
+    from mobile_layout import render_mobile_navigation
     st.title("📤 Upload Files")
     user_id = get_user_id()
     event_id = get_active_event_id()
