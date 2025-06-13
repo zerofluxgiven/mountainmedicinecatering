@@ -43,7 +43,7 @@ def generate_event_summary_pdf(event_id: str) -> None:
     pdf.set_font("Arial", 'B', 16)
     pdf.cell(200, 10, txt=f"📋 Event Summary: {event.get('name')}", ln=1, align='L')
     pdf.set_font("Arial", size=12)
-    pdf.cell(200, 10, txt=f"Date: {format_date(event.get('date'))} | Location: {event.get('location')}", ln=1)
+    pdf.cell(200, 10, txt=f"Date: {format_date(event.get('date')} | Location: {event.get('location')}", ln=1)
     pdf.ln(5)
 
     # Sections
@@ -52,10 +52,10 @@ def generate_event_summary_pdf(event_id: str) -> None:
         pop_text = "\n".join([f"{k}: {v}/5" for k, v in pop_data.items()])
         add_section("Menu Popularity", pop_text)
 
-    add_section("Leftovers / Overages", summary.get("leftovers_notes", ""))
-    add_section("Timing Issues", summary.get("timing_issues", ""))
-    add_section("Improvements", summary.get("improvements", ""))
-    add_section("Forgotten / Missing Items", summary.get("forgotten_items", ""))
+    add_section("Leftovers / Overages", summary.get("leftovers_notes", "")
+    add_section("Timing Issues", summary.get("timing_issues", "")
+    add_section("Improvements", summary.get("improvements", "")
+    add_section("Forgotten / Missing Items", summary.get("forgotten_items", "")
 
     pdf.ln(10)
     pdf.set_font("Arial", 'I', 10)

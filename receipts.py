@@ -27,7 +27,7 @@ def receipt_upload_ui(user: dict) -> None:
     if st.session_state.get("mobile_mode"):
         render_mobile_navigation()
 
-    st.info(get_event_scope_message())
+    st.info(get_event_scope_message()
 
     tab1, tab2 = st.tabs(["📤 Upload Receipt", "📋 View Receipts"])
 
@@ -92,11 +92,11 @@ def _parse_receipt_with_ai(file_path: str) -> dict:
 
         result_text = response.choices[0].message.content.strip()
         json_match = re.search(r'\{.*\}', result_text, re.DOTALL)
-        result_data = json.loads(json_match.group()) if json_match else json.loads(result_text)
+        result_data = json.loads(json_match.group() if json_match else json.loads(result_text)
 
         parsed_data = {
             "vendor": result_data.get("vendor", "Unknown Vendor"),
-            "date": _parse_date(result_data.get("date", "")),
+            "date": _parse_date(result_data.get("date", ""),
             "total": result_data.get("total", "0.00"),
             "items": []
         }
@@ -158,13 +158,13 @@ def show_receipt_analytics():
         col1, col2, col3, col4 = safe_columns(4)
 
         with col1:
-            st.metric("Total Receipts", len(receipts))
+            st.metric("Total Receipts", len(receipts)
         with col2:
-            total_amount = sum(float(r.get('total', '0').replace('$', '').replace(',', '')) for r in receipts if r.get('total'))
+            total_amount = sum(float(r.get('total', '0').replace('$', '').replace(',', '') for r in receipts if r.get('total')
             st.metric("Total Spent", f"${total_amount:,.2f}")
         with col3:
-            vendors = set(r.get('vendor') for r in receipts if r.get('vendor'))
-            st.metric("Unique Vendors", len(vendors))
+            vendors = set(r.get('vendor') for r in receipts if r.get('vendor')
+            st.metric("Unique Vendors", len(vendors)
         with col4:
             avg_amount = total_amount / len(receipts) if receipts else 0
             st.metric("Average Receipt", f"${avg_amount:.2f}")
@@ -184,7 +184,7 @@ def show_receipt_analytics():
             vendor_totals = {}
             for receipt in receipts:
                 vendor = receipt.get('vendor', 'Unknown')
-                amount = float(receipt.get('total', '0').replace('$', '').replace(',', ''))
+                amount = float(receipt.get('total', '0').replace('$', '').replace(',', '')
                 vendor_totals[vendor] = vendor_totals.get(vendor, 0) + amount
 
             for vendor, total in sorted(vendor_totals.items(), key=lambda x: x[1], reverse=True)[:5]:
@@ -195,13 +195,13 @@ def show_receipt_analytics():
 
 def _display_receipts(receipts: list) -> None:
     total_amount = sum(
-        float(r.get('total', '0').replace('$', '').replace(',', ''))
+        float(r.get('total', '0').replace('$', '').replace(',', '')
         for r in receipts if r.get('total')
     )
 
     col1, col2, col3 = safe_columns(3)
     with col1:
-        st.metric("Total Receipts", len(receipts))
+        st.metric("Total Receipts", len(receipts)
     with col2:
         st.metric("Total Spent", f"${total_amount:,.2f}")
     with col3:
@@ -244,7 +244,7 @@ def _display_receipts(receipts: list) -> None:
                     with col1:
                         st.write(f"• {item.get('name', 'Unknown')}")
                     with col2:
-                        st.write(item.get('quantity', ''))
+                        st.write(item.get('quantity', '')
                     with col3:
                         st.write(f"${item.get('price', '0.00')}")
 
@@ -286,7 +286,7 @@ def _upload_receipt_section(user: dict) -> None:
                     file_ext = file_name.split(".")[-1].lower()
 
                     with tempfile.NamedTemporaryFile(delete=False, suffix="." + file_ext) as tmp:
-                        tmp.write(uploaded.getvalue())
+                        tmp.write(uploaded.getvalue()
                         tmp_path = tmp.name
 
                     parsed_data = _parse_receipt_with_ai(tmp_path)
@@ -311,11 +311,11 @@ def _upload_receipt_section(user: dict) -> None:
             col1, col2 = safe_columns(2)
 
             with col1:
-                vendor = st.text_input("Vendor", value=parsed.get("vendor", ""))
-                date = st.date_input("Purchase Date", value=parsed.get("date", datetime.today()))
+                vendor = st.text_input("Vendor", value=parsed.get("vendor", "")
+                date = st.date_input("Purchase Date", value=parsed.get("date", datetime.today())
 
             with col2:
-                total = st.text_input("Total Amount", value=parsed.get("total", ""))
+                total = st.text_input("Total Amount", value=parsed.get("total", "")
 
                 if is_event_scoped():
                     event_id = get_active_event_id()

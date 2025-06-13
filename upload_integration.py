@@ -31,11 +31,11 @@ def save_parsed_menu_ui(parsed_data: dict):
 
     with st.form("save_menu_form"):
         day = st.text_input("Day")
-        meal = st.selectbox("Meal", ["Breakfast", "Lunch", "Dinner", "Note"])
-        recipe = st.text_input("Recipe Name", value=parsed_data.get("title", ""))
-        notes = st.text_area("Notes", value=parsed_data.get("notes", ""))
-        allergens = st.text_input("Allergens (comma-separated)", value=", ".join(parsed_data.get("allergens", [])))
-        tags = st.text_input("Tags (comma-separated)", value=", ".join(parsed_data.get("tags", [])))
+        meal = st.selectbox("Meal", key="Meal", ["Breakfast", "Lunch", "Dinner", "Note"], key="auto_key"
+        recipe = st.text_input("Recipe Name", value=parsed_data.get("title", "")
+        notes = st.text_area("Notes", value=parsed_data.get("notes", "")
+        allergens = st.text_input("Allergens (comma-separated)", value=", ".join(parsed_data.get("allergens", []))
+        tags = st.text_input("Tags (comma-separated)", value=", ".join(parsed_data.get("tags", []))
 
         if st.form_submit_button("✅ Save to Event Menu"):
             new_item = {
@@ -125,11 +125,11 @@ def show_save_file_actions(upload_info: dict):
 
     with st.form("save_menu_form"):
         day = st.text_input("Day")
-        meal = st.selectbox("Meal", ["Breakfast", "Lunch", "Dinner", "Note"])
-        recipe = st.text_input("Recipe Name", value=parsed_data.get("title", ""))
-        notes = st.text_area("Notes", value=parsed_data.get("notes", ""))
-        allergens = st.text_input("Allergens (comma-separated)", value=", ".join(parsed_data.get("allergens", [])))
-        tags = st.text_input("Tags (comma-separated)", value=", ".join(parsed_data.get("tags", [])))
+        meal = st.selectbox("Meal", key="Meal", ["Breakfast", "Lunch", "Dinner", "Note"], key="auto_key"
+        recipe = st.text_input("Recipe Name", value=parsed_data.get("title", "")
+        notes = st.text_area("Notes", value=parsed_data.get("notes", "")
+        allergens = st.text_input("Allergens (comma-separated)", value=", ".join(parsed_data.get("allergens", []))
+        tags = st.text_input("Tags (comma-separated)", value=", ".join(parsed_data.get("tags", []))
 
         if st.form_submit_button("✅ Save to Event Menu"):
             new_item = {

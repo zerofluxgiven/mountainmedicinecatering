@@ -35,7 +35,7 @@ def profile_page():
 
     # Editable Bio Section
     st.subheader("📝 Bio")
-    bio = st.text_area("Tell us a bit about yourself", value=profile.get("bio", ""))
+    bio = st.text_area("Tell us a bit about yourself", value=profile.get("bio", "")
     if st.button("Update Bio"):
         get_db().collection(COLLECTION_USERS).document(user_id).update({"bio": bio})
         st.success("✅ Bio updated.")
@@ -51,10 +51,10 @@ def profile_page():
     participated_events = [doc.to_dict() for doc in participated]
 
     recipes = get_db().collection(COLLECTION_RECIPES).where("author_id", "==", user_id).stream()
-    recipe_count = len(list(recipes))
+    recipe_count = len(list(recipes)
 
-    st.metric("Events Hosted", len(created_events))
-    st.metric("Events Participated", len(participated_events))
+    st.metric("Events Hosted", len(created_events)
+    st.metric("Events Participated", len(participated_events)
     st.metric("Recipes Contributed", recipe_count)
     st.metric("Estimated Hours Worked", len(participated_events) * 4)  # placeholder logic
 

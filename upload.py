@@ -18,10 +18,10 @@ def upload_ui(event_id: str = None):
 
     events = get_all_events()
     event_options = {
-        f"{e.get('name', 'Unnamed')} ({format_date(e.get('start_date'))}) - {e.get('status', 'planning')}": e['id']
+        f"{e.get('name', 'Unnamed')} ({format_date(e.get('start_date')}) - {e.get('status', 'planning')}": e['id']
         for e in events if not e.get("deleted", False)
     }
-    eid_label = st.selectbox("Select Event (optional)", ["None"] + list(event_options.keys()))
+    eid_label = st.selectbox("Select Event (optional, key="auto_key"", ["None"] + list(event_options.keys(, key="auto_key"))
     eid = event_options.get(eid_label) if eid_label != "None" else None
 
     if file and user:
@@ -43,7 +43,7 @@ def upload_ui(event_id: str = None):
                         name = st.text_input("Recipe Name", recipe_draft["name"])
                         ingredients = st.text_area("Ingredients", recipe_draft["ingredients"])
                         instructions = st.text_area("Instructions", recipe_draft["instructions"])
-                        notes = st.text_area("Notes", recipe_draft.get("notes", ""))
+                        notes = st.text_area("Notes", recipe_draft.get("notes", "")
                         confirm = st.form_submit_button("Save Recipe")
                         # Offer to save as event menu item if in event context
                         if eid:

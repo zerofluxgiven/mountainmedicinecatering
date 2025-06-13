@@ -23,7 +23,7 @@ def scale_ingredients(ingredients: list, multiplier: float) -> list:
     for ing in ingredients:
         try:
             qty = float(ing.get("quantity", "1").split()[0])
-            ing["quantity"] = str(round(qty * multiplier, 2))
+            ing["quantity"] = str(round(qty * multiplier, 2)
         except:
             pass  # fallback: skip if not numerical
     return ingredients
@@ -199,7 +199,7 @@ def update_recipe_with_parsed_ingredients(recipe_id: str, parsed_ingredients: Li
     """Update a recipe with parsed ingredient data"""
     try:
         # Get unique ingredient IDs
-        ingredient_ids = list(set(ing['ingredient_id'] for ing in parsed_ingredients))
+        ingredient_ids = list(set(ing['ingredient_id'] for ing in parsed_ingredients)
         
         # Update recipe
         db.collection("recipes").document(recipe_id).update({
@@ -283,14 +283,14 @@ def _browse_ingredients_tab():
     # Category filter
     categories = ["All", "Proteins", "Dairy", "Vegetables", "Fruits", "Grains", 
                  "Herbs & Spices", "Oils & Fats", "Condiments", "Baking", "Beverages", "Other"]
-    selected_category = st.selectbox("Filter by category", categories)
+    selected_category = st.selectbox("Filter by category", key="Filter by category", categories, key="auto_key"
     
     # Get ingredients
     try:
         if selected_category == "All":
             query = db.collection("ingredients").order_by("usage_count", direction=firestore.Query.DESCENDING)
         else:
-            query = db.collection("ingredients").where(filter=FieldFilter("category", "==", selected_category))
+            query = db.collection("ingredients").where(filter=FieldFilter("category", "==", selected_category)
         
         ingredients = [doc.to_dict() for doc in query.stream()]
         
@@ -358,7 +358,7 @@ def _ingredient_search_tab():
                     for recipe in recipes:
                         with st.expander(f"📖 {recipe.get('name', 'Unnamed Recipe')}"):
                             st.write(f"**Author:** {recipe.get('author_name', 'Unknown')}")
-                            st.write(f"**Created:** {format_date(recipe.get('created_at'))}")
+                            st.write(f"**Created:** {format_date(recipe.get('created_at')}")
                             
                             # Show how this ingredient is used
                             parsed_ings = recipe.get('parsed_ingredients', [])
@@ -439,11 +439,11 @@ def _parse_recipes_tab(user: dict):
                             for ping in parsed:
                                 cols = st.columns([1, 1, 2, 2])
                                 with cols[0]:
-                                    st.write(ping.get('quantity', '-'))
+                                    st.write(ping.get('quantity', '-')
                                 with cols[1]:
-                                    st.write(ping.get('unit', '-'))
+                                    st.write(ping.get('unit', '-')
                                 with cols[2]:
-                                    st.write(ping.get('name', '-'))
+                                    st.write(ping.get('name', '-')
                                 with cols[3]:
                                     st.caption(f"→ {ping.get('normalized_name', '-')}")
                             
@@ -466,7 +466,7 @@ def _show_ingredient_details(ingredient: Dict):
         st.markdown("### Basic Information")
         st.write(f"**Category:** {ingredient.get('category', 'Other')}")
         st.write(f"**Usage Count:** {ingredient.get('usage_count', 0)} recipes")
-        st.write(f"**Common Units:** {', '.join(ingredient.get('common_units', [])) or 'None recorded'}")
+        st.write(f"**Common Units:** {', '.join(ingredient.get('common_units', []) or 'None recorded'}")
         
         # Allergen information
         allergen_info = ingredient.get('allergen_info', {})

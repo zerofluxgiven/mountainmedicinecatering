@@ -749,7 +749,7 @@ def save_mobile_state(key: str, value: Any) -> None:
     # Also save to localStorage for PWA
     js_code = f"""
     <script>
-    localStorage.setItem('{key}', JSON.stringify({json.dumps(value)}));
+    localStorage.setItem('{key}', JSON.stringify({json.dumps(value)});
     </script>
     """
     st.markdown(js_code, unsafe_allow_html=True)

@@ -91,7 +91,7 @@ def extract_text_from_pdf(uploaded_file):
     text = ""
     try:
         with tempfile.NamedTemporaryFile(delete=False, suffix=".pdf") as tmp:
-            tmp.write(uploaded_file.read())
+            tmp.write(uploaded_file.read()
             tmp_path = tmp.name
 
         doc = fitz.open(tmp_path)
@@ -183,7 +183,7 @@ def render_extraction_buttons(file_id, parsed_data):
                 from utils import get_active_event_id
                 event_id = get_active_event_id()
                 if not event_id:
-                    event_id = st.selectbox('Assign to Event', options=get_all_events(), format_func=lambda e: e['name'])
+                    event_id = st.selectbox('Assign to Event', options=get_all_events(, key="auto_key", format_func=lambda e: e['name'], key="auto_key")
                 save_menu_to_firestore(parsed_data, event_id=event_id)
                 st.success('✅ Menu saved to database')
             if st.button('📥 Save as Ingredient'):
@@ -203,7 +203,7 @@ def render_extraction_buttons(file_id, parsed_data):
         st.info("No parsed data available.")
         return
 
-    st.warning(f"Parsed keys: {list(parsed_data.keys())}")
+    st.warning(f"Parsed keys: {list(parsed_data.keys()}")
     st.json(parsed_data)
 
 
@@ -225,7 +225,7 @@ def render_extraction_buttons(file_id, parsed_data):
                 from utils import get_active_event_id
                 from auth import get_user_id
                 for m in menus:
-                    save_menu_to_firestore(menus, get_active_event_id(), get_user_id())
+                    save_menu_to_firestore(menus, get_active_event_id(), get_user_id()
                     break  # Save all at once
                 st.success("✅ Menus saved to database")
             except Exception as e:
