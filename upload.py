@@ -1,3 +1,4 @@
+#upload.py
 with st.expander("🧾 Parsed Metadata Editor", expanded=True):
         parsed_data['type'] = st.text_input("Type", parsed_data.get('type', ''))
         parsed_data['meal_time'] = st.text_input("Meal Time", parsed_data.get('meal_time', ''))
