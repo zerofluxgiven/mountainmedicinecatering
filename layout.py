@@ -69,7 +69,7 @@ def render_event_mode_indicator():
 # ----------------------------
 # 💬 Fixed Floating AI Assistant (Bottom Right)
 # ----------------------------
-def render_floating_ai_chat():
+def # render_floating_ai_chat()  # Disabled by patch:
     """Render working floating AI chat bubble in bottom right"""
     user = session_get("user")
     if not user:
@@ -770,6 +770,14 @@ def _get_ai_response(message: str):
 def render_top_navbar(tabs):
     """Render clean purple-themed navigation tabs using Streamlit native components"""
     if not tabs:
+
+    # Inject logo banner above tabs
+    st.markdown("""
+    <div style="text-align:center; padding: 1rem 0;">
+      <img src="/mountain_logo_banner.png" style="max-width: 600px; height: auto;" alt="Mountain Medicine">
+    </div>
+    """, unsafe_allow_html=True)
+
         st.warning("⚠️ No navigation tabs defined.")
         return
 
@@ -893,7 +901,7 @@ def apply_theme():
     
     inject_custom_css()
     render_event_mode_indicator()
-    render_floating_ai_chat()
+    # render_floating_ai_chat()  # Disabled by patch
 
 # ----------------------------
 # 📱 Mobile Responsive Container
@@ -1059,7 +1067,7 @@ def render_info_card(title, content, icon="ℹ️", card_type="info"):
 # For backward compatibility
 def render_floating_assistant():
     """Legacy function name"""
-    render_floating_ai_chat()
+    # render_floating_ai_chat()  # Disabled by patch
 
 def show_event_mode_banner():
     """Empty function for compatibility"""
