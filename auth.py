@@ -1,162 +1,113 @@
-# ✅ PATCHED auth.py (session key standardized to 'user')
 import streamlit as st
-from firebase_admin import auth as admin_auth
-from firebase_init import db
-from utils import session_get, session_set
-from datetime import datetime
-import streamlit as st
+from auth import require_role, get_user, get_user_id
+from utils import session_get, format_date, get_active_event_id
+from file_storage import save_uploaded_file, file_manager_ui
+from upload_integration import save_parsed_menu_ui, show_save_file_actions
+from ui_components import render_tag_group, edit_metadata_ui
+from events import get_all_events
+from mobile_helpers import safe_file_uploader
+
 
 # ----------------------------
-# 🔐 Session Helpers
+# 📤 Desktop Upload UI
 # ----------------------------
+@require_role("user")
+def upload_ui_desktop(event_id: str = None):
+    st.subheader("📄 Upload a File")
 
-def is_logged_in():
-    return "user" in st.session_state
+    file = safe_file_uploader("Select file to upload", type=["pdf", "png", "jpg", "jpeg", "txt"])
+    user = session_get("user")
 
-def get_user():
-    print("🔎 get_user called; session keys:", list(st.session_state.keys())
-    return st.session_state.get("user")
+    events = get_all_events()
+    event_options = {
+        f"{e.get('name', 'Unnamed')} ({format_date(e.get('start_date'))} - {e.get('status', 'planning')})": e['id']
+        for e in events if not e.get("deleted", False)
+    }
 
-def get_user_id(user=None):
-    if user is None:
-        user = st.session_state.get("user", {})
-    return user.get("id") if user else None
+    eid_label = st.selectbox("Select Event (optional)", ["None"] + list(event_options.keys()), key="auto_key")
+    eid = event_options.get(eid_label) if eid_label != "None" else None
 
-def get_user_role(user=None):
-    if user is None:
-        user = st.session_state.get("user", {})
-    return user.get("role", "viewer")
+    if file and user:
+        uploaded_by = user["id"]
+        if st.button("Upload"):
+            file_id = save_uploaded_file(file, eid, uploaded_by)
+            st.success(f"✅ File uploaded! File ID: {file_id}")
 
-def get_current_user():
-    return get_user()
+            if file.name.lower().endswith(".txt"):
+                try:
+                    file.seek(0)
+                    contents = file.read().decode("utf-8")
 
-# ----------------------------
-# 🚫 Access Control Decorators
-# ----------------------------
+                    from ai_parsing_engine import parse_file as parse_and_store_recipe_from_file
+                    recipe_draft = parse_and_store_recipe_from_file(contents)
 
-def require_login():
-    if not is_logged_in():
-        st.warning("You must be logged in to access this page.")
-        st.stop()
+                    st.markdown("### 🧪 Auto-Detected Recipe Preview")
+                    with st.form("confirm_recipe_from_upload"):
+                        name = st.text_input("Recipe Name", recipe_draft["name"])
+                        ingredients = st.text_area("Ingredients", recipe_draft["ingredients"])
+                        instructions = st.text_area("Instructions", recipe_draft["instructions"])
+                        notes = st.text_area("Notes", recipe_draft.get("notes", ""))
+                        confirm = st.form_submit_button("Save Recipe")
 
-def require_role(required_role):
-    def decorator(func):
-        def wrapper(*args, **kwargs):
-            user = get_user()
-            if not user:
-                st.warning("You must be logged in.")
-                st.stop()
-            role = user.get("role", "viewer")
-            hierarchy = ["viewer", "user", "manager", "admin"]
-            if hierarchy.index(role) < hierarchy.index(required_role):
-                st.error(f"Access denied. Requires role: {required_role}")
-                st.stop()
-            return func(*args, **kwargs)
-        return wrapper
-    return decorator
+                        if eid:
+                            st.markdown("### 🍽️ Save as Menu Item for Event")
+                            st.session_state["parsed_recipe_context"] = {
+                                "title": name,
+                                "instructions": instructions,
+                                "notes": notes,
+                                "tags": [],
+                                "allergens": [],
+                                "event_id": eid
+                            }
+                            save_parsed_menu_ui(st.session_state["parsed_recipe_context"])
 
-# ----------------------------
-# 🔑 Firebase Web Auth Handler
-# ----------------------------
+                        if confirm:
+                            recipe_draft.update({
+                                "name": name,
+                                "ingredients": ingredients,
+                                "instructions": instructions,
+                                "notes": notes,
+                                "tags": [],
+                                "author_name": user.get("name", uploaded_by)
+                            })
+                            from recipe_db import save_recipe_to_firestore
+                            recipe_id = save_recipe_to_firestore(recipe_draft)
+                            if recipe_id:
+                                st.success(f"✅ Recipe saved! ID: {recipe_id}")
+                            else:
+                                st.error("❌ Failed to save recipe.")
+                except Exception as e:
+                    st.warning(f"⚠️ Could not parse recipe: {e}")
 
-def authenticate_user(token: str):
-    import firebase_admin.auth as auth
-    import logging
-
-    if not token or not isinstance(token, str):
-        logging.error(f"Invalid token input: {token} (type: {type(token)})")
-        raise ValueError("Token must be a non-empty string")
-
-    try:
-        decoded = auth.verify_id_token(token)
-        logging.info(f"Token decoded successfully: {decoded}")
-        return decoded
-    except Exception as e:
-        logging.exception(f"Failed to verify token: {e}")
-        raise
-
-# ----------------------------
-# ✅ ENRICH AND REGISTER SESSION USER
-# ----------------------------
-
-def enrich_session_from_token(token: str) -> dict | None:
-    try:
-        decoded_token = admin_auth.verify_id_token(token)
-        user_id = decoded_token["uid"]
-        email = decoded_token.get("email", "").lower()
-        email_verified = decoded_token.get("email_verified", False)
-
-        st.session_state["_auth_debug"] = {
-            "decoded_uid": user_id,
-            "email": email,
-            "verified": email_verified,
-            "timestamp": str(datetime.utcnow()
-        }
-
-        doc_ref = db.collection("users").document(user_id)
-        doc = doc_ref.get()
-
-        if doc.exists:
-            user_data = doc.to_dict()
-            st.session_state["_auth_debug"]["found_in_firestore"] = True
-            st.session_state["_auth_debug"]["role"] = user_data.get("role", "none")
-            return user_data
-
-        # Not in DB → create new user
-        admin_email = st.secrets.get("admin", {}).get("email", "").lower()
-        is_admin = email == admin_email
-        user_data = {
-            "id": user_id,
-            "email": email,
-            "created_at": datetime.utcnow(),
-            "role": "admin" if is_admin else "viewer",
-            "active": True,
-            "email_verified": email_verified
-        }
-        doc_ref.set(user_data)
-
-        st.session_state["_auth_debug"]["created_new_user"] = True
-        st.session_state["_auth_debug"]["assigned_role"] = user_data["role"]
-        return user_data
-
-    except Exception as e:
-        st.session_state["_auth_debug"] = {"error": str(e), "timestamp": str(datetime.utcnow()}
-        print(f"[Auth] Token enrichment failed: {e}")
-        return None
 
 # ----------------------------
-# 🔁 Firebase User Sync Tool
+# 📱 Mobile Upload UI
 # ----------------------------
+def upload_ui_mobile():
+    from mobile_layout import render_mobile_navigation
+    st.title("📤 Upload Files")
+    user_id = get_user_id()
+    event_id = get_active_event_id()
 
-def sync_firebase_users():
-    synced = 0
-    page = admin_auth.list_users()
-    while page:
-        for user in page.users:
-            doc_ref = db.collection("users").document(user.uid)
-            if not doc_ref.get().exists:
-                doc_ref.set({
-                    "id": user.uid,
-                    "email": user.email,
-                    "name": user.display_name or "",
-                    "role": "viewer",
-                    "email_verified": user.email_verified,
-                    "active": True,
-                    "created_at": user.user_metadata.creation_timestamp,
-                })
-                synced += 1
-        page = page.get_next_page()
-    return synced
+    st.markdown("### Upload a new file")
+    uploaded_file = st.file_uploader("Drop or select a file", type=["pdf", "txt", "jpg", "png", "jpeg", "csv", "docx"])
 
-# ----------------------------
-# ❌ User Deletion
-# ----------------------------
+    if uploaded_file:
+        with st.spinner("Parsing and uploading..."):
+            result = save_uploaded_file(uploaded_file, event_id, user_id)
+            st.session_state["last_uploaded_file"] = result
 
-def delete_firebase_user(uid):
-    try:
-        admin_auth.delete_user(uid)
-        db.collection("users").document(uid).delete()
-        return True
-    except Exception as e:
-        st.error(f"Failed to delete user: {e}")
-        return False
+        st.success("✅ File uploaded and parsed.")
+
+        if st.button("View / Edit Parsed Data"):
+            parsed = result.get("parsed", {})
+            parsed = edit_metadata_ui(parsed)
+            render_tag_group("Recipe", [parsed.get("title", "")], color="green")
+            render_tag_group("Allergens", parsed.get("allergens", []), color="red")
+            render_tag_group("Tags", parsed.get("tags", []), color="purple")
+
+        show_save_file_actions(st.session_state["last_uploaded_file"])
+
+    st.markdown("---")
+    st.markdown("## 📁 File Manager")
+    file_manager_ui({"id": user_id})
