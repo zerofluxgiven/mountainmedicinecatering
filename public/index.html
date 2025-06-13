@@ -64,18 +64,14 @@
       font-family: 'Inter', sans-serif;
       background: var(--bg);
       color: var(--text);
-      display: flex;
-      flex-direction: column;
-      align-items: center;
-      justify-content: center;
-      height: 100vh;
-      text-align: center;
     }
 
-    p {
-      margin-top: 0;
-      color: #555;
-      font-size: 1rem;
+    .login-container {
+      min-height: 100vh;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      flex-direction: column;
     }
 
     .login-box {
@@ -85,6 +81,7 @@
       box-shadow: 0 4px 12px rgba(0,0,0,0.08);
       max-width: 360px;
       width: 90%;
+      text-align: center;
     }
 
     .login-button {
@@ -107,22 +104,29 @@
       margin-bottom: 1rem;
     }
 
+    p {
+      margin-top: 0;
+      color: #555;
+      font-size: 1rem;
+    }
+
     footer {
-      position: absolute;
-      bottom: 1rem;
       font-size: 0.8rem;
       color: #999;
+      margin-top: 2rem;
     }
   </style>
 </head>
 <body>
-  <div class="login-box">
-    <div class="logo">
-      <img src="/mountain_logo.png" alt="Mountain Medicine Logo" style="max-width: 400px; height: auto; display: block; margin: 0 auto;" />
+  <div class="login-container">
+    <div class="login-box">
+      <div class="logo">
+        <img src="/mountain_logo.png" alt="Mountain Medicine Logo" style="display: block; margin: 0 auto;" />
+      </div>
+      <p>Bringing humanity closer through man's original primal ceremony.</p>
+      <button class="login-button" onclick="login()">🔐 Login with Google</button>
     </div>
-    <p>Bringing humanity closer through man's original primal ceremony.</p>
-    <button class="login-button" onclick="login()">🔐 Login with Google</button>
+    <footer>&copy; 2025 Mountain Medicine</footer>
   </div>
-  <footer>&copy; 2025 Mountain Medicine</footer>
 </body>
 </html>
