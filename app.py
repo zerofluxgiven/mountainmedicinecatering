@@ -1,3 +1,4 @@
+from upload import upload_ui
 import streamlit as st
 
 # ✅ Correct Streamlit config placed immediately after import
@@ -245,7 +246,7 @@ def main():
         elif selected_tab == "Upload":
             upload_tab, analytics_tab = st.tabs(["📄 Upload Files", "📊 File Analytics"])
             with upload_tab:
-                file_manager_ui(user)
+                upload_ui()
             with analytics_tab:
                 show_file_analytics()
         elif selected_tab == "Receipts":
