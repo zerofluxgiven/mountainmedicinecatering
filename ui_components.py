@@ -328,3 +328,29 @@ def safe_button(label: str, key: str, **kwargs) -> bool:
     """Create a button with guaranteed unique key"""
     unique_key = create_unique_key(key, kwargs.get('context', 'default'))
     return st.button(label, key=unique_key, **{k: v for k, v in kwargs.items() if k != 'context'})
+
+def render_tag_group(title, tags, color="blue"):
+    if not tags:
+        return
+    st.markdown(f"#### <span style='background-color:light{color};padding:6px 10px;border-radius:8px;font-weight:600;'>{title}</span>", unsafe_allow_html=True)
+    tag_html = " ".join([
+        f"<span style='background-color:{color};color:white;padding:4px 10px;margin:3px;border-radius:999px;font-size:12px;display:inline-block;'>{tag}</span>"
+        for tag in tags
+    ])
+    st.markdown(f"<div style='margin-bottom:10px'>{tag_html}</div>", unsafe_allow_html=True)
+
+def edit_metadata_ui(parsed):
+    st.markdown("### ✏️ Edit Metadata")
+
+    parsed["title"] = st.text_input("Title", value=parsed.get("title", ""))
+    parsed["diet"] = st.text_input("Diet", value=parsed.get("diet", ""))
+    parsed["notes"] = st.text_area("Notes", value=parsed.get("notes", ""))
+
+    allergens = st.text_input("Allergens (comma-separated)", value=", ".join(parsed.get("allergens", [])))
+    parsed["allergens"] = [a.strip() for a in allergens.split(",") if a.strip()]
+
+    tags = st.text_input("Tags (comma-separated)", value=", ".join(parsed.get("tags", [])))
+    parsed["tags"] = [t.strip() for t in tags.split(",") if t.strip()]
+
+    st.info("When you're done editing, use the Save buttons below to commit.")
+    return parsed
