@@ -13,7 +13,7 @@ def packing_ui():
     st.title("📦 Packing & Loading")
     
     # Show current scope
-    st.info(get_event_scope_message())
+    st.info(get_event_scope_message()
     
     # Check if we're in event mode
     if not is_event_scoped():
@@ -55,7 +55,7 @@ def _show_all_events_packing():
             event_options.append(option)
             event_mapping[option] = event['id']
     
-    selected = st.selectbox("Choose Event", event_options)
+    selected = st.selectbox("Choose Event", key="Choose Event", event_options, key="auto_key"
     
     if selected != "Select an event...":
         event_id = event_mapping[selected]
@@ -124,7 +124,7 @@ def _render_task_list(event_id):
             with col1:
                 new_task = st.text_input("Task Description")
             with col2:
-                priority = st.selectbox("Priority", ["High", "Medium", "Low"])
+                priority = st.selectbox("Priority", key="Priority", ["High", "Medium", "Low"], key="auto_key"
             
             if st.form_submit_button("Add Task"):
                 if new_task:
@@ -208,7 +208,7 @@ def _render_equipment_list(event_id):
             with col2:
                 quantity = st.number_input("Quantity", min_value=1, value=1)
             with col3:
-                category = st.selectbox("Category", ["Cooking", "Serving", "Storage", "Transport", "Safety", "Other"])
+                category = st.selectbox("Category", key="Category", ["Cooking", "Serving", "Storage", "Transport", "Safety", "Other"], key="auto_key"
             
             if st.form_submit_button("Add Equipment"):
                 if new_eq:
@@ -277,9 +277,9 @@ def _render_grocery_list(event_id):
             with col2:
                 quantity = st.text_input("Quantity")
             with col3:
-                unit = st.selectbox("Unit", ["", "lbs", "kg", "oz", "cups", "pieces", "dozen", "cases"])
+                unit = st.selectbox("Unit", key="Unit", ["", "lbs", "kg", "oz", "cups", "pieces", "dozen", "cases"], key="auto_key"
             
-            category = st.selectbox("Category", ["Produce", "Protein", "Dairy", "Dry Goods", "Beverages", "Supplies", "Other"])
+            category = st.selectbox("Category", key="Category", ["Produce", "Protein", "Dairy", "Dry Goods", "Beverages", "Supplies", "Other"], key="auto_key"
             
             if st.form_submit_button("Add Item"):
                 if new_groc:

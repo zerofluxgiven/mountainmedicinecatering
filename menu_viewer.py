@@ -33,9 +33,9 @@ def menu_viewer_ui(event_id=None):
     for i, item in enumerate(menu):
         with st.expander(f"{item.get('name', 'Untitled Dish')}", expanded=False):
             name = st.text_input(f"Dish Name #{i+1}", item.get("name", ""), key=f"name_{i}")
-            category = st.selectbox(f"Category #{i+1}", ["Appetizer", "Main", "Side", "Dessert", "Drink", "Other"], index=_get_category_index(item.get("category")), key=f"cat_{i}")
+            category = st.selectbox(f"Category #{i+1}", ["Appetizer", "Main", "Side", "Dessert", "Drink", "Other"], index=_get_category_index(item.get("category", key="auto_key", key="auto_key"), key=f"cat_{i}")
             description = st.text_area(f"Description #{i+1}", item.get("description", ""), key=f"desc_{i}")
-            tags = st.text_input(f"Tags #{i+1} (comma-separated)", ", ".join(item.get("tags", [])), key=f"tags_{i}")
+            tags = st.text_input(f"Tags #{i+1} (comma-separated)", ", ".join(item.get("tags", []), key=f"tags_{i}")
             updated_menu.append({
                 "name": name.strip(),
                 "category": category,
@@ -46,7 +46,7 @@ def menu_viewer_ui(event_id=None):
     st.markdown("### ➕ Add New Menu Item")
     with st.form("new_menu_item_form", clear_on_submit=True):
         new_name = st.text_input("New Dish Name")
-        new_category = st.selectbox("New Category", ["Appetizer", "Main", "Side", "Dessert", "Drink", "Other"])
+        new_category = st.selectbox("New Category", key="New Category", ["Appetizer", "Main", "Side", "Dessert", "Drink", "Other"], key="auto_key"
         new_description = st.text_area("New Description")
         new_tags = st.text_input("New Tags (comma-separated)")
         submitted = st.form_submit_button("Add Menu Item")

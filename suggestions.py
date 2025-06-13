@@ -90,7 +90,7 @@ def get_pending_suggestions() -> list[dict]:
     return [doc.to_dict() for doc in docs]
 
 def get_suggestion_count() -> int:
-    return len(get_pending_suggestions())
+    return len(get_pending_suggestions()
 
 # ----------------------------
 # 🧠 AI Helper for Suggestion Drafting

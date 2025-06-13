@@ -21,6 +21,6 @@ def audit_log_ui(user=None):
         return
 
     for log in logs:
-        ts = format_date(log.get("timestamp"))
+        ts = format_date(log.get("timestamp")
         st.markdown(f"**{ts}** — {log.get('user', {}).get('name', 'Unknown')} → `{log.get('action')}`")
         st.caption(f"Target: `{log.get('target_type')}` / ID: `{log.get('target_id')}`")

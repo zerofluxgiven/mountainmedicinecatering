@@ -65,7 +65,7 @@ def menu_editor_ui_scoped(user: dict) -> None:
     st.title("🍽️ Menu Editor")
     
     # Show current scope
-    st.info(get_event_scope_message())
+    st.info(get_event_scope_message()
     
    # role = get_user_role(user)
     
@@ -96,7 +96,7 @@ def file_manager_ui_scoped(user):
     st.subheader("📁 File Manager")
     
     # Show current scope
-    st.info(get_event_scope_message())
+    st.info(get_event_scope_message()
     
     if not user:
         st.warning("Please log in to manage files.")
@@ -141,7 +141,7 @@ def normalize_ingredient(name: str) -> str:
 # ----------------------------
 
 def generate_id(prefix=None):
-    uid = str(uuid.uuid4())[:8]
+    uid = str(uuid.uuid4()[:8]
     return f"{prefix}_{uid}" if prefix else uid
 
 # ----------------------------

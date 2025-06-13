@@ -113,8 +113,8 @@ def role_admin_ui() -> None:
         role_stats[role] = role_stats.get(role, 0) + 1
     
     st.markdown("### 📊 Role Statistics")
-    cols = st.columns(len(role_stats))
-    for i, (role, count) in enumerate(role_stats.items()):
+    cols = st.columns(len(role_stats)
+    for i, (role, count) in enumerate(role_stats.items():
         with cols[i]:
             st.metric(role.title(), count)
     
@@ -141,7 +141,7 @@ def role_admin_ui() -> None:
                 
                 if user.get('created_at'):
                     from utils import format_date
-                    st.markdown(f"**Joined:** {format_date(user.get('created_at'))}")
+                    st.markdown(f"**Joined:** {format_date(user.get('created_at')}")
             
             with col2:
                 current_role = user.get("role", "viewer")
@@ -191,7 +191,7 @@ def role_admin_ui() -> None:
                     if st.button("📧 Send Verification", key=f"verify_{user['id']}"):
                         try:
                             from firebase_admin import auth as firebase_auth
-                            verification_link = firebase_auth.generate_email_verification_link(user.get('email'))
+                            verification_link = firebase_auth.generate_email_verification_link(user.get('email')
                             st.success("✅ Verification email queued!")
                             st.info("Email verification system integration needed")
                         except Exception as e:
@@ -232,25 +232,25 @@ def show_user_activity_summary(user: dict):
         
         try:
             # Get user's events
-            events_created = list(db.collection("events").where("created_by", "==", user_id).stream())
+            events_created = list(db.collection("events").where("created_by", "==", user_id).stream()
             
             # Get user's files
-            files_uploaded = list(db.collection("files").where("uploaded_by", "==", user_id).stream())
+            files_uploaded = list(db.collection("files").where("uploaded_by", "==", user_id).stream()
             
             # Get user's active sessions
             active_sessions = list(db.collection("active_sessions")
                                  .where("user_id", "==", user_id)
-                                 .where("active", "==", True).stream())
+                                 .where("active", "==", True).stream()
             
             # Display metrics
             col1, col2, col3 = st.columns(3)
             
             with col1:
-                st.metric("Events Created", len(events_created))
+                st.metric("Events Created", len(events_created)
             with col2:
-                st.metric("Files Uploaded", len(files_uploaded))
+                st.metric("Files Uploaded", len(files_uploaded)
             with col3:
-                st.metric("Active Sessions", len(active_sessions))
+                st.metric("Active Sessions", len(active_sessions)
             
             # Show recent events
             if events_created:

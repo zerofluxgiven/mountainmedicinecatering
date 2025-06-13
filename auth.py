@@ -14,7 +14,7 @@ def is_logged_in():
     return "user" in st.session_state
 
 def get_user():
-    print("🔎 get_user called; session keys:", list(st.session_state.keys()))
+    print("🔎 get_user called; session keys:", list(st.session_state.keys())
     return st.session_state.get("user")
 
 def get_user_id(user=None):
@@ -90,7 +90,7 @@ def enrich_session_from_token(token: str) -> dict | None:
             "decoded_uid": user_id,
             "email": email,
             "verified": email_verified,
-            "timestamp": str(datetime.utcnow())
+            "timestamp": str(datetime.utcnow()
         }
 
         doc_ref = db.collection("users").document(user_id)
@@ -120,7 +120,7 @@ def enrich_session_from_token(token: str) -> dict | None:
         return user_data
 
     except Exception as e:
-        st.session_state["_auth_debug"] = {"error": str(e), "timestamp": str(datetime.utcnow())}
+        st.session_state["_auth_debug"] = {"error": str(e), "timestamp": str(datetime.utcnow()}
         print(f"[Auth] Token enrichment failed: {e}")
         return None
 

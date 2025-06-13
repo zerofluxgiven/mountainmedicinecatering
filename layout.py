@@ -198,7 +198,7 @@ def render_chat_bubble():
             
             function handleMouseDown(e) {{
                 // Only drag on direct button click, not on any child elements
-                if (e.target !== button && !button.contains(e.target)) return;
+                if (e.target !== button && !button.contains(e.target) return;
                 
                 startDrag(e.clientX, e.clientY);
                 
@@ -261,8 +261,8 @@ def render_chat_bubble():
                 const padding = 10;
                 const buttonSize = 60;
                 
-                newRight = Math.max(padding, Math.min(window.innerWidth - buttonSize - padding, newRight));
-                newBottom = Math.max(padding, Math.min(window.innerHeight - buttonSize - padding, newBottom));
+                newRight = Math.max(padding, Math.min(window.innerWidth - buttonSize - padding, newRight);
+                newBottom = Math.max(padding, Math.min(window.innerHeight - buttonSize - padding, newBottom);
                 
                 // Apply new position
                 container.style.right = newRight + 'px';
@@ -429,8 +429,8 @@ def render_fully_draggable_chat():
             const maxTop = window.innerHeight - element.offsetHeight - 10;
             const maxLeft = window.innerWidth - element.offsetWidth - 10;
             
-            container.style.top = Math.max(10, Math.min(maxTop, newTop)) + "px";
-            container.style.left = Math.max(10, Math.min(maxLeft, newLeft)) + "px";
+            container.style.top = Math.max(10, Math.min(maxTop, newTop) + "px";
+            container.style.left = Math.max(10, Math.min(maxLeft, newLeft) + "px";
             container.style.bottom = "auto";
             container.style.right = "auto";
         }}
@@ -889,7 +889,7 @@ def render_status_indicator(status):
 def apply_theme():
     """Apply the complete Mountain Medicine theme"""
     import time
-    st.session_state["current_location"] = f"main_header_{int(time.time())}"
+    st.session_state["current_location"] = f"main_header_{int(time.time()}"
     
     inject_custom_css()
     render_event_mode_indicator()

@@ -93,7 +93,7 @@ def ai_chat_ui():
                 st.session_state.chat_history.append({
                     "sender": "user",
                     "content": f"Analyze or suggest improvements for this recipe: {recipe_context.get('name', '')}",
-                    "timestamp": format_date(datetime.now())
+                    "timestamp": format_date(datetime.now()
                 })
                 st.rerun()
 
@@ -106,8 +106,8 @@ def ai_chat_ui():
         if chat.get("sender") == "user":
             st.markdown(f"**🧑 You:** {chat.get('content', '')}")
         else:
-            with st.expander(f"🤖 **AI** - {chat.get('timestamp', 'Now')}", expanded=(i == len(st.session_state.chat_history) - 1)):
-                st.markdown(chat.get('content', ''))
+            with st.expander(f"🤖 **AI** - {chat.get('timestamp', 'Now')}", expanded=(i == len(st.session_state.chat_history) - 1):
+                st.markdown(chat.get('content', '')
                 
                 # Show action buttons if AI suggested actions
                 if chat.get('actions'):
@@ -138,14 +138,14 @@ def ai_chat_ui():
                 st.session_state.chat_history.append({
                     "sender": "user",
                     "content": user_input.strip(),
-                    "timestamp": format_date(datetime.now())
+                    "timestamp": format_date(datetime.now()
                 })
                 
                 st.session_state.chat_history.append({
                     "sender": "ai",
                     "content": response["content"],
                     "actions": response.get("actions", []),
-                    "timestamp": format_date(datetime.now())
+                    "timestamp": format_date(datetime.now()
                 })
                 
                 # Log conversation
@@ -248,7 +248,7 @@ def handle_quick_action(action_type: str):
         st.session_state.setdefault("chat_history", []).append({
             "sender": "user",
             "content": prompts[action_type],
-            "timestamp": format_date(datetime.now())
+            "timestamp": format_date(datetime.now()
         })
         
         # Get AI response
@@ -262,7 +262,7 @@ def handle_quick_action(action_type: str):
                 "sender": "ai",
                 "content": response["content"],
                 "actions": response.get("actions", []),
-                "timestamp": format_date(datetime.now())
+                "timestamp": format_date(datetime.now()
             })
             
             log_conversation(user["id"], prompts[action_type], response["content"], role)
@@ -283,8 +283,8 @@ def build_context(user: dict, include_event: bool = True) -> str:
             if recipe_doc.exists:
                 recipe = recipe_doc.to_dict()
                 context_parts.append(f"Recipe: {recipe.get('name', 'Unnamed')}")
-                context_parts.append("Ingredients:\n" + recipe.get("ingredients", "—"))
-                context_parts.append("Instructions:\n" + recipe.get("instructions", "—"))
+                context_parts.append("Ingredients:\n" + recipe.get("ingredients", "—")
+                context_parts.append("Instructions:\n" + recipe.get("instructions", "—")
         except Exception as e:
             context_parts.append("⚠️ Failed to load selected recipe context.")
 
@@ -305,7 +305,7 @@ def build_context(user: dict, include_event: bool = True) -> str:
             
             # Get menu items count
             try:
-                menu_count = len(list(db.collection("menus").where("event_id", "==", active_event["id"]).stream()))
+                menu_count = len(list(db.collection("menus").where("event_id", "==", active_event["id"]).stream())
                 context_parts.append(f"Menu Items: {menu_count}")
             except:
                 pass
@@ -398,7 +398,7 @@ def save_ai_shopping_list(event_id: str, content: str):
                 qty_part = parts[1].strip(')')
                 # Simple quantity extraction
                 quantity = qty_part.split()[0] if qty_part else ""
-                unit = ' '.join(qty_part.split()[1:]) if len(qty_part.split()) > 1 else ""
+                unit = ' '.join(qty_part.split()[1:]) if len(qty_part.split() > 1 else ""
             else:
                 name = item_text
                 quantity = ""
@@ -440,7 +440,7 @@ def show_ai_usage_analytics():
     
     try:
         # Get usage logs
-        logs = list(db.collection("ai_logs").order_by("created_at", direction=firestore.Query.DESCENDING).limit(100).stream())
+        logs = list(db.collection("ai_logs").order_by("created_at", direction=firestore.Query.DESCENDING).limit(100).stream()
         
         if not logs:
             st.info("No AI usage data yet.")
@@ -448,7 +448,7 @@ def show_ai_usage_analytics():
         
         # Calculate metrics
         total_queries = len(logs)
-        unique_users = len(set(log.to_dict().get("user_id") for log in logs))
+        unique_users = len(set(log.to_dict().get("user_id") for log in logs)
         
         # Common query types
         query_types = {

@@ -308,10 +308,10 @@ def event_ui(user: dict | None) -> None:
                 
             with col2:
                 st.markdown("**Status:**", unsafe_allow_html=True)
-                render_status_indicator(event.get('status', 'planning'))
+                render_status_indicator(event.get('status', 'planning')
                 st.markdown(f"**Created by:** {event.get('created_by', 'Unknown')}")
                 if event.get('created_at'):
-                    st.markdown(f"**Created:** {format_date(event.get('created_at'))}")
+                    st.markdown(f"**Created:** {format_date(event.get('created_at')}")
             
             # Description
             if event.get('description'):
@@ -396,7 +396,7 @@ def show_event_statistics():
             st.metric("Completed Events", completed_events)
         
         with col4:
-            total_guests = sum(e.get('guest_count', 0) for e in events if not e.get('deleted'))
+            total_guests = sum(e.get('guest_count', 0) for e in events if not e.get('deleted')
             st.metric("Total Guests Served", total_guests)
         
         # Show recent activity
@@ -431,10 +431,10 @@ def render_event_filters():
         search_term = st.text_input("Search events", placeholder="Search by name or location...")
     
     with col2:
-        status_filter = st.selectbox("Filter by status", ["All", "planning", "active", "complete"])
+        status_filter = st.selectbox("Filter by status", key="Filter by status", ["All", "planning", "active", "complete"], key="auto_key"
     
     with col3:
-        date_filter = st.selectbox("Date range", ["All time", "This month", "Next month", "Past events"])
+        date_filter = st.selectbox("Date range", key="Date range", ["All time", "This month", "Next month", "Past events"], key="auto_key"
     
     return search_term, status_filter, date_filter
 

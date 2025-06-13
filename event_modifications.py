@@ -34,7 +34,7 @@ def event_modifications_ui(user: dict) -> None:
 
     for s in suggestions:
         with st.expander(f"🗂️ {s.get('type', 'Unknown Type')} | Field: {s.get('field', 'Unknown')}"):
-            st.markdown(f"**Submitted by:** {s.get('created_by', 'unknown')} | **Time:** {format_date(s.get('created_at'))}")
+            st.markdown(f"**Submitted by:** {s.get('created_by', 'unknown')} | **Time:** {format_date(s.get('created_at')}")
             st.markdown(f"**Target ID:** `{s.get('target_id')}`")
             st.markdown(f"**Original Value:**\n```\n{s.get('original_value')}```")
 

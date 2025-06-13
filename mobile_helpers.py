@@ -14,7 +14,7 @@ def safe_dataframe(data, use_container_width=True, **kwargs):
     if st.session_state.get("mobile_mode", False):
         mobile_layout.optimize_table_for_mobile(
             data if isinstance(data, list) else data.to_dict('records'),
-            list(data.columns) if hasattr(data, 'columns') else list(data[0].keys())
+            list(data.columns) if hasattr(data, 'columns') else list(data[0].keys()
         )
     else:
         st.dataframe(data, use_container_width=use_container_width, **kwargs)  # ✅ FIXED: Direct st.dataframe call

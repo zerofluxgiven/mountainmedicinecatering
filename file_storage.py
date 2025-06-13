@@ -14,7 +14,7 @@ def file_manager_ui(user):
     user_id = user.get("id")
 
     query = db.collection("files").where("deleted", "==", False)
-    files = list(query.stream())
+    files = list(query.stream()
     file_data = [doc.to_dict() | {"id": doc.id} for doc in files]
 
     if 'view_mode' not in st.session_state:
@@ -24,7 +24,7 @@ def file_manager_ui(user):
 
     view_col, search_col = st.columns([1, 3])
     with view_col:
-        st.selectbox("View", ["all", "linked", "unlinked"], key="view_mode")
+        st.selectbox("View", key="View", ["all", "linked", "unlinked"], key="view_mode", key="auto_key"
     with search_col:
         st.text_input("Search files", key="search_term")
 
@@ -32,8 +32,8 @@ def file_manager_ui(user):
     for file in file_data:
         matches_view = (
             st.session_state.view_mode == "all" or
-            (st.session_state.view_mode == "linked" and file.get("event_id")) or
-            (st.session_state.view_mode == "unlinked" and not file.get("event_id"))
+            (st.session_state.view_mode == "linked" and file.get("event_id") or
+            (st.session_state.view_mode == "unlinked" and not file.get("event_id")
         )
         matches_search = st.session_state.search_term.lower() in file.get("name", "").lower()
         if matches_view and matches_search:
@@ -58,8 +58,8 @@ def file_manager_ui(user):
     if "editing_file" in st.session_state:
         file = st.session_state["editing_file"]
         st.markdown(f"### ✏️ Editing File: {file.get('name', '')}")
-        tags = st.text_input("Tags (comma-separated)", value=", ".join(file.get("tags", [])))
-        event_id = st.text_input("Linked Event ID", value=file.get("event_id", ""))
+        tags = st.text_input("Tags (comma-separated)", value=", ".join(file.get("tags", []))
+        event_id = st.text_input("Linked Event ID", value=file.get("event_id", "")
         if st.button("Save Changes", key="save_changes"):
             db.collection("files").document(file["id"]).update({
                 "tags": [tag.strip() for tag in tags.split(",") if tag.strip()],
@@ -79,7 +79,7 @@ def file_manager_ui(user):
 def show_file_analytics():
     st.subheader("📊 File Analytics")
     query = db.collection("files").where("deleted", "==", False)
-    files = list(query.stream())
+    files = list(query.stream()
     file_data = [doc.to_dict() | {"id": doc.id} for doc in files]
 
     total_files = len(file_data)
@@ -89,14 +89,14 @@ def show_file_analytics():
     contributors = set()
 
     for file in file_data:
-        contributors.add(file.get("uploaded_by", "Unknown"))
+        contributors.add(file.get("uploaded_by", "Unknown")
         ftype = file.get("type", "other")
         types[ftype] = types.get(ftype, 0) + 1
 
     st.metric("📁 Total Files", total_files)
     st.metric("🔗 Linked to Events", linked)
     st.metric("❌ Unlinked", unlinked)
-    st.metric("🙋 Contributors", len(contributors))
+    st.metric("🙋 Contributors", len(contributors)
 
     st.markdown("### 📂 File Type Breakdown")
     for ftype, count in types.items():
@@ -190,7 +190,7 @@ def show_link_editor_ui(file_id: str):
     from file_storage import link_file_to_entity
     st.markdown("### 🔗 Link this file to a record")
     link_targets = ["event", "recipe", "menu", "ingredient"]
-    selected_type = st.selectbox("Choose target type to link", link_targets, key=f"link_type_{file_id}")
+    selected_type = st.selectbox("Choose target type to link", key="Choose target type to link", link_targets, key=f"link_type_{file_id}", key="auto_key"
     collection_map = {
         "event": "events", "recipe": "recipes",
         "menu": "menus", "ingredient": "ingredients"
@@ -199,7 +199,7 @@ def show_link_editor_ui(file_id: str):
     selected_id = st.selectbox(
         f"Select {selected_type} to link",
         options,
-        format_func=lambda o: o.get('name', o.get('title', o['id'])),
+        format_func=lambda o: o.get('name', o.get('title', o['id']),
         key=f"{file_id}_{selected_type}"
     )
     if st.button(f"🔗 Link to selected {selected_type}", key=f"link_btn_{file_id}"):
