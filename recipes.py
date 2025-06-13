@@ -510,3 +510,57 @@ def save_recipe_to_firestore(recipe_data, user_id=None, file_id=None):
     }
     db.collection("recipes").document(recipe_id).set(doc)
     return recipe_id
+
+
+def save_event_to_firestore(event_data, user_id=None, file_id=None):
+    from firebase_init import db
+    import uuid
+    event_id = str(uuid.uuid4())
+    doc = {
+        "id": event_id,
+        "name": event_data.get("title", "Untitled Event"),
+        "date": event_data.get("date"),
+        "location": event_data.get("location"),
+        "notes": event_data.get("notes", ""),
+        "tags": event_data.get("tags", []),
+        "created_by": user_id,
+        "source_file_id": file_id
+    }
+    db.collection("events").document(event_id).set(doc)
+    return event_id
+
+
+
+def save_menu_to_firestore(menu_data, user_id=None, file_id=None):
+    from firebase_init import db
+    import uuid
+    menu_id = str(uuid.uuid4())
+    doc = {
+        "id": menu_id,
+        "title": menu_data.get("title", "Untitled Menu"),
+        "meals": menu_data.get("meals", []),
+        "tags": menu_data.get("tags", []),
+        "created_by": user_id,
+        "source_file_id": file_id
+    }
+    db.collection("menus").document(menu_id).set(doc)
+    return menu_id
+
+
+
+def save_ingredient_to_firestore(ingredient_data, user_id=None, file_id=None):
+    from firebase_init import db
+    import uuid
+    ing_id = str(uuid.uuid4())
+    doc = {
+        "id": ing_id,
+        "name": ingredient_data.get("name", "Unnamed Ingredient"),
+        "unit": ingredient_data.get("unit", ""),
+        "category": ingredient_data.get("category", ""),
+        "notes": ingredient_data.get("notes", ""),
+        "tags": ingredient_data.get("tags", []),
+        "created_by": user_id,
+        "source_file_id": file_id
+    }
+    db.collection("ingredients").document(ing_id).set(doc)
+    return ing_id
