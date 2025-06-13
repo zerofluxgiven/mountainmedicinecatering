@@ -237,6 +237,9 @@ def restore_file(file_id):
 # ----------------------------
 
 def file_manager_ui(user):
+    if "user" not in st.session_state:
+        st.warning("You must be logged in to access the file manager.")
+        st.stop()
     st.subheader("📁 File Manager")
     
     # Show current scope
