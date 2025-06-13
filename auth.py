@@ -14,6 +14,7 @@ def is_logged_in():
     return "user" in st.session_state
 
 def get_user():
+    print("🔎 get_user called; session keys:", list(st.session_state.keys()))
     return st.session_state.get("user")
 
 def get_user_id(user=None):
