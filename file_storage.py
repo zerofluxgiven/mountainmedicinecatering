@@ -102,3 +102,69 @@ def show_file_analytics():
     st.markdown("### 📂 File Type Breakdown")
     for ftype, count in types.items():
         st.markdown(f"- **{ftype}**: {count}")
+
+
+from firebase_init import get_db, get_bucket
+from utils import generate_id
+from datetime import datetime
+import mimetypes
+from ai_parsing_engine import parse_file, extract_text
+from io import BytesIO
+
+def save_uploaded_file(file, event_id: str, uploaded_by: str):
+    """
+    Uploads file to Firebase Storage, logs metadata in Firestore,
+    auto-runs AI parsing, and returns relevant data.
+    """
+    db = get_db()
+    bucket = get_bucket()
+
+    file_id = generate_id("file")
+    content = file.getvalue()
+    filename = file.name
+    mimetype, _ = mimetypes.guess_type(filename)
+    mimetype = mimetype or "application/octet-stream"
+
+    folder = event_id or "unlinked"
+    storage_path = f"uploads/{folder}/{file_id}_{filename}"
+    blob = bucket.blob(storage_path)
+    blob.upload_from_string(content, content_type=mimetype)
+    blob.make_public()
+
+    raw_text = None
+    parsed = {}
+    try:
+        fcopy = BytesIO(content)
+        fcopy.name = filename
+        fcopy.type = mimetype
+        raw_text = extract_text(fcopy)
+        parsed = parse_file(fcopy, target_type="all", user_id=uploaded_by, file_id=file_id)
+    except Exception as e:
+        print(f"AI parsing failed: {e}")
+
+    metadata = {
+        "name": filename,
+        "size": len(content),
+        "type": mimetype,
+        "uploaded_by": uploaded_by,
+        "event_id": event_id,
+        "created_at": datetime.utcnow(),
+        "storage_path": storage_path,
+        "public_url": blob.public_url,
+        "deleted": False,
+        "raw_text": raw_text,
+        "parsed_data": {
+            "parsed": parsed,
+            "version": 1,
+            "status": "pending_review",
+            "last_updated": datetime.utcnow(),
+            "user_id": uploaded_by
+        } if parsed else {},
+    }
+
+    db.collection("files").document(file_id).set(metadata)
+    return {
+        "file_id": file_id,
+        "parsed": parsed,
+        "raw_text": raw_text
+    }
