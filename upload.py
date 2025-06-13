@@ -1,4 +1,4 @@
-    with st.expander("🧾 Parsed Metadata Editor", expanded=True):
+with st.expander("🧾 Parsed Metadata Editor", expanded=True):
         parsed_data['type'] = st.text_input("Type", parsed_data.get('type', ''))
         parsed_data['meal_time'] = st.text_input("Meal Time", parsed_data.get('meal_time', ''))
         parsed_data['diet'] = st.text_input("Diet", parsed_data.get('diet', ''))
@@ -82,3 +82,57 @@ def upload_ui(event_id: str = None):
                                 st.error("❌ Failed to save parsed recipe.")
                 except Exception as e:
                     st.warning(f"⚠️ Could not parse recipe: {e}")
+
+import streamlit as st
+from firebase_init import db
+from utils import get_active_event_id
+from auth import get_user_id
+from file_storage import save_uploaded_file
+from upload_integration import save_parsed_menu_ui
+
+def upload_ui():
+    st.title("📤 Upload Files")
+    user_id = get_user_id()
+    event_id = get_active_event_id()
+
+    st.markdown("### Upload a new file")
+    uploaded_file = st.file_uploader("Drop or select a file", type=["pdf", "txt", "jpg", "png", "jpeg", "csv", "docx"])
+
+    if uploaded_file:
+        with st.spinner("Parsing and uploading..."):
+            result = save_uploaded_file(uploaded_file, event_id, user_id)
+            st.session_state["last_uploaded_file"] = result
+
+        st.success("✅ File uploaded and parsed.")
+
+        if st.button("View / Edit Parsed Data"):
+            parsed = result.get("parsed", {})
+            raw = result.get("raw_text", "")
+
+            st.markdown("#### 🧠 Parsed Preview")
+
+            # Visual section: RECIPE
+            if parsed.get("title"):
+                with st.container():
+                    st.markdown("##### 🍽️ Recipe")
+                    st.markdown(f"**Title:** `{parsed.get('title')}`")
+                    st.markdown(f"**Diet:** `{parsed.get('diet', '-')}`")
+                    st.markdown(f"**Allergens:** `{', '.join(parsed.get('allergens', []))}`")
+                    st.markdown(f"**Notes:** {parsed.get('notes', '')}")
+
+            if parsed.get("tags"):
+                st.markdown("##### 🏷️ Tags")
+                st.markdown(", ".join([f"`{t}`" for t in parsed.get("tags", [])]))
+
+        st.markdown("### Save as...")
+        col1, col2 = st.columns(2)
+        with col1:
+            if st.button("💾 Save as Menu Item"):
+                save_parsed_menu_ui(result.get("parsed", {}))
+        with col2:
+            st.button("💾 Save as Recipe")  # placeholder for recipe logic
+
+    st.markdown("---")
+    st.markdown("## 📁 File Manager")
+    from file_storage import file_manager_ui
+    file_manager_ui({"id": user_id})
