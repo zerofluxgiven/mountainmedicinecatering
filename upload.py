@@ -1,11 +1,3 @@
-#upload.py
-with st.expander("🧾 Parsed Metadata Editor", expanded=True):
-        parsed_data['type'] = st.text_input("Type", parsed_data.get('type', ''))
-        parsed_data['meal_time'] = st.text_input("Meal Time", parsed_data.get('meal_time', ''))
-        parsed_data['diet'] = st.text_input("Diet", parsed_data.get('diet', ''))
-        parsed_data['notes'] = st.text_area("Notes", parsed_data.get('notes', ''))
-        parsed_data['allergens'] = st.text_input("Allergens (comma-separated)", 
-                                              ', '.join(parsed_data.get('allergens', []))).split(',')
 import streamlit as st
 from auth import require_role
 from file_storage import save_uploaded_file
