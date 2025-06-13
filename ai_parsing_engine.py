@@ -169,22 +169,58 @@ def query_ai_parser(raw_text, target_type):
 # --------------------------------------------
 # ⏬ UI Extract Buttons (called from other files)
 # --------------------------------------------
-def render_extraction_buttons(file_id, parsed_data):
+def render_extraction_buttons(file_id, parsed_data, user_id=None):
+    from recipes import (
+        save_recipe_to_firestore,
+        save_menu_to_firestore,
+        save_event_to_firestore,
+        save_ingredient_to_firestore
+    )
+    from utils import get_active_event_id
+
+    if not parsed_data:
+        st.info("No parsed data available.")
+        return
+
+    with st.expander('💾 Save Extracted Content', expanded=True):
+        if "recipes" in parsed_data and parsed_data["recipes"]:
+            if st.button("📥 Save Recipes"):
+                for r in parsed_data["recipes"] if isinstance(parsed_data["recipes"], list) else [parsed_data["recipes"]]:
+                    save_recipe_to_firestore(r, user_id=user_id, file_id=file_id)
+                st.success("✅ Recipes saved to database")
+
+        if "menus" in parsed_data and parsed_data["menus"]:
+            if st.button("📥 Save Menus"):
+                for m in parsed_data["menus"] if isinstance(parsed_data["menus"], list) else [parsed_data["menus"]]:
+                    save_menu_to_firestore(m, user_id=user_id, file_id=file_id)
+                st.success("✅ Menus saved to database")
+
+        if "events" in parsed_data and parsed_data["events"]:
+            if st.button("📥 Save Events"):
+                for e in parsed_data["events"] if isinstance(parsed_data["events"], list) else [parsed_data["events"]]:
+                    save_event_to_firestore(e, user_id=user_id, file_id=file_id)
+                st.success("✅ Events saved to database")
+
+        if "ingredients" in parsed_data and parsed_data["ingredients"]:
+            if st.button("📥 Save Ingredients"):
+                for ing in parsed_data["ingredients"]:
+                    save_ingredient_to_firestore(ing, user_id=user_id, file_id=file_id)
+                st.success("✅ Ingredients saved to database")
+
+    st.markdown("---")
+    st.subheader("🧪 Parsed Data")
+    st.json(parsed_data)
 
     if parsed_data:
-        with st.expander('💾 Save Options', expanded=False):
-            if st.button('📥 Save as Recipe'):
                 for r in parsed_data['recipes'] if isinstance(parsed_data['recipes'], list) else [parsed_data['recipes']]:
                     save_recipe_to_firestore(r)
                 st.success('✅ Recipes saved to database')
-            if st.button('📥 Save as Menu'):
                 from menu_editor import save_menu_to_firestore
                 from utils import get_active_event_id
                 event_id = get_active_event_id()
                 if not event_id:
                 save_menu_to_firestore(parsed_data, event_id=event_id)
                 st.success('✅ Menu saved to database')
-            if st.button('📥 Save as Ingredient'):
                 from ingredients import save_ingredient_to_firestore
                 if 'ingredients' in parsed_data:
                     for ing in parsed_data['ingredients']:
