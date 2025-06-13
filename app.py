@@ -1,4 +1,4 @@
-from upload import upload_ui
+from upload import upload_ui_mobile, upload_ui_desktop
 import streamlit as st
 
 # ✅ Correct Streamlit config placed immediately after import
@@ -106,10 +106,8 @@ def handle_auth_routing():
     import streamlit.components.v1 as components
     query_params = st.experimental_get_query_params()
 
-
     if "token" not in query_params:
         components.html('''
-        
         <script>
         const token = localStorage.getItem("mm_token") || "";
         const device = localStorage.getItem("mm_device") || "desktop";
@@ -118,8 +116,6 @@ def handle_auth_routing():
         </script>
         ''', height=0)
         st.stop()
-        pass
-        return
 
     if query_params.get("logout") == ["true"]:
         log_user_action("logout")
@@ -146,7 +142,7 @@ def handle_auth_routing():
             st.session_state["user"] = user
             st.toast(f"Welcome {user.get('name', 'back')} 👋")
             log_user_action(user.get("id", "unknown"), user.get("role", "viewer"), "login")
-            st.query_params.clear()
+            st.experimental_set_query_params()
         else:
             st.error("Login failed. Invalid or expired token.")
             return
@@ -158,10 +154,7 @@ def handle_auth_routing():
 
 def validate_tab_state(visible_tabs):
     if "top_nav" not in st.session_state or st.session_state["top_nav"] not in visible_tabs:
-        if visible_tabs:
-            st.session_state["top_nav"] = visible_tabs[0]
-        else:
-            st.session_state["top_nav"] = "Dashboard"
+        st.session_state["top_nav"] = visible_tabs[0] if visible_tabs else "Dashboard"
 
 def main():
     handle_auth_routing()
@@ -204,7 +197,6 @@ def main():
     st.sidebar.write("User:", st.session_state.get("user"))
     st.sidebar.write("Event ID:", st.session_state.get("active_event_id"))
 
-
     visible_tabs = list(TABS.keys())
     role = user.get("role", "viewer") if user else "viewer"
     if role != "admin":
@@ -221,11 +213,7 @@ def main():
     selected_tab = render_top_navbar(visible_tabs)
 
     if not selected_tab:
-        selected_tab = st.session_state.get("top_nav")
-        if not selected_tab:
-            st.warning("⚠️ Failed to determine active tab. Defaulting to Dashboard.")
-            selected_tab = "Dashboard"
-            st.session_state["top_nav"] = "Dashboard"
+        selected_tab = st.session_state.get("top_nav", "Dashboard")
 
     if selected_tab not in visible_tabs:
         st.warning(f"⚠️ Invalid tab: {selected_tab}. Resetting.")
@@ -249,7 +237,10 @@ def main():
         elif selected_tab == "Upload":
             upload_tab, analytics_tab = st.tabs(["📄 Upload Files", "📊 File Analytics"])
             with upload_tab:
-                upload_ui()
+                if st.session_state.get("mobile_mode"):
+                    upload_ui_mobile()
+                else:
+                    upload_ui_desktop()
             with analytics_tab:
                 show_file_analytics()
         elif selected_tab == "Receipts":
