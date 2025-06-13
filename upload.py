@@ -3,7 +3,6 @@ from auth import require_role
 from file_storage import save_uploaded_file
 from utils import session_get, format_date
 from mobile_helpers import safe_file_uploader
-from mobile_components import render_mobile_navigation
 from events import get_all_events
 from recipes import parse_and_store_recipe_from_file, save_recipe_to_firestore  # ✅ ADD THIS
 
@@ -86,6 +85,7 @@ from upload_integration import save_parsed_menu_ui
 from ui_components import render_tag_group, edit_metadata_ui
 
 def upload_ui():
+    from mobile_components import render_mobile_navigation
     st.title("📤 Upload Files")
     user_id = get_user_id()
     event_id = get_active_event_id()
