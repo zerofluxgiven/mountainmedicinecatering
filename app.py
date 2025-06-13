@@ -203,7 +203,7 @@ def main():
     st.sidebar.write("Event ID:", st.session_state.get("active_event_id"))
 
 
-    visible_tabs = list(TABS.keys()
+    visible_tabs = list(TABS.keys())
     role = user.get("role", "viewer") if user else "viewer"
     if role != "admin":
         for admin_tab in ["Admin Panel", "Suggestions", "Bulk Suggestions", "Audit Logs", "PDF Export"]:
