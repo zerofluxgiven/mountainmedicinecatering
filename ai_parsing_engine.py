@@ -174,7 +174,6 @@ def render_extraction_buttons(file_id, parsed_data):
     if parsed_data:
         with st.expander('💾 Save Options', expanded=False):
             if st.button('📥 Save as Recipe'):
-                from recipes import save_recipe_to_firestore
                 for r in parsed_data['recipes'] if isinstance(parsed_data['recipes'], list) else [parsed_data['recipes']]:
                     save_recipe_to_firestore(r)
                 st.success('✅ Recipes saved to database')
@@ -183,7 +182,6 @@ def render_extraction_buttons(file_id, parsed_data):
                 from utils import get_active_event_id
                 event_id = get_active_event_id()
                 if not event_id:
-                    event_id = st.selectbox('Assign to Event', options=get_all_events(, key="auto_key", format_func=lambda e: e['name'], key="auto_key")
                 save_menu_to_firestore(parsed_data, event_id=event_id)
                 st.success('✅ Menu saved to database')
             if st.button('📥 Save as Ingredient'):
@@ -210,7 +208,6 @@ def render_extraction_buttons(file_id, parsed_data):
     if "recipes" in parsed_data and parsed_data["recipes"]:
         if st.button("📥 Save as Recipe"):
             try:
-                from recipes import save_recipe_to_firestore
                 for r in parsed_data["recipes"] if isinstance(parsed_data["recipes"], list) else [parsed_data["recipes"]]:
                     save_recipe_to_firestore(r)
                 st.success("✅ Recipes saved to database")
@@ -230,3 +227,16 @@ def render_extraction_buttons(file_id, parsed_data):
                 st.success("✅ Menus saved to database")
             except Exception as e:
                 st.error(f"Failed to save menus: {e}")
+
+def retry_parse_with_variants(raw_text, type_, retries=3):
+    prompts = [
+        f"Extract {type_} as structured JSON from:\n\n{raw_text[:6000]}",
+        f"Give me only the clean JSON {type_} details in this content:\n\n{raw_text[:6000]}",
+        f"Parse only {type_} content. Format in strict JSON, no commentary:\n\n{raw_text[:6000]}"
+    ]
+    for prompt in prompts[:retries]:
+        try:
+            return query_ai_parser(prompt)
+        except Exception as e:
+            print(f"Retry failed: {e}")
+    return {}
