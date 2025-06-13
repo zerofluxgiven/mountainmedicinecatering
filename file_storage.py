@@ -1,4 +1,3 @@
-
 import streamlit as st
 from firebase_init import db
 from firebase_admin import storage
@@ -168,3 +167,41 @@ def save_uploaded_file(file, event_id: str, uploaded_by: str):
         "parsed": parsed,
         "raw_text": raw_text
     }
+
+def link_file_to_entity(file_id: str, entity_type: str, entity_id: str):
+    from firebase_init import db
+    assert entity_type in {"recipes", "events", "menus", "ingredients"}, "Invalid entity type"
+    file_ref = db.collection("files").document(file_id)
+    file_doc = file_ref.get()
+    if not file_doc.exists:
+        raise ValueError("File does not exist")
+    data = file_doc.to_dict()
+    linked_to = data.get("linked_to", {})
+    current_links = linked_to.get(entity_type, [])
+    if entity_id not in current_links:
+        current_links.append(entity_id)
+    linked_to[entity_type] = current_links
+    file_ref.update({"linked_to": linked_to})
+
+def show_link_editor_ui(file_id: str):
+    import streamlit as st
+    from firebase_init import db
+    from utils import get_all_docs_as_options
+    from file_storage import link_file_to_entity
+    st.markdown("### 🔗 Link this file to a record")
+    link_targets = ["event", "recipe", "menu", "ingredient"]
+    selected_type = st.selectbox("Choose target type to link", link_targets, key=f"link_type_{file_id}")
+    collection_map = {
+        "event": "events", "recipe": "recipes",
+        "menu": "menus", "ingredient": "ingredients"
+    }
+    options = get_all_docs_as_options(collection_map[selected_type])
+    selected_id = st.selectbox(
+        f"Select {selected_type} to link",
+        options,
+        format_func=lambda o: o.get('name', o.get('title', o['id'])),
+        key=f"{file_id}_{selected_type}"
+    )
+    if st.button(f"🔗 Link to selected {selected_type}", key=f"link_btn_{file_id}"):
+        link_file_to_entity(file_id, collection_map[selected_type], selected_id["id"])
+        st.success(f"✅ Linked to {selected_type.capitalize()}")
