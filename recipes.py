@@ -494,3 +494,19 @@ def _recipe_analytics_tab():
         
     except Exception as e:
         st.error(f"Could not load analytics: {e}")
+
+def save_recipe_to_firestore(recipe_data, user_id=None, file_id=None):
+    from firebase_init import db
+    import uuid
+    recipe_id = str(uuid.uuid4())
+    doc = {
+        "id": recipe_id,
+        "name": recipe_data.get("title", "Untitled"),
+        "ingredients": recipe_data.get("ingredients", []),
+        "instructions": recipe_data.get("instructions", []),
+        "tags": recipe_data.get("tags", []),
+        "created_by": user_id,
+        "source_file_id": file_id
+    }
+    db.collection("recipes").document(recipe_id).set(doc)
+    return recipe_id
