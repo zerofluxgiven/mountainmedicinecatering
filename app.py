@@ -49,7 +49,6 @@ from event_planning_dashboard import event_planning_dashboard_ui
 from event_modifications import event_modifications_ui
 from bulk_suggestions import bulk_suggestions_ui
 from audit import audit_log_ui
-from tag_merging import tag_merging_ui
 from roles import role_admin_ui as admin_panel_ui
 from ingredients import ingredient_catalogue_ui
 from allergies import allergy_management_ui
