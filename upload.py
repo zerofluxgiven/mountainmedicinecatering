@@ -83,12 +83,14 @@ def upload_ui(event_id: str = None):
                 except Exception as e:
                     st.warning(f"⚠️ Could not parse recipe: {e}")
 
+
 import streamlit as st
 from firebase_init import db
 from utils import get_active_event_id
 from auth import get_user_id
-from file_storage import save_uploaded_file
+from file_storage import save_uploaded_file, file_manager_ui
 from upload_integration import save_parsed_menu_ui
+from ui_components import render_tag_group, edit_metadata_ui
 
 def upload_ui():
     st.title("📤 Upload Files")
@@ -108,31 +110,14 @@ def upload_ui():
         if st.button("View / Edit Parsed Data"):
             parsed = result.get("parsed", {})
             raw = result.get("raw_text", "")
+            parsed = edit_metadata_ui(parsed)
+            render_tag_group("Recipe", [parsed.get("title", "")], color="green")
+            render_tag_group("Allergens", parsed.get("allergens", []), color="red")
+            render_tag_group("Tags", parsed.get("tags", []), color="purple")
 
-            st.markdown("#### 🧠 Parsed Preview")
-
-            # Visual section: RECIPE
-            if parsed.get("title"):
-                with st.container():
-                    st.markdown("##### 🍽️ Recipe")
-                    st.markdown(f"**Title:** `{parsed.get('title')}`")
-                    st.markdown(f"**Diet:** `{parsed.get('diet', '-')}`")
-                    st.markdown(f"**Allergens:** `{', '.join(parsed.get('allergens', []))}`")
-                    st.markdown(f"**Notes:** {parsed.get('notes', '')}")
-
-            if parsed.get("tags"):
-                st.markdown("##### 🏷️ Tags")
-                st.markdown(", ".join([f"`{t}`" for t in parsed.get("tags", [])]))
-
-        st.markdown("### Save as...")
-        col1, col2 = st.columns(2)
-        with col1:
-            if st.button("💾 Save as Menu Item"):
-                save_parsed_menu_ui(result.get("parsed", {}))
-        with col2:
-            st.button("💾 Save as Recipe")  # placeholder for recipe logic
+        from upload_integration import show_save_file_actions
+        show_save_file_actions(st.session_state["last_uploaded_file"])
 
     st.markdown("---")
     st.markdown("## 📁 File Manager")
-    from file_storage import file_manager_ui
     file_manager_ui({"id": user_id})
