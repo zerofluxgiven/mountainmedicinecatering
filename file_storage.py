@@ -11,8 +11,7 @@ import uuid
 
 def file_manager_ui(user):
     st.subheader("📁 File Manager")
-    user_id = user.get("id")
-
+    user_id = user.get("id"))
     query = db.collection("files").where("deleted", "==", False)
     files = list(query.stream()
     file_data = [doc.to_dict() | {"id": doc.id} for doc in files]
@@ -24,7 +23,7 @@ def file_manager_ui(user):
 
     view_col, search_col = st.columns([1, 3])
     with view_col:
-        st.selectbox("View", key="View", ["all", "linked", "unlinked"], key="view_mode", key="auto_key"
+        st.selectbox(
     with search_col:
         st.text_input("Search files", key="search_term")
 
@@ -33,7 +32,7 @@ def file_manager_ui(user):
         matches_view = (
             st.session_state.view_mode == "all" or
             (st.session_state.view_mode == "linked" and file.get("event_id") or
-            (st.session_state.view_mode == "unlinked" and not file.get("event_id")
+            (st.session_state.view_mode == "unlinked" and not file.get("event_id"))
         )
         matches_search = st.session_state.search_term.lower() in file.get("name", "").lower()
         if matches_view and matches_search:
