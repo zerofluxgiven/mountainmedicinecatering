@@ -8,8 +8,8 @@ from PIL import Image
 import pytesseract
 import json
 from datetime import datetime
-from firebase_init import db, firestore
 import streamlit as st
+from firebase_init import db, firestore
 
 client = openai.OpenAI(api_key=st.secrets["openai"]["api_key"])
 
@@ -129,7 +129,7 @@ def query_ai_parser(raw_text, target_type):
 
         return json.loads(raw_output)
 
-    except json.JSONDecodeError as decode_error:
+    except json.JSONDecodeError:
         st.error("❌ Failed to parse AI response as valid JSON.")
         return {}
 
