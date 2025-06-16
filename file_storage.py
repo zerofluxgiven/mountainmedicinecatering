@@ -11,9 +11,9 @@ import uuid
 
 def file_manager_ui(user):
     st.subheader("📁 File Manager")
-    user_id = user.get("id"))
+    user_id = user.get("id")
     query = db.collection("files").where("deleted", "==", False)
-    files = list(query.stream()))
+    files = list(query.stream())
     file_data = [doc.to_dict() | {"id": doc.id} for doc in files]
 
     if 'view_mode' not in st.session_state:
@@ -57,7 +57,7 @@ def file_manager_ui(user):
     if "editing_file" in st.session_state:
         file = st.session_state["editing_file"]
         st.markdown(f"### ✏️ Editing File: {file.get('name', '')}")
-        tags = st.text_input("Tags (comma-separated)", value=", ".join(file.get("tags", []))))
+        tags = st.text_input("Tags (comma-separated)", value=", ".join(file.get("tags", [])))
         event_id = st.text_input("Linked Event ID", value=file.get("event_id", ""))
         if st.button("Save Changes", key="save_changes"):
             db.collection("files").document(file["id"]).update({
@@ -78,7 +78,7 @@ def file_manager_ui(user):
 def show_file_analytics():
     st.subheader("📊 File Analytics")
     query = db.collection("files").where("deleted", "==", False)
-    files = list(query.stream()))
+    files = list(query.stream())
     file_data = [doc.to_dict() | {"id": doc.id} for doc in files]
 
     total_files = len(file_data)
@@ -189,7 +189,7 @@ def show_link_editor_ui(file_id: str):
     from file_storage import link_file_to_entity
     st.markdown("### 🔗 Link this file to a record")
     link_targets = ["event", "recipe", "menu", "ingredient"]
-    selected_type = st.selectbox("Choose target type to link", link_targets, key=f"link_type_{file_id}")
+    selected_type = st.selectbox("View", ["all", "linked", "unlinked"], key="view_mode")
     collection_map = {
         "event": "events", "recipe": "recipes",
         "menu": "menus", "ingredient": "ingredients"
