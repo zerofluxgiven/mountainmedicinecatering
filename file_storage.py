@@ -1,5 +1,4 @@
 import streamlit as st
-from firebase_init import db
 from firebase_admin import storage
 from utils import format_date, get_active_event_id, session_get, session_set, get_event_by_id
 from datetime import datetime
@@ -10,6 +9,9 @@ import uuid
 # ----------------------------
 
 def file_manager_ui(user):
+    from firebase_init import get_db
+    db = get_db()
+
     st.subheader("📁 File Manager")
     user_id = user.get("id")
     query = db.collection("files").where("deleted", "==", False)
@@ -80,6 +82,9 @@ def file_manager_ui(user):
 # ----------------------------
 
 def show_file_analytics():
+    from firebase_init import get_db
+    db = get_db()
+
     st.subheader("📊 File Analytics")
     query = db.collection("files").where("deleted", "==", False)
     files = list(query.stream())
@@ -108,16 +113,11 @@ def show_file_analytics():
 
 from firebase_init import get_db, get_bucket
 from utils import generate_id
-from datetime import datetime
 import mimetypes
 from ai_parsing_engine import parse_file, extract_text
 from io import BytesIO
 
 def save_uploaded_file(file, event_id: str, uploaded_by: str):
-    """
-    Uploads file to Firebase Storage, logs metadata in Firestore,
-    auto-runs AI parsing, and returns relevant data.
-    """
     db = get_db()
     bucket = get_bucket()
 
@@ -172,7 +172,7 @@ def save_uploaded_file(file, event_id: str, uploaded_by: str):
     }
 
 def link_file_to_entity(file_id: str, entity_type: str, entity_id: str):
-    from firebase_init import db
+    db = get_db()
     assert entity_type in {"recipes", "events", "menus", "ingredients"}, "Invalid entity type"
     file_ref = db.collection("files").document(file_id)
     file_doc = file_ref.get()
@@ -188,9 +188,10 @@ def link_file_to_entity(file_id: str, entity_type: str, entity_id: str):
 
 def show_link_editor_ui(file_id: str):
     import streamlit as st
-    from firebase_init import db
+    from firebase_init import get_db
     from utils import get_all_docs_as_options
     from file_storage import link_file_to_entity
+    db = get_db()
     st.markdown("### 🔗 Link this file to a record")
     link_targets = ["event", "recipe", "menu", "ingredient"]
     selected_type = st.selectbox("View", ["all", "linked", "unlinked"], key="view_mode")
