@@ -80,7 +80,7 @@ def render_event_toolbar(*args, **kwargs) -> None:
     """Stub for rendering event toolbar"""
     # Generate unique key based on context
     context_id = kwargs.get('context', 'default')
-    toolbar_key = f"toolbar_{context_id}_{hash(str(args)}"
+    toolbar_key = f"toolbar_{context_id}_{hash(str(args))}"
     
     st.markdown(f"<!-- Event toolbar placeholder: {toolbar_key} -->", unsafe_allow_html=True)
 
@@ -321,12 +321,12 @@ def apply_purple_theme_to_widget(widget_key: str) -> None:
 def create_unique_key(base: str, context: str = None) -> str:
     """Create a unique key for Streamlit components"""
     if context:
-        return f"{context}_{base}_{hash(str([base, context])}"
+        return f"{context}_{base}_{hash(str([base, context]))}"
     return f"{base}_{hash(base)}"
 
 def safe_button(label: str, key: str, **kwargs) -> bool:
     """Create a button with guaranteed unique key"""
-    unique_key = create_unique_key(key, kwargs.get('context', 'default')
+    unique_key = create_unique_key(key, kwargs.get('context', 'default'))
     return st.button(label, key=unique_key, **{k: v for k, v in kwargs.items() if k != 'context'})
 
 def render_tag_group(title, tags, color="blue"):
@@ -342,14 +342,14 @@ def render_tag_group(title, tags, color="blue"):
 def edit_metadata_ui(parsed):
     st.markdown("### ✏️ Edit Metadata")
 
-    parsed["title"] = st.text_input("Title", value=parsed.get("title", "")
-    parsed["diet"] = st.text_input("Diet", value=parsed.get("diet", "")
-    parsed["notes"] = st.text_area("Notes", value=parsed.get("notes", "")
+    parsed["title"] = st.text_input("Title", value=parsed.get("title", ""))
+    parsed["diet"] = st.text_input("Diet", value=parsed.get("diet", ""))
+    parsed["notes"] = st.text_area("Notes", value=parsed.get("notes", ""))
 
-    allergens = st.text_input("Allergens (comma-separated)", value=", ".join(parsed.get("allergens", []))
+    allergens = st.text_input("Allergens (comma-separated)", value=", ".join(parsed.get("allergens", [])))
     parsed["allergens"] = [a.strip() for a in allergens.split(",") if a.strip()]
 
-    tags = st.text_input("Tags (comma-separated)", value=", ".join(parsed.get("tags", []))
+    tags = st.text_input("Tags (comma-separated)", value=", ".join(parsed.get("tags", [])))
     parsed["tags"] = [t.strip() for t in tags.split(",") if t.strip()]
 
     st.info("When you're done editing, use the Save buttons below to commit.")
