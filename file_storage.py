@@ -24,6 +24,10 @@ def file_manager_ui(user):
     view_col, search_col = st.columns([1, 3])
     with view_col:
         st.selectbox(
+            "View Mode", 
+            ["all", "linked", "unlinked"], 
+            key="view_mode"
+        )
     with search_col:
         st.text_input("Search files", key="search_term")
 
@@ -31,7 +35,7 @@ def file_manager_ui(user):
     for file in file_data:
         matches_view = (
             st.session_state.view_mode == "all" or
-            (st.session_state.view_mode == "linked" and file.get("event_id") or
+            (st.session_state.view_mode == "linked" and file.get("event_id")) or
             (st.session_state.view_mode == "unlinked" and not file.get("event_id"))
         )
         matches_search = st.session_state.search_term.lower() in file.get("name", "").lower()
