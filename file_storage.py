@@ -11,7 +11,7 @@ import uuid
 
 def file_manager_ui(user):
     st.subheader("📁 File Manager")
-    user_id = user.get("id"))
+    user_id = user.get("id")
     query = db.collection("files").where("deleted", "==", False)
     files = list(query.stream()
     file_data = [doc.to_dict() | {"id": doc.id} for doc in files]
@@ -32,7 +32,7 @@ def file_manager_ui(user):
         matches_view = (
             st.session_state.view_mode == "all" or
             (st.session_state.view_mode == "linked" and file.get("event_id") or
-            (st.session_state.view_mode == "unlinked" and not file.get("event_id"))
+            (st.session_state.view_mode == "unlinked" and not file.get("event_id")
         )
         matches_search = st.session_state.search_term.lower() in file.get("name", "").lower()
         if matches_view and matches_search:
@@ -57,7 +57,7 @@ def file_manager_ui(user):
     if "editing_file" in st.session_state:
         file = st.session_state["editing_file"]
         st.markdown(f"### ✏️ Editing File: {file.get('name', '')}")
-        tags = st.text_input("Tags (comma-separated)", value=", ".join(file.get("tags", []))
+        tags = st.text_input("Tags (comma-separated)", value=", ".join(file.get("tags", [])
         event_id = st.text_input("Linked Event ID", value=file.get("event_id", "")
         if st.button("Save Changes", key="save_changes"):
             db.collection("files").document(file["id"]).update({
