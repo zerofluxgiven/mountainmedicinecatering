@@ -9,17 +9,6 @@ from menus import save_menu_to_firestore
 # ⬆️ Upload Integration: Save as Menu
 # ----------------------------
 
-def save_parsed_menu_ui(parsed_data: dict):import streamlit as st
-from firebase_init import db
-from utils import get_active_event_id
-from auth import get_user_id
-from datetime import datetime
-from menus import save_menu_to_firestore
-
-# ----------------------------
-# ⬆️ Upload Integration: Save as Menu
-# ----------------------------
-
 def save_parsed_menu_ui(parsed_data: dict):
     st.markdown("### 🍽️ Save as Event Menu Item")
 
@@ -31,11 +20,11 @@ def save_parsed_menu_ui(parsed_data: dict):
 
     with st.form("save_menu_form"):
         day = st.text_input("Day")
-        meal = st.selectbox("Meal", key="Meal", ["Breakfast", "Lunch", "Dinner", "Note"], key="auto_key"
-        recipe = st.text_input("Recipe Name", value=parsed_data.get("title", "")
-        notes = st.text_area("Notes", value=parsed_data.get("notes", "")
-        allergens = st.text_input("Allergens (comma-separated)", value=", ".join(parsed_data.get("allergens", []))
-        tags = st.text_input("Tags (comma-separated)", value=", ".join(parsed_data.get("tags", []))
+        meal = st.selectbox("Meal", ["Breakfast", "Lunch", "Dinner", "Note"], key="auto_key")
+        recipe = st.text_input("Recipe Name", value=parsed_data.get("title", ""))
+        notes = st.text_area("Notes", value=parsed_data.get("notes", ""))
+        allergens = st.text_input("Allergens (comma-separated)", value=", ".join(parsed_data.get("allergens", [])))
+        tags = st.text_input("Tags (comma-separated)", value=", ".join(parsed_data.get("tags", [])))
 
         if st.form_submit_button("✅ Save to Event Menu"):
             new_item = {
@@ -58,11 +47,11 @@ def save_parsed_menu_ui(parsed_data: dict):
             else:
                 st.error("❌ Failed to save menu item.")
 
-def show_save_file_actions(upload_info: dict):
-    import streamlit as st
-    from firebase_init import db
-    from datetime import datetime
+# ----------------------------
+# 📥 Save Parsed File As...
+# ----------------------------
 
+def show_save_file_actions(upload_info: dict):
     file_id = upload_info.get("file_id")
     parsed = upload_info.get("parsed", {})
     raw_text = upload_info.get("raw_text", "")
@@ -79,8 +68,7 @@ def show_save_file_actions(upload_info: dict):
                 "created_at": datetime.utcnow().isoformat(),
                 "parsed_data": parsed,
             }
-            doc_ref = db.collection("recipes").document()
-            doc_ref.set(recipe_doc)
+            db.collection("recipes").document().set(recipe_doc)
             st.success("✅ File saved as Recipe")
 
     with col2:
@@ -115,39 +103,3 @@ def show_save_file_actions(upload_info: dict):
                 "parsed_data": parsed,
             })
             st.success("✅ File saved as Ingredient")
-    st.markdown("### 🍽️ Save as Event Menu Item")
-
-    user_id = get_user_id()
-    event_id = get_active_event_id()
-    if not event_id:
-        st.warning("Please activate or select an event before saving to a menu.")
-        return
-
-    with st.form("save_menu_form"):
-        day = st.text_input("Day")
-        meal = st.selectbox("Meal", key="Meal", ["Breakfast", "Lunch", "Dinner", "Note"], key="auto_key"
-        recipe = st.text_input("Recipe Name", value=parsed_data.get("title", "")
-        notes = st.text_area("Notes", value=parsed_data.get("notes", "")
-        allergens = st.text_input("Allergens (comma-separated)", value=", ".join(parsed_data.get("allergens", []))
-        tags = st.text_input("Tags (comma-separated)", value=", ".join(parsed_data.get("tags", []))
-
-        if st.form_submit_button("✅ Save to Event Menu"):
-            new_item = {
-                "day": day,
-                "meal": meal.lower(),
-                "recipe": recipe,
-                "notes": notes,
-                "allergens": [a.strip() for a in allergens.split(",") if a.strip()],
-                "tags": [t.strip() for t in tags.split(",") if t.strip()]
-            }
-
-            event_file_ref = db.collection("events").document(event_id).collection("meta").document("event_file")
-            doc = event_file_ref.get()
-            current = doc.to_dict().get("menu", []) if doc.exists else []
-            current.append(new_item)
-
-            success = save_menu_to_firestore(current, event_id, user_id)
-            if success:
-                st.success("✅ Menu item added!")
-            else:
-                st.error("❌ Failed to save menu item.")
