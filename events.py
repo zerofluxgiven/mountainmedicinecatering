@@ -311,7 +311,7 @@ def event_ui(user: dict | None) -> None:
                 render_status_indicator(event.get('status', 'planning'))
                 st.markdown(f"**Created by:** {event.get('created_by', 'Unknown')}")
                 if event.get('created_at'):
-                    st.markdown(f"**Created:** {format_date(event.get('created_at')}")
+                   st.markdown(f"**Created:** {format_date(event.get('created_at'))}")
             
             # Description
             if event.get('description'):
