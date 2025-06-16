@@ -7,7 +7,6 @@ from ui_components import render_tag_group, edit_metadata_ui
 from events import get_all_events
 from mobile_helpers import safe_file_uploader
 
-
 # ----------------------------
 # 📤 Desktop Upload UI
 # ----------------------------
@@ -20,7 +19,7 @@ def upload_ui_desktop(event_id: str = None):
 
     events = get_all_events()
     event_options = {
-        f"{e.get('name', 'Unnamed')} ({format_date(e.get('start_date'))}) - {e.get('status', 'planning')})": e['id']
+        f"{e.get('name', 'Unnamed')} ({format_date(e.get('start_date'))} - {e.get('status', 'planning')})": e['id']
         for e in events if not e.get("deleted", False)
     }
 
@@ -78,7 +77,6 @@ def upload_ui_desktop(event_id: str = None):
                                 st.error("❌ Failed to save recipe.")
                 except Exception as e:
                     st.warning(f"⚠️ Could not parse recipe: {e}")
-
 
 # ----------------------------
 # 📱 Mobile Upload UI
