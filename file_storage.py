@@ -1,8 +1,11 @@
 import streamlit as st
 from firebase_admin import storage
-from utils import format_date, get_active_event_id, session_get, session_set, get_event_by_id
+from utils import format_date, get_active_event_id, session_get, session_set, get_event_by_id, generate_id
 from datetime import datetime
 import uuid
+import mimetypes
+from ai_parsing_engine import parse_file, extract_text
+from io import BytesIO
 
 # ----------------------------
 # 📁 File Manager UI
@@ -110,14 +113,12 @@ def show_file_analytics():
     for ftype, count in types.items():
         st.markdown(f"- **{ftype}**: {count}")
 
-
-from firebase_init import get_db, get_bucket
-from utils import generate_id
-import mimetypes
-from ai_parsing_engine import parse_file, extract_text
-from io import BytesIO
+# ----------------------------
+# ⬆️ Save Uploaded File
+# ----------------------------
 
 def save_uploaded_file(file, event_id: str, uploaded_by: str):
+    from firebase_init import get_db, get_bucket
     db = get_db()
     bucket = get_bucket()
 
@@ -171,8 +172,14 @@ def save_uploaded_file(file, event_id: str, uploaded_by: str):
         "raw_text": raw_text
     }
 
+# ----------------------------
+# 🔗 Link File to Entity
+# ----------------------------
+
 def link_file_to_entity(file_id: str, entity_type: str, entity_id: str):
+    from firebase_init import get_db
     db = get_db()
+
     assert entity_type in {"recipes", "events", "menus", "ingredients"}, "Invalid entity type"
     file_ref = db.collection("files").document(file_id)
     file_doc = file_ref.get()
@@ -186,11 +193,16 @@ def link_file_to_entity(file_id: str, entity_type: str, entity_id: str):
     linked_to[entity_type] = current_links
     file_ref.update({"linked_to": linked_to})
 
+# ----------------------------
+# 🧩 Link Editor UI
+# ----------------------------
+
 def show_link_editor_ui(file_id: str):
     import streamlit as st
     from firebase_init import get_db
     from utils import get_all_docs_as_options
     from file_storage import link_file_to_entity
+
     db = get_db()
     st.markdown("### 🔗 Link this file to a record")
     link_targets = ["event", "recipe", "menu", "ingredient"]
