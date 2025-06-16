@@ -6,92 +6,90 @@
   <title>Login | Mountain Medicine</title>
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600&display=swap" rel="stylesheet">
   <style>
-  :root {
-    --purple: #6C4AB6;
-    --light-purple: #B8A4D4;
-    --bg: #f9f9fb;
-    --text: #222;
-  }
+    :root {
+      --purple: #6C4AB6;
+      --light-purple: #B8A4D4;
+      --bg: #f9f9fb;
+      --text: #222;
+    }
 
-  * {
-    box-sizing: border-box;
-  }
+    * {
+      box-sizing: border-box;
+    }
 
-  html, body {
-    margin: 0;
-    padding: 0;
-    height: 100%;
-    font-family: 'Inter', sans-serif;
-    background: var(--bg);
-    color: var(--text);
-  }
+    html, body {
+      margin: 0;
+      padding: 0;
+      height: 100%;
+      font-family: 'Inter', sans-serif;
+      background: var(--bg);
+      color: var(--text);
+      display: flex;
+      justify-content: center;
+      align-items: center;
+    }
 
-  body {
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    flex-direction: column;
-  }
+    .login-container {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      flex-direction: column;
+      width: 100%;
+      max-width: 100vw;
+      height: 100%;
+    }
 
-  .login-container {
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-    justify-content: center;
-    flex-grow: 1;
-    width: 100%;
-    max-width: 100vw;
-  }
+    .login-box {
+      background: white;
+      border-radius: 16px;
+      padding: 2rem;
+      box-shadow: 0 4px 12px rgba(0,0,0,0.08);
+      max-width: 360px;
+      width: 90%;
+      text-align: center;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+    }
 
-  .login-box {
-    background: white;
-    border-radius: 16px;
-    padding: 2rem;
-    box-shadow: 0 4px 12px rgba(0,0,0,0.08);
-    max-width: 360px;
-    width: 90%;
-    text-align: center;
-  }
+    .logo img {
+      max-width: 300px;
+      height: auto;
+      display: block;
+      margin: 0 auto 1rem;
+    }
 
-  .logo img {
-    max-width: 300px;
-    height: auto;
-    display: block;
-    margin: 0 auto 1rem;
-  }
+    p {
+      margin: 0 0 1rem;
+      color: #555;
+      font-size: 1rem;
+    }
 
-  p {
-    margin: 0 0 1rem;
-    color: #555;
-    font-size: 1rem;
-  }
+    .login-button {
+      background: var(--purple);
+      color: white;
+      border: none;
+      border-radius: 8px;
+      padding: 0.75rem 1.5rem;
+      font-size: 1rem;
+      font-weight: 600;
+      cursor: pointer;
+      margin-top: 1rem;
+      width: 100%;
+    }
 
-  .login-button {
-    background: var(--purple);
-    color: white;
-    border: none;
-    border-radius: 8px;
-    padding: 0.75rem 1.5rem;
-    font-size: 1rem;
-    font-weight: 600;
-    cursor: pointer;
-    margin-top: 1rem;
-    width: 100%;
-  }
+    .login-button:hover {
+      background: var(--light-purple);
+    }
 
-  .login-button:hover {
-    background: var(--light-purple);
-  }
-
-  footer {
-    font-size: 0.8rem;
-    color: #999;
-    margin-top: 2rem;
-    text-align: center;
-    width: 100%;
-  }
-</style>
-
+    .login-box footer {
+      font-size: 0.8rem;
+      color: #999;
+      margin-top: 2rem;
+      text-align: center;
+      width: 100%;
+    }
+  </style>
   <script type="module">
     import { initializeApp } from "https://www.gstatic.com/firebasejs/10.11.0/firebase-app.js";
     import { getAuth, GoogleAuthProvider, signInWithRedirect, getRedirectResult } from "https://www.gstatic.com/firebasejs/10.11.0/firebase-auth.js";
@@ -146,8 +144,8 @@
       </div>
       <p>Bringing humanity closer through man's original primal ceremony.</p>
       <button class="login-button" onclick="login()">🔐 Login with Google</button>
+      <footer>&copy; 2025 Mountain Medicine</footer>
     </div>
-    <footer>&copy; 2025 Mountain Medicine</footer>
   </div>
 </body>
 </html>
