@@ -5,6 +5,86 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
   <title>Login | Mountain Medicine</title>
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600&display=swap" rel="stylesheet">
+  <style>
+    :root {
+      --purple: #6C4AB6;
+      --light-purple: #B8A4D4;
+      --bg: #f9f9fb;
+      --text: #222;
+    }
+
+    * {
+      box-sizing: border-box;
+    }
+
+    body, html {
+      margin: 0;
+      padding: 0;
+      height: 100%;
+      font-family: 'Inter', sans-serif;
+      background: var(--bg);
+      color: var(--text);
+      display: flex;
+      justify-content: center;
+      align-items: center;
+    }
+
+    .login-container {
+      width: 100%;
+      max-width: 100vw;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+    }
+
+    .login-box {
+      background: white;
+      border-radius: 16px;
+      padding: 2rem;
+      box-shadow: 0 4px 12px rgba(0,0,0,0.08);
+      max-width: 360px;
+      width: 90%;
+      text-align: center;
+    }
+
+    .logo img {
+      max-width: 300px;
+      height: auto;
+      display: block;
+      margin: 0 auto 1rem;
+    }
+
+    p {
+      margin: 0 0 1rem;
+      color: #555;
+      font-size: 1rem;
+    }
+
+    .login-button {
+      background: var(--purple);
+      color: white;
+      border: none;
+      border-radius: 8px;
+      padding: 0.75rem 1.5rem;
+      font-size: 1rem;
+      font-weight: 600;
+      cursor: pointer;
+      margin-top: 1rem;
+      width: 100%;
+    }
+
+    .login-button:hover {
+      background: var(--light-purple);
+    }
+
+    footer {
+      font-size: 0.8rem;
+      color: #999;
+      margin-top: 2rem;
+      text-align: center;
+    }
+  </style>
   <script type="module">
     import { initializeApp } from "https://www.gstatic.com/firebasejs/10.11.0/firebase-app.js";
     import { getAuth, GoogleAuthProvider, signInWithRedirect, getRedirectResult } from "https://www.gstatic.com/firebasejs/10.11.0/firebase-auth.js";
@@ -50,78 +130,12 @@
       signInWithRedirect(auth, provider);
     }
   </script>
-  <style>
-    :root {
-      --purple: #6C4AB6;
-      --light-purple: #B8A4D4;
-      --bg: #f9f9fb;
-      --text: #222;
-    }
-
-    body {
-      margin: 0;
-      padding: 0;
-      font-family: 'Inter', sans-serif;
-      background: var(--bg);
-      color: var(--text);
-    }
-
-    .login-container {
-      min-height: 100vh;
-      display: flex;
-      justify-content: center;
-      align-items: center;
-      flex-direction: column;
-    }
-
-    .login-box {
-      background: white;
-      border-radius: 16px;
-      padding: 2rem;
-      box-shadow: 0 4px 12px rgba(0,0,0,0.08);
-      max-width: 360px;
-      width: 90%;
-      text-align: center;
-    }
-
-    .login-button {
-      background: var(--purple);
-      color: white;
-      border: none;
-      border-radius: 8px;
-      padding: 0.75rem 1.5rem;
-      font-size: 1rem;
-      font-weight: 600;
-      cursor: pointer;
-      margin-top: 1.5rem;
-    }
-
-    .login-button:hover {
-      background: var(--light-purple);
-    }
-
-    .logo {
-      margin-bottom: 1rem;
-    }
-
-    p {
-      margin-top: 0;
-      color: #555;
-      font-size: 1rem;
-    }
-
-    footer {
-      font-size: 0.8rem;
-      color: #999;
-      margin-top: 2rem;
-    }
-  </style>
 </head>
 <body>
   <div class="login-container">
     <div class="login-box">
       <div class="logo">
-        <img src="/mountain_logo.png" alt="Mountain Medicine Logo" style="max-width: 400px; height: auto; display: block; margin: 0 auto;" />
+        <img src="/mountain_logo.png" alt="Mountain Medicine Logo" />
       </div>
       <p>Bringing humanity closer through man's original primal ceremony.</p>
       <button class="login-button" onclick="login()">🔐 Login with Google</button>
