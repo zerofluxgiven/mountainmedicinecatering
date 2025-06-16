@@ -173,7 +173,7 @@ def render_quick_event_switcher() -> None:
         current_index = 0
         
         if active_event_id:
-            for i, (display_name, event_id) in enumerate(event_mapping.items():
+            for i, (display_name, event_id) in enumerate(event_mapping.items()):
                 if event_id == active_event_id:
                     current_index = i + 1
                     break
