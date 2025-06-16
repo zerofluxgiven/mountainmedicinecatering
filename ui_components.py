@@ -145,11 +145,13 @@ def render_quick_event_switcher() -> None:
         from firebase_init import db, firestore
         
         # Get recent events
-        events_docs = list(db.collection("events")
-                          .where("deleted", "==", False)
-                          .order_by("start_date", direction=db.query.DESCENDING)
-                          .limit(5)
-                          .stream()
+        events_docs = list(
+            db.collection("events")
+              .where("deleted", "==", False)
+              .order_by("start_date", direction=db.query.DESCENDING)
+              .limit(5)
+              .stream()
+        )
         
         events = [doc.to_dict() | {"id": doc.id} for doc in events_docs]
         
