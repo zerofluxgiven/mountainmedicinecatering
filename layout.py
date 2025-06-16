@@ -69,7 +69,7 @@ def render_event_mode_indicator():
 # ----------------------------
 # 💬 Fixed Floating AI Assistant (Bottom Right)
 # ----------------------------
-def # render_floating_ai_chat()  # Disabled by patch:
+#def # render_floating_ai_chat()  # Disabled by patch:
     """Render working floating AI chat bubble in bottom right"""
     user = session_get("user")
     if not user:
