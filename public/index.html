@@ -18,28 +18,22 @@
     }
 
     html, body {
+      height: 100%;
       margin: 0;
       padding: 0;
-      height: 100%;
-      font-family: 'Inter', sans-serif;
       background: var(--bg);
       color: var(--text);
-      display: flex;
-      justify-content: center;
-      align-items: center;
+      font-family: 'Inter', sans-serif;
     }
 
-    .login-container {
+    body {
       display: flex;
-      align-items: center;
       justify-content: center;
-      flex-direction: column;
-      width: 100%;
-      max-width: 100vw;
-      height: 100%;
+      align-items: center;
     }
 
     .login-box {
+      margin: auto;
       background: white;
       border-radius: 16px;
       padding: 2rem;
@@ -56,7 +50,7 @@
       max-width: 300px;
       height: auto;
       display: block;
-      margin: 0 auto 1rem;
+      margin-bottom: 1rem;
     }
 
     p {
@@ -82,7 +76,7 @@
       background: var(--light-purple);
     }
 
-    .login-box footer {
+    footer {
       font-size: 0.8rem;
       color: #999;
       margin-top: 2rem;
@@ -137,15 +131,13 @@
   </script>
 </head>
 <body>
-  <div class="login-container">
-    <div class="login-box">
-      <div class="logo">
-        <img src="/mountain_logo.png" alt="Mountain Medicine Logo" />
-      </div>
-      <p>Bringing humanity closer through man's original primal ceremony.</p>
-      <button class="login-button" onclick="login()">🔐 Login with Google</button>
-      <footer>&copy; 2025 Mountain Medicine</footer>
+  <div class="login-box">
+    <div class="logo">
+      <img src="/mountain_logo.png" alt="Mountain Medicine Logo" />
     </div>
+    <p>Bringing humanity closer through man's original primal ceremony.</p>
+    <button class="login-button" onclick="login()">🔐 Login with Google</button>
+    <footer>&copy; 2025 Mountain Medicine</footer>
   </div>
 </body>
 </html>
