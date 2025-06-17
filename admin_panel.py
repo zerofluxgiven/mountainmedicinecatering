@@ -2,6 +2,7 @@
 
 import streamlit as st
 from auth import require_role, get_current_user, get_user_role as auth_get_user_role
+from firebase_init import db
 
 COLLECTION = "users"
 

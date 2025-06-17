@@ -36,43 +36,43 @@ def _admin_dashboard():
         col1, col2, col3 = st.columns(3)
 
         with col1:
-            events = list(db.collection("events").stream()
+            events = list(db.collection("events").stream())
             active_events = len([e for e in events if e.to_dict().get("status") == "active"])
-            st.metric("Total Events", len(events)
+            st.metric("Total Events", len(events))
             st.metric("Active Events", active_events)
 
         with col2:
-            suggestions = list(db.collection("suggestions").where("status", "==", "pending").stream()
-            st.metric("Pending Suggestions", len(suggestions)
+            suggestions = list(db.collection("suggestions").where("status", "==", "pending").stream())
+            st.metric("Pending Suggestions", len(suggestions))
             
-            users = list(db.collection("users").stream()
-            st.metric("Total Users", len(users)
+            users = list(db.collection("users").stream())
+            st.metric("Total Users", len(users))
 
         with col3:
-            recipes = list(db.collection("recipes").stream()
-            st.metric("Total Recipes", len(recipes)
+            recipes = list(db.collection("recipes").stream())
+            st.metric("Total Recipes", len(recipes))
             
-            deleted_files = list(db.collection("files").where(filter=FieldFilter("deleted", "==", True).stream()
-            st.metric("Active Files", len(files)
+            deleted_files = list(db.collection("files").where(filter=FieldFilter("deleted", "==", True)).stream())
+            st.metric("Active Files", len(files))
 
         st.divider()
 
         # Additional metrics
         col4, col5, col6 = st.columns(3)
         with col4:
-            tags = list(db.collection("tags").stream()
-            st.metric("Tag Variants", len(tags)
+            tags = list(db.collection("tags").stream())
+            st.metric("Tag Variants", len(tags))
         
         with col5:
-            deleted_files = list(db.collection("files").where(filter=FieldFilter("deleted", "==", True).stream()
-            st.metric("Soft-Deleted Files", len(deleted_files)
+            deleted_files = list(db.collection("files").where(filter=FieldFilter("deleted", "==", True)).stream())
+            st.metric("Soft-Deleted Files", len(deleted_files))
         
         with col6:
             now = datetime.utcnow()
             month_ago = now - timedelta(days=30)
-            recent_logs = list(db.collection("logs").where(filter=FieldFilter("timestamp", ">=", month_ago).stream()
-            unique_users = set(log.to_dict().get("user_id") for log in recent_logs if log.to_dict().get("user_id")
-            st.metric("Active Users (30d)", len(unique_users)
+            recent_logs = list(db.collection("logs").where(filter=FieldFilter("timestamp", ">=", month_ago)).stream())
+            unique_users = set(log.to_dict().get("user_id") for log in recent_logs if log.to_dict().get("user_id"))
+            st.metric("Active Users (30d)", len(unique_users))
 
         # System health indicators
         st.markdown("### 🔍 System Health")
@@ -117,9 +117,9 @@ def _audit_log_viewer():
         # Get filter options
         col1, col2 = st.columns(2)
         with col1:
-            days_back = st.selectbox("Show logs from:", key="Show logs from:", [1, 7, 30, 90], index=1, key="auto_key"
+            days_back = st.selectbox("Show logs from:", [1, 7, 30, 90], index=1)
         with col2:
-            limit = st.selectbox("Max entries:", key="Max entries:", [50, 100, 200], index=0, key="auto_key"
+            limit = st.selectbox("Max entries:", [50, 100, 200], index=0)
         
         # Calculate date filter
         cutoff_date = datetime.utcnow() - timedelta(days=days_back)
@@ -128,9 +128,9 @@ def _audit_log_viewer():
         logs_query = (db.collection("logs")
                      .where("timestamp", ">=", cutoff_date)
                       .order_by("timestamp", direction=firestore.Query.DESCENDING)
-                     .limit(limit)
+                     .limit(limit))
         
-        logs = list(logs_query.stream()
+        logs = list(logs_query.stream())
         
         if not logs:
             st.info("No logs found for the selected time period.")
@@ -141,7 +141,7 @@ def _audit_log_viewer():
         for log_doc in logs:
             log_data = log_doc.to_dict()
             
-            timestamp = format_timestamp(log_data.get('timestamp')
+            timestamp = format_timestamp(log_data.get('timestamp'))
             action = log_data.get('action', 'Unknown')
             user_id = log_data.get('user_id', 'System')
             details = log_data.get('details', {})
@@ -181,10 +181,10 @@ def _cleanup_tools():
             try:
                 cutoff = datetime.utcnow() - timedelta(days=days_old)
                 stale_query = (db.collection("suggestions")
-             .where(filter=FieldFilter("status", "==", "pending")
-             .where(filter=FieldFilter("created_at", "<", cutoff))
+             .where(filter=FieldFilter("status", "==", "pending"))
+             .where(filter=FieldFilter("created_at", "<", cutoff)))
                 
-                stale_suggestions = list(stale_query.stream()
+                stale_suggestions = list(stale_query.stream())
                 count = 0
                 
                 for suggestion_doc in stale_suggestions:
@@ -220,7 +220,7 @@ def _cleanup_tools():
     
     if st.button("🔍 Find Orphaned Files"):
         try:
-            deleted_files = list(db.collection("files").where(filter=FieldFilter("deleted", "==", True).stream()
+            deleted_files = list(db.collection("files").where(filter=FieldFilter("deleted", "==", True)).stream())
             orphaned = []
             
             for file_doc in files:
@@ -228,7 +228,7 @@ def _cleanup_tools():
                 if file_data.get("event_id"):
                     event_exists = db.collection("events").document(file_data["event_id"]).get().exists
                     if not event_exists:
-                        orphaned.append((file_doc.id, file_data)
+                        orphaned.append((file_doc.id, file_data))
             
             if orphaned:
                 st.warning(f"Found {len(orphaned)} orphaned files:")
@@ -254,7 +254,7 @@ def _cleanup_tools():
     st.caption("Permanently delete files that have been soft-deleted")
     
     try:
-        deleted_files = list(db.collection("files").where(filter=FieldFilter("deleted", "==", True).stream()
+        deleted_files = list(db.collection("files").where(filter=FieldFilter("deleted", "==", True)).stream())
         
         if deleted_files:
             st.warning(f"Found {len(deleted_files)} soft-deleted files")
@@ -263,7 +263,7 @@ def _cleanup_tools():
             st.write("Examples:")
             for i, file_doc in enumerate(deleted_files[:5]):
                 file_data = file_doc.to_dict()
-                deleted_at = format_timestamp(file_data.get('deleted_at')
+                deleted_at = format_timestamp(file_data.get('deleted_at'))
                 st.write(f"- {file_data.get('filename', 'Unknown')} (deleted {deleted_at})")
             
             if len(deleted_files) > 5:
@@ -310,7 +310,7 @@ def _archive_event_tool():
         completed_events = list(db.collection("events")
                                .where("status", "==", "complete")
                                .where("archived", "==", False)
-                               .stream()
+                               .stream())
         
         if not completed_events:
             st.success("✅ No completed events need archiving")
@@ -407,7 +407,7 @@ def get_system_stats():
         }
         
         # Count events
-        events = list(db.collection("events").stream()
+        events = list(db.collection("events").stream())
         stats["events"]["total"] = len(events)
         
         for event_doc in events:
@@ -422,7 +422,7 @@ def get_system_stats():
                 stats["events"]["archived"] += 1
         
         # Count users
-        users = list(db.collection("users").stream()
+        users = list(db.collection("users").stream())
         stats["users"]["total"] = len(users)
         
         for user_doc in users:
@@ -434,12 +434,12 @@ def get_system_stats():
                 stats["users"]["managers"] += 1
         
         # Count files
-        files = list(db.collection("files").stream()
+        files = list(db.collection("files").stream())
         stats["files"]["total"] = len(files)
         stats["files"]["deleted"] = len([f for f in files if f.to_dict().get("deleted")])
         
         # Count suggestions
-        suggestions = list(db.collection("suggestions").stream()
+        suggestions = list(db.collection("suggestions").stream())
         for suggestion_doc in suggestions:
             suggestion_data = suggestion_doc.to_dict()
             status = suggestion_data.get("status", "pending")

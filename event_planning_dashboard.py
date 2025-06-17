@@ -116,8 +116,8 @@ def event_planning_dashboard_ui(event_id):
             if start > end:
                 st.error("⚠️ Start date must be before end date")
                 
-            headcount = st.number_input("👥 Expected Guests", min_value=0, value=event.get("guest_count", 0)
-            staff_count = st.number_input("🧑‍🍳 Staff Count", min_value=0, value=event.get("staff_count", 0)
+            headcount = st.number_input("👥 Expected Guests", min_value=0, value=event.get("guest_count", 0))
+            staff_count = st.number_input("🧑‍🍳 Staff Count", min_value=0, value=event.get("staff_count", 0))
 
         # Additional details - FIXED
         st.markdown("## 📝 Additional Information")
@@ -235,7 +235,7 @@ def _render_quick_menu_form(event_id: str, user: dict):
         
         with col1:
             name = st.text_input("Menu Item Name *")
-            category = st.selectbox("Category", key="Category", ["Appetizer", "Main Course", "Side Dish", "Dessert", "Beverage"], key="auto_key"
+            category = st.selectbox("Category", ["Appetizer", "Main Course", "Side Dish", "Dessert", "Beverage"])
         
         with col2:
             description = st.text_area("Description")
@@ -326,9 +326,9 @@ def _render_shopping_list_editor(event_id):
         with col2:
             quantity = st.text_input("Quantity")
         with col3:
-            unit = st.selectbox("Unit", key="Unit", ["", "lbs", "kg", "oz", "cups", "pieces", "dozen", "cases"], key="auto_key"
+            unit = st.selectbox("Unit", ["", "lbs", "kg", "oz", "cups", "pieces", "dozen", "cases"])
         
-        category = st.selectbox("Category", key="Category", ["Produce", "Protein", "Dairy", "Dry Goods", "Beverages", "Supplies", "Other"], key="auto_key"
+        category = st.selectbox("Category", ["Produce", "Protein", "Dairy", "Dry Goods", "Beverages", "Supplies", "Other"])
         
         if st.form_submit_button("Add Item"):
             if not item_name:
@@ -404,7 +404,7 @@ def _render_equipment_list_editor(event_id):
         with col2:
             quantity = st.number_input("Quantity", min_value=1, value=1)
         
-        category = st.selectbox("Category", key="Category", ["Cooking", "Serving", "Storage", "Transport", "Safety", "Other"], key="auto_key"
+        category = st.selectbox("Category", ["Cooking", "Serving", "Storage", "Transport", "Safety", "Other"])
         
         if st.form_submit_button("Add Equipment"):
             if not equipment_name:
@@ -470,7 +470,7 @@ def _render_task_list_editor(event_id):
     st.markdown("#### Add Task")
     with st.form(f"add_task_{event_id}"):
         task_label = st.text_input("Task Description *")
-        priority = st.selectbox("Priority", key="Priority", ["High", "Medium", "Low"], key="auto_key"
+        priority = st.selectbox("Priority", ["High", "Medium", "Low"])
         
         if st.form_submit_button("Add Task"):
             if not task_label:
@@ -520,7 +520,7 @@ def _render_allergies_section(event_id, user):
                 
                 with col1:
                     st.write(f"**{allergy.get('person_name', 'Unknown')}**")
-                    allergens = ", ".join(allergy.get('allergies', [])
+                    allergens = ", ".join(allergy.get('allergies', []))
                     st.caption(f"Allergies: {allergens}")
                     st.caption(f"Severity: {allergy.get('severity', 'Unknown')}")
                 
@@ -545,7 +545,7 @@ def _render_allergies_section(event_id, user):
             
             with col1:
                 person_name = st.text_input("Person's Name *")
-                severity = st.selectbox("Severity", key="Severity", ["Mild", "Moderate", "Severe", "Life-threatening"], key="auto_key"
+                severity = st.selectbox("Severity", ["Mild", "Moderate", "Severe", "Life-threatening"])
             
             with col2:
                 allergies_text = st.text_input("Allergies (comma-separated) *")
@@ -619,13 +619,13 @@ def _render_file_upload_section(event_id, user):
         
         with col1:
             st.write(f"**File:** {uploaded_file.name}")
-            st.write(f"**Size:** {len(uploaded_file.getvalue() / 1024:.1f} KB")
+            st.write(f"**Size:** {len(uploaded_file.getvalue()) / 1024:.1f} KB")
         
         with col2:
             if st.button("Upload to Event", key=f"upload_btn_{event_id}"):
                 try:
                     # ✅ FIXED: Proper file upload with error handling
-                    file_id = save_uploaded_file(uploaded_file, event_id, get_user_id(user)
+                    file_id = save_uploaded_file(uploaded_file, event_id, get_user_id(user))
                     if file_id:
                         st.success("File uploaded successfully!")
                     else:
@@ -659,7 +659,7 @@ def _render_ai_suggestions(event_id):
             
         # Get menu count
         try:
-            menu_count = len(list(db.collection("menus").where("event_id", "==", event_id).stream())
+            menu_count = len(list(db.collection("menus").where("event_id", "==", event_id).stream()))
             if menu_count == 0:
                 suggestions.append("No menu items yet - start planning your menu")
         except:

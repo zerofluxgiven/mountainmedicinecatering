@@ -1,9 +1,10 @@
+# roles.py - Updated for Firebase Authentication
 
 import streamlit as st
-from firebase_init import get_db
+from firebase_admin import firestore
 from auth import require_role, get_current_user, get_user_role as auth_get_user_role
 
-db = get_db()
+db = firestore.client()
 COLLECTION = "users"
 
 # ----------------------------
@@ -17,7 +18,7 @@ def get_all_users() -> list[dict]:
         from auth import sync_firebase_users
         sync_firebase_users()
         
-        docs = get_db().collection(COLLECTION).stream()
+        docs = db.collection(COLLECTION).stream()
         return [doc.to_dict() | {"id": doc.id} for doc in docs]
     except Exception as e:
         st.error(f"Failed to get users: {e}")
@@ -25,7 +26,7 @@ def get_all_users() -> list[dict]:
 
 def get_user_role(user_id: str) -> str:
     """Returns a user's role by ID, defaulting to 'viewer'."""
-    doc = get_db().collection(COLLECTION).document(user_id).get()
+    doc = db.collection(COLLECTION).document(user_id).get()
     if doc.exists:
         return doc.to_dict().get("role", "viewer")
     
@@ -44,7 +45,7 @@ def get_user_role(user_id: str) -> str:
             "active": True,
             "email_verified": firebase_user.email_verified
         }
-        get_db().collection(COLLECTION).document(user_id).set(user_data)
+        db.collection(COLLECTION).document(user_id).set(user_data)
         return role
     except:
         return "viewer"
@@ -57,14 +58,14 @@ def update_user_role(user_id: str, role: str) -> None:
     """Updates a user's role in Firestore and logs the change."""
     try:
         # Update role in Firestore
-        get_db().collection(COLLECTION).document(user_id).update({
+        db.collection(COLLECTION).document(user_id).update({
             "role": role,
             "role_updated_at": datetime.utcnow()
         })
         
         # Log the role change
         current_user = get_current_user()
-        get_db().collection("logs").add({
+        db.collection("logs").add({
             "action": "role_update",
             "target_user_id": user_id,
             "new_role": role,
@@ -76,7 +77,7 @@ def update_user_role(user_id: str, role: str) -> None:
         
         # Send notification
         from notifications import send_notification
-        user_doc = get_db().collection(COLLECTION).document(user_id).get()
+        user_doc = db.collection(COLLECTION).document(user_id).get()
         if user_doc.exists:
             user_name = user_doc.to_dict().get("name", "Unknown")
             send_notification(
@@ -114,8 +115,8 @@ def role_admin_ui() -> None:
         role_stats[role] = role_stats.get(role, 0) + 1
     
     st.markdown("### 📊 Role Statistics")
-    cols = st.columns(len(role_stats)
-    for i, (role, count) in enumerate(role_stats.items():
+    cols = st.columns(len(role_stats))
+    for i, (role, count) in enumerate(role_stats.items()):
         with cols[i]:
             st.metric(role.title(), count)
     
@@ -142,7 +143,7 @@ def role_admin_ui() -> None:
                 
                 if user.get('created_at'):
                     from utils import format_date
-                    st.markdown(f"**Joined:** {format_date(user.get('created_at')}")
+                    st.markdown(f"**Joined:** {format_date(user.get('created_at'))}")
             
             with col2:
                 current_role = user.get("role", "viewer")
@@ -192,7 +193,7 @@ def role_admin_ui() -> None:
                     if st.button("📧 Send Verification", key=f"verify_{user['id']}"):
                         try:
                             from firebase_admin import auth as firebase_auth
-                            verification_link = firebase_auth.generate_email_verification_link(user.get('email')
+                            verification_link = firebase_auth.generate_email_verification_link(user.get('email'))
                             st.success("✅ Verification email queued!")
                             st.info("Email verification system integration needed")
                         except Exception as e:
@@ -233,25 +234,25 @@ def show_user_activity_summary(user: dict):
         
         try:
             # Get user's events
-            events_created = list(get_db().collection("events").where("created_by", "==", user_id).stream()
+            events_created = list(db.collection("events").where("created_by", "==", user_id).stream())
             
             # Get user's files
-            files_uploaded = list(get_db().collection("files").where("uploaded_by", "==", user_id).stream()
+            files_uploaded = list(db.collection("files").where("uploaded_by", "==", user_id).stream())
             
             # Get user's active sessions
-            active_sessions = list(get_db().collection("active_sessions")
+            active_sessions = list(db.collection("active_sessions")
                                  .where("user_id", "==", user_id)
-                                 .where("active", "==", True).stream()
+                                 .where("active", "==", True).stream())
             
             # Display metrics
             col1, col2, col3 = st.columns(3)
             
             with col1:
-                st.metric("Events Created", len(events_created)
+                st.metric("Events Created", len(events_created))
             with col2:
-                st.metric("Files Uploaded", len(files_uploaded)
+                st.metric("Files Uploaded", len(files_uploaded))
             with col3:
-                st.metric("Active Sessions", len(active_sessions)
+                st.metric("Active Sessions", len(active_sessions))
             
             # Show recent events
             if events_created:
@@ -293,7 +294,7 @@ def initialize_role_system():
             admin_user = firebase_auth.get_user_by_email(admin_email)
             
             # Ensure admin has correct role in Firestore
-            admin_doc = get_db().collection(COLLECTION).document(admin_user.uid).get()
+            admin_doc = db.collection(COLLECTION).document(admin_user.uid).get()
             if not admin_doc.exists or admin_doc.to_dict().get("role") != "admin":
                 admin_data = {
                     "id": admin_user.uid,
@@ -304,7 +305,7 @@ def initialize_role_system():
                     "active": True,
                     "email_verified": admin_user.email_verified
                 }
-                get_db().collection(COLLECTION).document(admin_user.uid).set(admin_data, merge=True)
+                db.collection(COLLECTION).document(admin_user.uid).set(admin_data, merge=True)
                 
         except firebase_auth.UserNotFoundError:
             st.warning(f"Admin user {admin_email} not found in Firebase. Please register this email.")

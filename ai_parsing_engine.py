@@ -10,6 +10,12 @@ import json
 from datetime import datetime
 import streamlit as st
 from firebase_init import db, firestore
+from recipes import (
+    save_recipe_to_firestore,
+    save_event_to_firestore,
+    save_menu_to_firestore,
+    save_ingredient_to_firestore,
+)
 
 client = openai.OpenAI(api_key=st.secrets["openai"]["api_key"])
 
@@ -142,10 +148,6 @@ def query_ai_parser(raw_text, target_type):
 # --------------------------------------------
 
 def render_extraction_buttons(file_id, parsed_data, user_id=None):
-    from recipes import save_recipe_to_firestore
-    from menus import save_menu_to_firestore
-    from events import save_event_to_firestore
-    from ingredients import save_ingredient_to_firestore
     from utils import get_active_event_id
 
     if not parsed_data:

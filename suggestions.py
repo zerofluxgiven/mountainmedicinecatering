@@ -1,12 +1,12 @@
 # suggestions.py
 
 import streamlit as st
-from firebase_init import get_db
+from firebase_admin import firestore
 from datetime import datetime
 from auth import get_user_id
 from utils import generate_id
 
-db = get_db()
+db = firestore.client()
 COLLECTION = "suggestions"
 
 # ----------------------------
@@ -42,7 +42,7 @@ def create_suggestion(
         "source_references": source_references or [],
     }
 
-    get_db().collection(COLLECTION).document(suggestion_id).set(suggestion_data)
+    db.collection(COLLECTION).document(suggestion_id).set(suggestion_data)
     st.success("✅ Suggestion submitted for admin review.")
 
 # ----------------------------
@@ -70,13 +70,13 @@ def suggestion_input(field_name: str, current_value: str, document_type: str, do
 # ----------------------------
 
 def approve_suggestion(suggestion_id: str) -> None:
-    get_db().collection(COLLECTION).document(suggestion_id).update({
+    db.collection(COLLECTION).document(suggestion_id).update({
         "status": "approved",
         "approved_at": firestore.SERVER_TIMESTAMP
     })
 
 def reject_suggestion(suggestion_id: str) -> None:
-    get_db().collection(COLLECTION).document(suggestion_id).update({
+    db.collection(COLLECTION).document(suggestion_id).update({
         "status": "rejected",
         "rejected_at": firestore.SERVER_TIMESTAMP
     })
@@ -86,11 +86,11 @@ def reject_suggestion(suggestion_id: str) -> None:
 # ----------------------------
 
 def get_pending_suggestions() -> list[dict]:
-    docs = get_db().collection(COLLECTION).where("status", "==", "pending").order_by("created_at", direction=firestore.Query.DESCENDING).stream()
+    docs = db.collection(COLLECTION).where("status", "==", "pending").order_by("created_at", direction=firestore.Query.DESCENDING).stream()
     return [doc.to_dict() for doc in docs]
 
 def get_suggestion_count() -> int:
-    return len(get_pending_suggestions()
+    return len(get_pending_suggestions())
 
 # ----------------------------
 # 🧠 AI Helper for Suggestion Drafting

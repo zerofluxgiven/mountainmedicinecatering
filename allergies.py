@@ -157,8 +157,8 @@ def get_safe_recipes_for_event(event_id: str) -> List[Dict]:
         allergen_tags = set()
         
         for allergy in allergies:
-            allergen_ingredients.update(allergy.get('ingredient_ids', [])
-            allergen_tags.update(allergy.get('tags', [])
+            allergen_ingredients.update(allergy.get('ingredient_ids', []))
+            allergen_tags.update(allergy.get('tags', []))
         
         # Get all recipes
         all_recipes = db.collection("recipes").stream()
@@ -169,8 +169,8 @@ def get_safe_recipes_for_event(event_id: str) -> List[Dict]:
             recipe['id'] = doc.id
             
             # Check if recipe is safe
-            recipe_ingredients = set(recipe.get('ingredient_ids', [])
-            recipe_tags = set(recipe.get('tags', [])
+            recipe_ingredients = set(recipe.get('ingredient_ids', []))
+            recipe_tags = set(recipe.get('tags', []))
             
             if not (recipe_ingredients & allergen_ingredients) and not (recipe_tags & allergen_tags):
                 safe_recipes.append(recipe)
@@ -227,7 +227,7 @@ def _view_allergies_tab(event_id: str):
     st.markdown(f"### {len(allergies)} people with allergies")
     
     for allergy in allergies:
-        with st.expander(f"🧑 {allergy.get('person_name', 'Unknown')} - {len(allergy.get('allergies', [])} allergies"):
+        with st.expander(f"🧑 {allergy.get('person_name', 'Unknown')} - {len(allergy.get('allergies', []))} allergies"):
             # Person details
             col1, col2 = st.columns(2)
             
@@ -236,11 +236,11 @@ def _view_allergies_tab(event_id: str):
                 for a in allergy.get('allergies', []):
                     st.write(f"• {a}")
                 
-                st.markdown("**Severity:** " + allergy.get('severity', 'Unknown')
+                st.markdown("**Severity:** " + allergy.get('severity', 'Unknown'))
             
             with col2:
                 st.markdown("**Notes:**")
-                st.write(allergy.get('notes', 'No notes')
+                st.write(allergy.get('notes', 'No notes'))
             
             # Allergen details
             st.markdown("---")
@@ -295,7 +295,7 @@ def _add_allergy_tab(event_id: str, user: dict):
         
         with col1:
             person_name = st.text_input("Person's Name *", placeholder="e.g., John Smith")
-            severity = st.selectbox("Severity *", key="Severity *", ["Mild", "Moderate", "Severe", "Life-threatening"], key="auto_key"
+            severity = st.selectbox("Severity *", ["Mild", "Moderate", "Severe", "Life-threatening"])
         
         with col2:
             allergies = st.text_area("Allergies (one per line) *", 
@@ -383,10 +383,10 @@ def _check_recipes_tab(event_id: str):
     allergy_summary = []
     for allergy in allergies:
         person = allergy.get('person_name')
-        allergens = ", ".join(allergy.get('allergies', [])
+        allergens = ", ".join(allergy.get('allergies', []))
         allergy_summary.append(f"**{person}:** {allergens}")
     
-    st.write(" | ".join(allergy_summary)
+    st.write(" | ".join(allergy_summary))
     st.markdown("---")
     
     # Recipe checker
@@ -485,7 +485,7 @@ def get_allergy_analytics(event_id: str = None) -> Dict:
             # Count unique allergens
             all_allergens = []
             for allergy in allergies:
-                all_allergens.extend(allergy.get('allergies', [])
+                all_allergens.extend(allergy.get('allergies', []))
             
             allergen_counts = {}
             for allergen in all_allergens:

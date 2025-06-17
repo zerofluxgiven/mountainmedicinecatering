@@ -3,7 +3,7 @@ from datetime import datetime, timedelta
 from utils import format_timestamp
 from notifications import send_notification
 from auth import require_role, sync_firebase_users, delete_firebase_user
-from firebase_init import db, firestore  # ✅ Fixed: Use centralized database client
+from db_client import db  # ✅ Fixed: Use centralized database client
 from google.cloud.firestore_v1.base_query import FieldFilter
 
 # ----------------------------
@@ -25,7 +25,7 @@ def user_admin_ui():
 
     # Get all users
     try:
-        users_docs = list(db.collection("users").stream()
+        users_docs = list(db.collection("users").stream())
         users = [doc.to_dict() | {"id": doc.id} for doc in users_docs]
     except Exception as e:
         st.error(f"⚠️ Could not load users: {e}")
@@ -40,7 +40,7 @@ def user_admin_ui():
     with col1:
         search = st.text_input("🔍 Search by name or email:", placeholder="Enter search term...")
     with col2:
-        role_filter = st.selectbox("Filter by role:", key="Filter by role:", ["All", "admin", "manager", "user", "viewer"], key="auto_key"
+        role_filter = st.selectbox("Filter by role:", ["All", "admin", "manager", "user", "viewer"])
 
     # Apply filters
     filtered_users = users
@@ -50,7 +50,7 @@ def user_admin_ui():
         filtered_users = [
             u for u in filtered_users 
             if (search_lower in u.get("name", "").lower() or 
-                search_lower in u.get("email", "").lower()
+                search_lower in u.get("email", "").lower())
         ]
     
     if role_filter != "All":
@@ -65,7 +65,7 @@ def user_admin_ui():
     col1, col2, col3, col4 = st.columns(4)
     
     with col1:
-        st.metric("Total Users", len(users)
+        st.metric("Total Users", len(users))
     with col2:
         admin_count = len([u for u in users if u.get("role") == "admin"])
         st.metric("Admins", admin_count)
@@ -84,7 +84,7 @@ def user_admin_ui():
     current_admin = st.session_state.get("firebase_user", {}).get("id")
 
     # Display users
-    for user in sorted(filtered_users, key=lambda x: x.get("name", "").lower():
+    for user in sorted(filtered_users, key=lambda x: x.get("name", "").lower()):
         with st.expander(f"👤 {user.get('name', 'Unnamed')} ({user.get('email', 'No email')})"):
             
             # User details
@@ -171,14 +171,14 @@ def user_admin_ui():
                                     "details": {
                                         "from_role": current_role,
                                         "to_role": new_role,
-                                        "target_user": user.get("name", user.get("email", user["id"]),
+                                        "target_user": user.get("name", user.get("email", user["id"])),
                                         "changed_by": current_admin
                                     }
                                 })
                                 
                                 # Send notification to admins
                                 send_notification(
-                                    f"Role changed for {user.get('name', user.get('email', 'Unknown')}: {current_role} → {new_role}",
+                                    f"Role changed for {user.get('name', user.get('email', 'Unknown'))}: {current_role} → {new_role}",
                                     role="admin"
                                 )
                                 
@@ -216,7 +216,7 @@ def user_admin_ui():
                     if st.button("📧 Resend Verification", key=f"verify_{user['id']}"):
                         try:
                             from firebase_admin import auth as firebase_auth
-                            verification_link = firebase_auth.generate_email_verification_link(user.get('email')
+                            verification_link = firebase_auth.generate_email_verification_link(user.get('email'))
                             st.success("✅ Verification email sent!")
                             st.info("Email verification link generated (integrate with email service)")
                         except Exception as e:
@@ -258,37 +258,37 @@ def show_user_activity(user):
     
     try:
         # Get user's events
-        events_created = list(db.collection("events").where("created_by", "==", user_id).stream()
+        events_created = list(db.collection("events").where("created_by", "==", user_id).stream())
         
         # Get user's suggestions
-        suggestions_made = list(db.collection("suggestions").where("user_id", "==", user_id).stream()
+        suggestions_made = list(db.collection("suggestions").where("user_id", "==", user_id).stream())
         
         # Get user's files
-        files_uploaded = list(db.collection("files").where("uploaded_by", "==", user_id).stream()
+        files_uploaded = list(db.collection("files").where("uploaded_by", "==", user_id).stream())
         
         # Get user's active sessions
-        active_sessions = list(db.collection("active_sessions").where("user_id", "==", user_id).where("active", "==", True).stream()
+        active_sessions = list(db.collection("active_sessions").where("user_id", "==", user_id).where("active", "==", True).stream())
         
         # Get user's logs (with proper ordering and fallback)
         try:
-            user_logs = list(db.collection("logs").where(filter=FieldFilter("user_id", "==", user_id)
+            user_logs = list(db.collection("logs").where(filter=FieldFilter("user_id", "==", user_id))
                 .order_by("timestamp", direction=firestore.Query.DESCENDING)
-                .limit(10).stream()
+                .limit(10).stream())
         except Exception:
             # Fallback if ordering fails (no index)
-            user_logs = list(db.collection("logs").where("user_id", "==", user_id).limit(10).stream()
+            user_logs = list(db.collection("logs").where("user_id", "==", user_id).limit(10).stream())
         
         # Display metrics
         col1, col2, col3, col4 = st.columns(4)
         
         with col1:
-            st.metric("Events Created", len(events_created)
+            st.metric("Events Created", len(events_created))
         with col2:
-            st.metric("Suggestions Made", len(suggestions_made)
+            st.metric("Suggestions Made", len(suggestions_made))
         with col3:
-            st.metric("Files Uploaded", len(files_uploaded)
+            st.metric("Files Uploaded", len(files_uploaded))
         with col4:
-            st.metric("Active Sessions", len(active_sessions)
+            st.metric("Active Sessions", len(active_sessions))
         
         # Show Firebase-specific info
         st.markdown("#### 🔐 Firebase Account Info")
@@ -301,8 +301,8 @@ def show_user_activity(user):
                 st.write(f"**Firebase UID:** `{firebase_user.uid}`")
                 st.write(f"**Email Verified:** {'✅ Yes' if firebase_user.email_verified else '❌ No'}")
             with col2:
-                st.write(f"**Account Created:** {format_timestamp(datetime.fromtimestamp(firebase_user.user_metadata.creation_timestamp / 1000)}")
-                st.write(f"**Last Sign In:** {format_timestamp(datetime.fromtimestamp(firebase_user.user_metadata.last_sign_in_timestamp / 1000) if firebase_user.user_metadata.last_sign_in_timestamp else 'Never'}")
+                st.write(f"**Account Created:** {format_timestamp(datetime.fromtimestamp(firebase_user.user_metadata.creation_timestamp / 1000))}")
+                st.write(f"**Last Sign In:** {format_timestamp(datetime.fromtimestamp(firebase_user.user_metadata.last_sign_in_timestamp / 1000)) if firebase_user.user_metadata.last_sign_in_timestamp else 'Never'}")
         except Exception as e:
             st.warning(f"Could not load Firebase user data: {e}")
         
@@ -311,7 +311,7 @@ def show_user_activity(user):
             st.markdown("#### 🕒 Recent Activity")
             for log_doc in user_logs:
                 log_data = log_doc.to_dict()
-                timestamp = format_timestamp(log_data.get('timestamp')
+                timestamp = format_timestamp(log_data.get('timestamp'))
                 action = log_data.get('action', 'Unknown action')
                 st.write(f"• **{timestamp}** - {action}")
         
@@ -327,8 +327,8 @@ def show_user_activity(user):
             st.markdown("#### 📱 Active Sessions")
             for session_doc in active_sessions:
                 session_data = session_doc.to_dict()
-                created_at = format_timestamp(session_data.get('created_at')
-                expires_at = format_timestamp(session_data.get('expires_at')
+                created_at = format_timestamp(session_data.get('created_at'))
+                expires_at = format_timestamp(session_data.get('expires_at'))
                 st.write(f"• Session created: {created_at}, expires: {expires_at}")
                 
                 # Option to revoke session
@@ -422,7 +422,7 @@ def show_user_analytics():
         col1, col2, col3, col4 = st.columns(4)
         
         with col1:
-            st.metric("Total Users", len(users)
+            st.metric("Total Users", len(users))
         with col2:
             st.metric("Verified Users", verified_count, f"{(verified_count/len(users)*100):.1f}%")
         with col3:
@@ -437,7 +437,7 @@ def show_user_analytics():
         
         with col1:
             for role, count in role_counts.items():
-                percentage = (count / len(users) * 100
+                percentage = (count / len(users)) * 100
                 st.write(f"**{role.title()}:** {count} users ({percentage:.1f}%)")
         
         with col2:
@@ -445,7 +445,7 @@ def show_user_analytics():
             st.write("📊 Role Distribution Chart")
             for role, count in role_counts.items():
                 # Simple text-based bar chart
-                bar_length = int((count / len(users) * 20)
+                bar_length = int((count / len(users)) * 20)
                 bar = "█" * bar_length + "░" * (20 - bar_length)
                 st.write(f"`{role:8} {bar} {count:3d}`")
         
@@ -464,7 +464,7 @@ def show_user_analytics():
             
             if monthly_registrations:
                 st.write("**Monthly Registration Counts:**")
-                for month, count in sorted(monthly_registrations.items():
+                for month, count in sorted(monthly_registrations.items()):
                     st.write(f"**{month}:** {count} new users")
             else:
                 st.info("No registration date data available")
@@ -490,7 +490,7 @@ def user_management_tools():
                 try:
                     users = [doc.to_dict() for doc in db.collection("users").stream()]
                     for user in users:
-                        send_notification(announcement, user_id=user.get('id')
+                        send_notification(announcement, user_id=user.get('id'))
                     st.success(f"Announcement sent to {len(users)} users")
                 except Exception as e:
                     st.error(f"Failed to send announcements: {e}")
@@ -517,7 +517,7 @@ def user_management_tools():
                         'Role': user.get('role', 'viewer'),
                         'Verified': user.get('email_verified', False),
                         'Active': user.get('active', True),
-                        'Created': format_timestamp(user.get('created_at', '')
+                        'Created': format_timestamp(user.get('created_at', ''))
                     })
                 
                 # Convert to CSV format (simplified)
