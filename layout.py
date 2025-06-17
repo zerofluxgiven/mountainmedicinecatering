@@ -791,45 +791,40 @@ def render_top_navbar(tabs):
     )
 
     # Stylize the nav bar
-    st.markdown("""
+    st.markdown(
+        """
     <style>
     .stRadio > div {
         display: flex !important;
-        gap: 0.5rem !important;
-        flex-wrap: wrap !important;
-        background: none !important;
+        gap: 0 !important;
+        overflow: hidden !important;
+        background: var(--primary-purple, #6C4AB6) !important;
+        border-radius: var(--border-radius) !important;
     }
     .stRadio > div > label {
-        background: white !important;
-        color: var(--primary-purple, #6C4AB6) !important;
-        border: 2px solid var(--primary-purple, #6C4AB6) !important;
-        border-radius: 8px !important;
+        flex: 1 1 auto !important;
+        background: transparent !important;
+        color: rgba(255,255,255,0.6) !important;
+        border: none !important;
+        border-right: 1px solid rgba(255,255,255,0.3) !important;
+        border-radius: 0 !important;
         padding: 0.5rem 1rem !important;
         font-weight: 500 !important;
         font-size: 0.9rem !important;
         cursor: pointer !important;
-        transition: all 0.2s ease !important;
-        min-height: 40px !important;
-        display: flex !important;
-        align-items: center !important;
-        justify-content: center !important;
-        margin-right: 0 !important;
     }
-    .stRadio > div > label:hover {
-        background: var(--light-purple, #B8A4D4) !important;
-        color: white !important;
-        transform: translateY(-2px) !important;
-        box-shadow: 0 2px 4px rgba(0,0,0,0.1) !important;
+    .stRadio > div > label:last-child {
+        border-right: none !important;
     }
     .stRadio > div > label[aria-checked="true"] {
-        background: var(--primary-purple, #6C4AB6) !important;
-        color: white !important;
+        background: var(--dark-purple, #4a3280) !important;
+        color: #fff !important;
     }
-    .stRadio input[type="radio"] {
-        display: none !important;
-    }
+    .stRadio input[type="radio"] { display: none !important; }
     </style>
-    """, unsafe_allow_html=True)
+    """,
+        unsafe_allow_html=True,
+    )
 
     return selected
 

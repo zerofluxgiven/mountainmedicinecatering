@@ -11,6 +11,7 @@ from ingredients import (
     search_recipes_by_ingredient,
 )
 from allergies import render_allergy_warning
+from recipes_editor import recipe_editor_ui
 
 db = get_db()
 
@@ -128,6 +129,14 @@ def recipes_page():
     """Simple recipe browsing page."""
     st.title("📚 Recipes")
 
+    # If a recipe has been selected for editing, open editor directly
+    editing_id = st.session_state.pop("editing_recipe_id", None)
+    if editing_id:
+        recipe_editor_ui(editing_id)
+        return
+
+    search_term = st.text_input("Search recipes", key="recipe_search")
+
     try:
         recipes = [
             doc.to_dict() | {"id": doc.id}
@@ -143,6 +152,10 @@ def recipes_page():
         st.info("No recipes found.")
         return
 
+    if search_term:
+        term = search_term.lower()
+        recipes = [r for r in recipes if term in r.get("name", "").lower()]
+
     for recipe in recipes:
         with st.expander(recipe.get("name", "Unnamed Recipe")):
             st.markdown(
@@ -151,3 +164,6 @@ def recipes_page():
             instructions = recipe.get("instructions") or "—"
             st.markdown(instructions)
             st.markdown("---")
+            if st.button("Edit Recipe", key=f"edit_{recipe['id']}"):
+                st.session_state["editing_recipe_id"] = recipe["id"]
+                st.experimental_rerun()
