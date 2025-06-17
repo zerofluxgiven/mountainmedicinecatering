@@ -61,7 +61,7 @@ def recipe_editor_ui(recipe_id=None):
         st.markdown("### 🧬 Variants (Sub-Recipes for Allergies/Diets)")
         variants = recipe.get("variants", [])
         for idx, variant in enumerate(variants):
-            with st.expander(f"Variant #{idx+1}: {variant.get('label', 'Untitled Variant')}"):
+            with st.expander(f"Variant #{idx + 1}: {variant.get('label', 'Untitled Variant')}"):
                 st.markdown(f"**Modified Instructions:**\n{variant.get('instructions', '-')}")
                 st.markdown(f"**Allergen Notes:** {variant.get('notes', '-')}")
 
@@ -108,18 +108,18 @@ def recipe_editor_ui(recipe_id=None):
             update_recipe_with_parsed_ingredients(recipe_id, ingredients)
             st.success("✅ Recipe updated!")
 
-    # Show version history
     st.markdown("---")
     st.markdown("### 🕓 Version History")
     versions = doc_ref.collection("versions").order_by("timestamp", direction=firestore.Query.DESCENDING).stream()
     for v in versions:
         vdata = v.to_dict()
-        with st.expander(f"🕓 {vdata.get('timestamp').strftime('%Y-%m-%d %H:%M')} - {vdata.get('edited_by')}"):
+        timestamp = vdata.get("timestamp")
+        label = timestamp.strftime("%Y-%m-%d %H:%M") if timestamp else "Unknown"
+        with st.expander(f"🕓 {label} - {vdata.get('edited_by')}"):
             st.write("**Name:**", vdata.get("name"))
             st.write("**Instructions:**")
             st.code(vdata.get("instructions", ""))
             st.write("**Notes:**", vdata.get("notes", ""))
-            edit_note = vdata.get("edit_note", "")
-            if edit_note:
-                st.info(f"📝 Edit Note: {edit_note}")
+            if vdata.get("edit_note"):
+                st.info(f"📝 Edit Note: {vdata.get('edit_note')}")
             st.caption(f"Tags: {', '.join(vdata.get('tags', []))}")
