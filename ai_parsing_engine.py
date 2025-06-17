@@ -3,6 +3,7 @@ import os
 import tempfile
 import mimetypes
 import csv
+import re
 import openai
 import fitz  # PyMuPDF
 from PIL import Image
@@ -159,14 +160,21 @@ def query_ai_parser(raw_text, target_type):
                 {"role": "system", "content": system_prompt},
                 {"role": "user", "content": user_prompt}
             ],
-            temperature=0.3
+            temperature=0.3,
+            response_format={"type": "json_object"}
         )
 
         raw_output = response.choices[0].message.content
         print("🔍 AI raw output:", raw_output)
         st.warning("🔍 AI raw output:\n" + raw_output)
 
-        return json.loads(raw_output)
+        try:
+            return json.loads(raw_output)
+        except json.JSONDecodeError:
+            match = re.search(r"\{.*\}", raw_output, re.DOTALL)
+            if match:
+                return json.loads(match.group(0))
+            raise
 
     except json.JSONDecodeError:
         st.error("❌ Failed to parse AI response as valid JSON.")
