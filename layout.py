@@ -770,22 +770,23 @@ def _get_ai_response(message: str):
 def render_top_navbar(tabs):
     """Render clean purple-themed navigation tabs using Streamlit native components"""
     if not tabs:
-
-    # Inject logo banner above tabs
-    st.markdown("""
-    <div style="text-align:center; padding: 1rem 0;">
-      <img src="/mountain_logo_banner.png" style="max-width: 600px; height: auto;" alt="Mountain Medicine">
-    </div>
-    """, unsafe_allow_html=True)
-
         st.warning("⚠️ No navigation tabs defined.")
         return
+
+    # Inject logo banner above tabs
+    st.markdown(
+        """
+        <div style="text-align:center; padding: 1rem 0;">
+            <img src="/mountain_logo_banner.png" style="max-width: 600px; height: auto;" alt="Mountain Medicine">
+        </div>
+        """,
+        unsafe_allow_html=True,
+    )
 
     default_tab = "Dashboard" if "Dashboard" in tabs else tabs[0]
     current_tab = st.session_state.get("top_nav", default_tab)
 
     if current_tab not in tabs:
-        current_tab = tabs[0] if tabs else "Dashboard"
         current_tab = default_tab
         st.session_state["top_nav"] = current_tab
 
@@ -897,7 +898,7 @@ def render_status_indicator(status):
 def apply_theme():
     """Apply the complete Mountain Medicine theme"""
     import time
-    st.session_state["current_location"] = f"main_header_{int(time.time()}"
+    st.session_state["current_location"] = f"main_header_{int(time.time())}"
     
     inject_custom_css()
     render_event_mode_indicator()
