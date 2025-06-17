@@ -248,24 +248,6 @@ button:active, .stButton > button:active {
     margin-right: 0.75rem !important;
 }
 
-/* -----------------------------
-   MOBILE SIDEBAR
------------------------------ */
-.css-1d391kg {
-    padding: var(--mobile-padding) !important;
-    width: 80% !important;
-    max-width: 300px !important;
-}
-
-/* Sidebar toggle button */
-button[aria-label="Open sidebar"] {
-    position: fixed !important;
-    top: 1rem !important;
-    left: 1rem !important;
-    z-index: 100 !important;
-    min-width: var(--touch-target-size) !important;
-    min-height: var(--touch-target-size) !important;
-}
 
 /* -----------------------------
    MOBILE EVENT INDICATOR

@@ -34,7 +34,6 @@ from user_session_initializer import enrich_session_from_token
 from dashboard import render_dashboard
 from mobile_layout import mobile_layout
 from mobile_components import mobile_safe_columns
-from floating_ai_chat import render_floating_ai_chat
 from notifications import notifications_sidebar
 from datetime import datetime
 from utils import format_date, get_active_event, session_get, log_user_action
