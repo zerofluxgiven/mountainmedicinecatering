@@ -872,8 +872,12 @@ def apply_theme():
     """Apply the complete Mountain Medicine theme"""
     import time
     st.session_state["current_location"] = f"main_header_{int(time.time())}"
-    
+
     inject_custom_css()
+    # If the user is on a mobile device, load the mobile-specific theme
+    from mobile_layout import mobile_layout
+    if st.session_state.get("mobile_mode"):
+        mobile_layout.apply_mobile_theme()
     render_event_mode_indicator()
 
 # ----------------------------
