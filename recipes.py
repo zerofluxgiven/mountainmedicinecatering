@@ -1,8 +1,9 @@
 import streamlit as st
-from firebase_init import get_db
+from firebase_init import get_db, get_bucket
 from firebase_admin import firestore
 from datetime import datetime
 from utils import format_date, get_active_event_id
+from auth import get_user
 from ingredients import (
     parse_recipe_ingredients,
     update_recipe_with_parsed_ingredients,
@@ -14,6 +15,7 @@ from allergies import render_allergy_warning
 from recipes_editor import recipe_editor_ui
 
 db = get_db()
+bucket = get_bucket()
 
 # ----------------------------
 # 🔄 Parse and Store Recipe From File
@@ -122,12 +124,113 @@ def save_ingredient_to_firestore(ingredient_data, user_id=None, file_id=None):
 
 
 # ----------------------------
+# 🌐 Add Recipe via Link UI
+# ----------------------------
+
+def add_recipe_via_link_ui():
+    """Allow users to paste a link and create a recipe."""
+    st.markdown(
+        "<div class='card' style='max-width:600px;margin:0 auto'>",
+        unsafe_allow_html=True,
+    )
+    st.markdown("**Add Recipe via Link**")
+    url = st.text_input(
+        "",
+        placeholder="Just paste a link to an online recipe",
+        key="recipe_link_input",
+    )
+    parse_clicked = st.button("Parse", key="parse_link_btn")
+
+    if parse_clicked and url:
+        with st.spinner("Parsing recipe..."):
+            from ai_parsing_engine import parse_recipe_from_url
+
+            data = parse_recipe_from_url(url)
+            st.session_state["parsed_link_recipe"] = data
+
+    data = st.session_state.get("parsed_link_recipe")
+
+    if data:
+        title = st.text_input("Title", value=data.get("title", ""))
+        ingredients_value = (
+            "\n".join(data.get("ingredients", []))
+            if isinstance(data.get("ingredients"), list)
+            else data.get("ingredients", "")
+        )
+        instructions_value = (
+            "\n".join(data.get("instructions", []))
+            if isinstance(data.get("instructions"), list)
+            else data.get("instructions", "")
+        )
+        ingredients = st.text_area("Ingredients", value=ingredients_value)
+        instructions = st.text_area("Instructions", value=instructions_value)
+        image_file = st.file_uploader("Recipe Photo", type=["png", "jpg", "jpeg"])
+        if image_file:
+            st.image(image_file, use_column_width=True)
+
+        if st.button("Save Recipe", key="save_link_recipe"):
+            user = get_user()
+            image_url = None
+            if image_file:
+                import uuid
+
+                blob = bucket.blob(f"recipes/{uuid.uuid4()}_{image_file.name}")
+                blob.upload_from_file(image_file)
+                blob.make_public()
+                image_url = blob.public_url
+
+            recipe_doc = {
+                "name": title,
+                "ingredients": ingredients,
+                "instructions": instructions,
+                "image_url": image_url,
+                "created_at": datetime.utcnow(),
+                "author_name": user.get("name") if user else "unknown",
+            }
+            db.collection("recipes").document().set(recipe_doc)
+            st.success("Recipe saved!")
+            st.session_state.pop("parsed_link_recipe", None)
+
+    st.markdown("</div>", unsafe_allow_html=True)
+
+
+def _render_recipe_card(recipe: dict):
+    """Render a single recipe preview card."""
+    ing_preview = "".join(
+        f"- {line}\n" for line in (recipe.get("ingredients", "").splitlines()[:3])
+    )
+    if st.session_state.get("mobile_mode"):
+        content = ""
+        if recipe.get("image_url"):
+            content += f"<img src='{recipe['image_url']}' style='width:100%;border-radius:8px;'>"
+        content += f"<pre style='white-space:pre-wrap'>{ing_preview}</pre>"
+        from mobile_layout import mobile_card
+
+        mobile_card(recipe.get("name", "Unnamed"), content, icon="🍲", key=recipe["id"])
+        if st.button("Edit", key=f"edit_{recipe['id']}"):
+            st.session_state["editing_recipe_id"] = recipe["id"]
+            st.experimental_rerun()
+    else:
+        st.markdown("<div class='card'>", unsafe_allow_html=True)
+        if recipe.get("image_url"):
+            st.image(recipe["image_url"], use_column_width=True)
+        st.markdown(f"### {recipe.get('name', 'Unnamed')}")
+        st.markdown(ing_preview)
+        if st.button("Edit", key=f"edit_{recipe['id']}"):
+            st.session_state["editing_recipe_id"] = recipe["id"]
+            st.experimental_rerun()
+        st.markdown("</div>", unsafe_allow_html=True)
+
+
+# ----------------------------
 # 📖 Recipes Tab (Public)
 # ----------------------------
 
 def recipes_page():
     """Simple recipe browsing page."""
     st.title("📚 Recipes")
+
+    add_recipe_via_link_ui()
 
     # If a recipe has been selected for editing, open editor directly
     editing_id = st.session_state.pop("editing_recipe_id", None)
@@ -157,13 +260,5 @@ def recipes_page():
         recipes = [r for r in recipes if term in r.get("name", "").lower()]
 
     for recipe in recipes:
-        with st.expander(recipe.get("name", "Unnamed Recipe")):
-            st.markdown(
-                f"**Created:** {format_date(recipe.get('created_at'))}"
-            )
-            instructions = recipe.get("instructions") or "—"
-            st.markdown(instructions)
-            st.markdown("---")
-            if st.button("Edit Recipe", key=f"edit_{recipe['id']}"):
-                st.session_state["editing_recipe_id"] = recipe["id"]
-                st.experimental_rerun()
+        _render_recipe_card(recipe)
+

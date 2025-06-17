@@ -6,6 +6,8 @@ import openai
 import fitz  # PyMuPDF
 from PIL import Image
 import pytesseract
+import requests
+from bs4 import BeautifulSoup
 import json
 from datetime import datetime
 import streamlit as st
@@ -144,6 +146,26 @@ def query_ai_parser(raw_text, target_type):
     except Exception as e:
         st.error(f"OpenAI error: {e}")
         return {}
+
+# --------------------------------------------
+# 🌐 Parse Recipe From URL
+# --------------------------------------------
+
+def parse_recipe_from_url(url: str) -> dict:
+    """Fetch a recipe webpage and extract structured data."""
+    try:
+        resp = requests.get(url, timeout=10)
+        resp.raise_for_status()
+        soup = BeautifulSoup(resp.text, "html.parser")
+        text = soup.get_text(separator="\n")
+    except Exception as e:
+        st.error(f"Failed to fetch page: {e}")
+        return {}
+
+    parsed = query_ai_parser(text, "recipes")
+    if isinstance(parsed, list):
+        return parsed[0] if parsed else {}
+    return parsed or {}
 
 # --------------------------------------------
 # 💾 Modular Save Buttons
