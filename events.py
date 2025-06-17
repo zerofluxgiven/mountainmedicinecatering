@@ -309,7 +309,7 @@ def event_ui(user: dict | None) -> None:
             if event.get('description'):
                 st.markdown(f"**Description:** {event.get('description')}")
                 
-            menu_viewer_ui(event["id"])
+            menu_viewer_ui(event["id"], key_prefix=f"{event['id']}_")
             
             with col1:
                 st.markdown(f"**Location:** {event.get('location', 'Unknown')}")

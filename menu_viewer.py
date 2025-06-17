@@ -11,7 +11,8 @@ from recipes import save_menu_to_firestore
 # ----------------------------
 
 @require_role("user")
-def menu_viewer_ui(event_id=None):
+def menu_viewer_ui(event_id=None, key_prefix: str = ""):
+    """Display and edit an event menu with scoped widget keys."""
     st.title("🍽️ Event Menu")
 
     if not event_id:
@@ -33,18 +34,26 @@ def menu_viewer_ui(event_id=None):
     updated_menu = []
     for i, item in enumerate(menu):
         with st.expander(f"{item.get('name', 'Untitled Dish')}", expanded=False):
-            name = st.text_input(f"Dish Name #{i+1}", item.get("name", ""), key=f"name_{i}")
+            name = st.text_input(
+                f"Dish Name #{i+1}",
+                item.get("name", ""),
+                key=f"{key_prefix}name_{i}"
+            )
             category = st.selectbox(
                 f"Category #{i+1}",
                 ["Appetizer", "Main", "Side", "Dessert", "Drink", "Other"],
                 index=_get_category_index(item.get("category")),
-                key=f"cat_{i}"
+                key=f"{key_prefix}cat_{i}"
             )
             description = st.text_area(
-                f"Description #{i+1}", item.get("description", ""), key=f"desc_{i}"
+                f"Description #{i+1}",
+                item.get("description", ""),
+                key=f"{key_prefix}desc_{i}"
             )
             tags = st.text_input(
-                f"Tags #{i+1} (comma-separated)", ", ".join(item.get("tags", [])), key=f"tags_{i}"
+                f"Tags #{i+1} (comma-separated)",
+                ", ".join(item.get("tags", [])),
+                key=f"{key_prefix}tags_{i}"
             )
             updated_menu.append({
                 "name": name.strip(),
@@ -54,15 +63,16 @@ def menu_viewer_ui(event_id=None):
             })
 
     st.markdown("### ➕ Add New Menu Item")
-    with st.form("new_menu_item_form", clear_on_submit=True):
-        new_name = st.text_input("New Dish Name")
+    form_key = f"{key_prefix}new_menu_item_form"
+    with st.form(form_key, clear_on_submit=True):
+        new_name = st.text_input("New Dish Name", key=f"{key_prefix}new_name")
         new_category = st.selectbox(
             "New Category",
             ["Appetizer", "Main", "Side", "Dessert", "Drink", "Other"],
-            key="new_category",
+            key=f"{key_prefix}new_category",
         )
-        new_description = st.text_area("New Description")
-        new_tags = st.text_input("New Tags (comma-separated)")
+        new_description = st.text_area("New Description", key=f"{key_prefix}new_desc")
+        new_tags = st.text_input("New Tags (comma-separated)", key=f"{key_prefix}new_tags")
         submitted = st.form_submit_button("Add Menu Item")
         if submitted and new_name.strip():
             updated_menu.append({

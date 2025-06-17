@@ -8,7 +8,8 @@ from datetime import datetime
 # 🍽️ Full Menu Editor UI
 # ----------------------------
 
-def full_menu_editor_ui(event_id=None):
+def full_menu_editor_ui(event_id=None, key_prefix: str = ""):
+    """Full menu editor UI with scoped widget keys."""
     st.title("🍽️ Event Menu Editor")
 
     # Shortcut to historical menu viewer
@@ -42,14 +43,45 @@ def full_menu_editor_ui(event_id=None):
     updated_menu = []
     for i, item in enumerate(menu):
         bg_color = meal_colors.get(item.get("meal", "note").lower(), "#f0f0f0")
-        with st.expander(f"{item.get('day', 'Day')} - {item.get('meal', 'Meal')}", expanded=False):
-            st.markdown(f"<div style='background-color:{bg_color};padding:1em;border-radius:8px;'>", unsafe_allow_html=True)
-            day = st.text_input(f"Day #{i+1}", value=item.get("day", ""), key=f"day_{i}")
-            meal = st.selectbox(f"Meal #{i+1}", ["Breakfast", "Lunch", "Dinner", "Note"], index=_get_meal_index(item.get("meal")), key=f"meal_{i}")
-            recipe = st.text_input(f"Recipe Name #{i+1}", value=item.get("recipe", ""), key=f"recipe_{i}")
-            notes = st.text_area(f"Notes #{i+1}", value=item.get("notes", ""), key=f"notes_{i}")
-            allergens = st.text_input(f"Allergens #{i+1}", value=", ".join(item.get("allergens", [])), key=f"allergens_{i}")
-            tags = st.text_input(f"Tags #{i+1}", value=", ".join(item.get("tags", [])), key=f"tags_{i}")
+        with st.expander(
+            f"{item.get('day', 'Day')} - {item.get('meal', 'Meal')}",
+            expanded=False,
+        ):
+            st.markdown(
+                f"<div style='background-color:{bg_color};padding:1em;border-radius:8px;'>",
+                unsafe_allow_html=True,
+            )
+            day = st.text_input(
+                f"Day #{i+1}",
+                value=item.get("day", ""),
+                key=f"{key_prefix}day_{i}"
+            )
+            meal = st.selectbox(
+                f"Meal #{i+1}",
+                ["Breakfast", "Lunch", "Dinner", "Note"],
+                index=_get_meal_index(item.get("meal")),
+                key=f"{key_prefix}meal_{i}"
+            )
+            recipe = st.text_input(
+                f"Recipe Name #{i+1}",
+                value=item.get("recipe", ""),
+                key=f"{key_prefix}recipe_{i}"
+            )
+            notes = st.text_area(
+                f"Notes #{i+1}",
+                value=item.get("notes", ""),
+                key=f"{key_prefix}notes_{i}"
+            )
+            allergens = st.text_input(
+                f"Allergens #{i+1}",
+                value=", ".join(item.get("allergens", [])),
+                key=f"{key_prefix}allergens_{i}"
+            )
+            tags = st.text_input(
+                f"Tags #{i+1}",
+                value=", ".join(item.get("tags", [])),
+                key=f"{key_prefix}tags_{i}"
+            )
             st.markdown("</div>", unsafe_allow_html=True)
 
             updated_menu.append({
@@ -62,16 +94,21 @@ def full_menu_editor_ui(event_id=None):
             })
 
     st.markdown("### ➕ Add New Menu Item")
-    with st.form("new_menu_item_form", clear_on_submit=True):
+    form_key = f"{key_prefix}new_menu_item_form"
+    with st.form(form_key, clear_on_submit=True):
         col1, col2 = st.columns(2)
         with col1:
-            new_day = st.text_input("Day")
-            new_meal = st.selectbox("Meal", ["Breakfast", "Lunch", "Dinner", "Note"])
-            new_recipe = st.text_input("Recipe Name")
+            new_day = st.text_input("Day", key=f"{key_prefix}new_day")
+            new_meal = st.selectbox(
+                "Meal",
+                ["Breakfast", "Lunch", "Dinner", "Note"],
+                key=f"{key_prefix}new_meal"
+            )
+            new_recipe = st.text_input("Recipe Name", key=f"{key_prefix}new_recipe")
         with col2:
-            new_notes = st.text_area("Notes")
-            new_allergens = st.text_input("Allergens (comma-separated)")
-            new_tags = st.text_input("Tags (comma-separated)")
+            new_notes = st.text_area("Notes", key=f"{key_prefix}new_notes")
+            new_allergens = st.text_input("Allergens (comma-separated)", key=f"{key_prefix}new_allergens")
+            new_tags = st.text_input("Tags (comma-separated)", key=f"{key_prefix}new_tags")
 
         submit_new = st.form_submit_button("Add Menu Item")
         if submit_new:
