@@ -23,6 +23,57 @@ from recipes import (
 
 client = openai.OpenAI(api_key=st.secrets["openai"]["api_key"])
 
+def offline_parse(raw_text: str, target_type: str):
+    """Fallback parser using simple heuristics when OpenAI is unavailable."""
+    text_lower = raw_text.lower()
+
+    if target_type == "tags":
+        import re
+        return re.findall(r"#(\w+)", raw_text)
+
+    if target_type == "ingredients":
+        import re
+        match = re.search(r"ingredients[:\n]+(.+?)(?:\n\n|$)", raw_text, re.IGNORECASE | re.DOTALL)
+        if match:
+            lines = [l.strip("-* •\t") for l in match.group(1).splitlines() if l.strip()]
+            return lines
+        return []
+
+    if target_type == "recipes":
+        import re
+        name_match = re.search(r"^(.*)\n.*ingredients", raw_text, re.IGNORECASE | re.MULTILINE)
+        name = name_match.group(1).strip() if name_match else None
+        ingredients = offline_parse(raw_text, "ingredients")
+        instr_match = re.search(r"instructions[:\n]+(.+?)(?:\n\n|$)", raw_text, re.IGNORECASE | re.DOTALL)
+        instructions = instr_match.group(1).strip() if instr_match else None
+        recipe = {}
+        if name:
+            recipe["name"] = name
+        if ingredients:
+            recipe["ingredients"] = ingredients
+        if instructions:
+            recipe["instructions"] = instructions
+        return recipe
+
+    if target_type == "menus":
+        import re
+        menus = []
+        for meal in ("breakfast", "lunch", "dinner"):
+            match = re.search(fr"{meal}[:\s]+(.+?)(?:\n|$)", raw_text, re.IGNORECASE)
+            if match:
+                items = [i.strip() for i in match.group(1).split(',')]
+                menus.append({"meal": meal.capitalize(), "items": items})
+        return menus
+
+    if target_type == "allergens":
+        allergens = []
+        for a in ["milk", "eggs", "fish", "shellfish", "tree nuts", "peanuts", "wheat", "soy"]:
+            if a in text_lower:
+                allergens.append(a)
+        return allergens
+
+    return {}
+
 # --------------------------------------------
 # 🧠 Main Entry Point
 # --------------------------------------------
@@ -170,11 +221,12 @@ def query_ai_parser(raw_text, target_type):
 
     except json.JSONDecodeError:
         st.error("❌ Failed to parse AI response as valid JSON.")
-        return {}
 
     except Exception as e:
         st.error(f"OpenAI error: {e}")
-        return {}
+
+    st.warning("⚠️ Falling back to offline parser.")
+    return offline_parse(raw_text, target_type)
 
 # --------------------------------------------
 # 🌐 Parse Recipe From URL
