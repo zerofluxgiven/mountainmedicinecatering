@@ -23,3 +23,5 @@ Thumbs.db
 
 # Other
 *.bak
+# Temporary pip logs
+=*
