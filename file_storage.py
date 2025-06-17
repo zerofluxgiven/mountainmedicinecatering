@@ -1,6 +1,7 @@
 import streamlit as st
 from firebase_admin import storage
 from utils import format_date, get_active_event_id, session_get, session_set, get_event_by_id, generate_id
+from recipe_viewer import render_recipe_preview
 from datetime import datetime
 import uuid
 import mimetypes
@@ -8,36 +9,6 @@ from ai_parsing_engine import parse_file, extract_text
 from io import BytesIO
 
 
-def normalize_quantity(value):
-    if not value or str(value).lower() in ["", "null", "none"]:
-        return "to taste"
-    return str(value).strip()
-
-
-def normalize_unit(value):
-    if not value or str(value).lower() in ["", "null", "none"]:
-        return ""
-    return str(value).strip()
-
-
-def render_recipe_preview(parsed_data):
-    recipe = parsed_data.get("recipes", {})
-    if isinstance(recipe, list):
-        recipe = recipe[0] if recipe else {}
-
-    st.subheader("🧪 Auto-Detected Recipe Preview")
-
-    st.text_input("Recipe Name", value=recipe.get("name", ""))
-
-    ingredients = recipe.get("ingredients", [])
-    pretty_ingredients = []
-    for i in ingredients:
-        line = f"- {i.get('item', '').title()} ({normalize_quantity(i.get('quantity'))} {normalize_unit(i.get('unit'))})".strip()
-        pretty_ingredients.append(line)
-    st.text_area("Ingredients", value="\n".join(pretty_ingredients))
-
-    st.text_area("Instructions", value=recipe.get("instructions", ""))
-    st.text_area("Notes", value=recipe.get("notes", ""))
 
 # ----------------------------
 # 📁 File Manager UI
