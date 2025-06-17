@@ -25,7 +25,24 @@ from recipes import (
 client = openai.OpenAI(api_key=st.secrets["openai"]["api_key"])
 
 # --------------------------------------------
-# 🧠 Main Entry Point
+# 🧹 Central Cleaning & Validation Utils
+# --------------------------------------------
+
+def clean_raw_text(text: str) -> str:
+    text = text.replace("\r", "").strip()
+    lines = text.split("\n")
+    cleaned = [line for line in lines if len(line.strip()) > 2 and not line.lower().startswith("http")]
+    return "\n".join(cleaned)
+
+def is_meaningful_recipe(recipe: dict) -> bool:
+    if not isinstance(recipe, dict):
+        return False
+    if not recipe.get("name"):
+        return False
+    return bool(recipe.get("ingredients") or recipe.get("instructions"))
+
+# --------------------------------------------
+# 🧠 Main Entry Point (Patched)
 # --------------------------------------------
 
 def parse_file(uploaded_file, target_type="all", user_id=None, file_id=None):
@@ -47,14 +64,17 @@ def parse_file(uploaded_file, target_type="all", user_id=None, file_id=None):
         "recipes", "menus", "tags", "ingredients", "allergens"
     ]
 
+    cleaned_text = clean_raw_text(raw_text)
+
     for t in target_types:
-        parsed[t] = query_ai_parser(raw_text, t)
+        parsed[t] = query_ai_parser(cleaned_text, t)
 
     if file_id:
         parsed_record = {
             "parsed": parsed,
             "version": 1,
-            "status": "pending_review",
+            "status": "unusable" if not is_meaningful_recipe(parsed.get("recipes", {})) else "pending_review",
+            "raw_text": raw_text[:5000],
             "last_updated": datetime.utcnow(),
             "user_id": user_id
         }
@@ -117,7 +137,6 @@ def extract_text_from_image(uploaded_file):
         return ""
 
 def extract_text_from_csv(uploaded_file):
-    """Read CSV content and return as plain text"""
     try:
         text = uploaded_file.read().decode("utf-8", errors="ignore")
         uploaded_file.seek(0)
@@ -128,7 +147,6 @@ def extract_text_from_csv(uploaded_file):
         return ""
 
 def extract_text_from_docx(uploaded_file):
-    """Extract text from a DOCX file"""
     try:
         document = Document(uploaded_file)
         return "\n".join([para.text for para in document.paragraphs])
@@ -137,7 +155,7 @@ def extract_text_from_docx(uploaded_file):
         return ""
 
 # --------------------------------------------
-# 🤖 AI Prompt Routing
+# 🤖 AI Prompt Routing (Patched)
 # --------------------------------------------
 
 def query_ai_parser(raw_text, target_type):
@@ -151,7 +169,20 @@ def query_ai_parser(raw_text, target_type):
         "- allergens → list of known allergens mentioned"
     )
 
-    user_prompt = f"Extract {target_type} data from the following:\n\n```\n{raw_text[:6000]}\n```\nOnly return JSON."
+    user_prompt = f"""
+Extract structured {target_type} data from the following text. 
+Use common section headers like:
+- Ingredients:
+- Instructions:
+- Steps:
+- Servings:
+
+Only return a JSON object.
+
+```
+{raw_text[:6000]}
+```
+"""
 
     try:
         response = client.chat.completions.create(
@@ -185,11 +216,10 @@ def query_ai_parser(raw_text, target_type):
         return {}
 
 # --------------------------------------------
-# 🌐 Parse Recipe From URL
+# 🌐 Parse Recipe From URL (Patched)
 # --------------------------------------------
 
 def parse_recipe_from_url(url: str) -> dict:
-    """Fetch a recipe webpage and extract structured data."""
     try:
         resp = requests.get(url, timeout=10)
         resp.raise_for_status()
@@ -199,10 +229,14 @@ def parse_recipe_from_url(url: str) -> dict:
         st.error(f"Failed to fetch page: {e}")
         return {}
 
-    parsed = query_ai_parser(text, "recipes")
-    if isinstance(parsed, list):
-        return parsed[0] if parsed else {}
-    return parsed or {}
+    cleaned_text = clean_raw_text(text)
+    parsed = query_ai_parser(cleaned_text, "recipes")
+
+    if not is_meaningful_recipe(parsed):
+        st.warning("⚠️ Recipe content extracted from URL appears to be incomplete or unusable.")
+        return {}
+
+    return parsed
 
 # --------------------------------------------
 # 💾 Modular Save Buttons
