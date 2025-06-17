@@ -56,12 +56,20 @@ def file_manager_ui(user):
         with st.expander(f"📦 {group_id} ({len(files)} files)"):
             for file in files:
                 file_name = file.get("name", "Unnamed")
-                st.markdown(f"- **{file_name}** ({file.get('type', '-')})")
-                if st.button("Edit Metadata", key=f"edit_{file['id']}"):
-                    st.session_state["editing_file"] = file
-                if st.button("Delete", key=f"delete_{file['id']}"):
-                    db.collection("files").document(file["id"]).update({"deleted": True})
-                    st.rerun()
+                col_a, col_b, col_c, col_d = st.columns([3, 1, 1, 1])
+
+                with col_a:
+                    st.markdown(f"**{file_name}** ({file.get('type', '-')})")
+                with col_b:
+                    if st.button("View/Edit Data", key=f"view_{file['id']}"):
+                        st.session_state["editing_parsed_file"] = file["id"]
+                with col_c:
+                    if st.button("Save As", key=f"saveas_{file['id']}"):
+                        st.session_state["saveas_file"] = file["id"]
+                with col_d:
+                    if st.button("Delete", key=f"delete_{file['id']}"):
+                        db.collection("files").document(file["id"]).update({"deleted": True})
+                        st.rerun()
 
     if "editing_file" in st.session_state:
         file = st.session_state["editing_file"]
@@ -79,6 +87,18 @@ def file_manager_ui(user):
         if st.button("Cancel", key="cancel_edit"):
             del st.session_state["editing_file"]
             st.rerun()
+
+    if "editing_parsed_file" in st.session_state:
+        file_id = st.session_state["editing_parsed_file"]
+        doc = db.collection("files").document(file_id).get()
+        if doc.exists:
+            _render_parsed_data_editor(doc.to_dict() | {"id": file_id}, db)
+
+    if "saveas_file" in st.session_state:
+        file_id = st.session_state["saveas_file"]
+        doc = db.collection("files").document(file_id).get()
+        if doc.exists:
+            _render_save_as_options(doc.to_dict() | {"id": file_id})
 
 # ----------------------------
 # 📊 File Analytics
@@ -221,3 +241,101 @@ def show_link_editor_ui(file_id: str):
     if st.button(f"🔗 Link to selected {selected_type}", key=f"link_btn_{file_id}"):
         link_file_to_entity(file_id, collection_map[selected_type], selected_id["id"])
         st.success(f"✅ Linked to {selected_type.capitalize()}")
+
+# ----------------------------
+# 📝 Parsed Data Editor
+# ----------------------------
+
+def _render_parsed_data_editor(file: dict, db):
+    import json
+    st.markdown(f"### 📝 Parsed Data: {file.get('name', '')}")
+    parsed = file.get("parsed_data", {}).get("parsed", {})
+    if not parsed:
+        st.info("No parsed data available for this file.")
+        if st.button("Close", key=f"close_edit_{file['id']}"):
+            del st.session_state["editing_parsed_file"]
+        return
+
+    edit_key = f"edit_json_{file['id']}"
+    if st.session_state.get(f"edit_mode_{file['id']}"):
+        json_text = st.text_area("JSON", st.session_state.get(edit_key, json.dumps(parsed, indent=2)), height=300, key=edit_key)
+        col1, col2 = st.columns(2)
+        with col1:
+            if st.button("Save", key=f"save_json_{file['id']}"):
+                try:
+                    new_data = json.loads(json_text)
+                    db.collection("files").document(file["id"]).update({
+                        "parsed_data.parsed": new_data,
+                        "parsed_data.last_updated": datetime.utcnow()
+                    })
+                    st.success("✅ Data saved")
+                    st.session_state[f"edit_mode_{file['id']}"] = False
+                    del st.session_state["editing_parsed_file"]
+                    st.rerun()
+                except json.JSONDecodeError:
+                    st.error("Invalid JSON")
+        with col2:
+            if st.button("Cancel", key=f"cancel_json_{file['id']}"):
+                st.session_state[f"edit_mode_{file['id']}"] = False
+    else:
+        st.json(parsed)
+        if st.button("Edit", key=f"start_edit_{file['id']}"):
+            st.session_state[f"edit_mode_{file['id']}"] = True
+    if st.button("Close", key=f"close_view_{file['id']}"):
+        if f"edit_mode_{file['id']}" in st.session_state:
+            del st.session_state[f"edit_mode_{file['id']}"]
+        del st.session_state["editing_parsed_file"]
+        st.rerun()
+
+# ----------------------------
+# 💾 Save-As Options
+# ----------------------------
+
+def _render_save_as_options(file: dict):
+    from auth import get_user_id
+    from shopping_lists import create_shopping_list
+    from recipes import (
+        save_recipe_to_firestore,
+        save_event_to_firestore,
+        save_menu_to_firestore,
+        save_ingredient_to_firestore,
+    )
+
+    file_id = file["id"]
+    parsed = file.get("parsed_data", {}).get("parsed", {})
+    uploaded_name = parsed.get("title") or parsed.get("name") or file.get("name", "Unnamed File")
+
+    st.markdown(f"### 💾 Save '{uploaded_name}' As...")
+    option = st.selectbox(
+        "Select type",
+        ["Recipe", "Menu", "Shopping List", "Event", "Ingredient"],
+        key=f"saveas_option_{file_id}"
+    )
+
+    if st.button("Create", key=f"create_{file_id}"):
+        user_id = get_user_id()
+        if option == "Recipe":
+            save_recipe_to_firestore(parsed, user_id=user_id, file_id=file_id)
+            st.success("✅ Saved as Recipe")
+        elif option == "Menu":
+            save_menu_to_firestore(parsed, user_id=user_id, file_id=file_id)
+            st.success("✅ Saved as Menu")
+        elif option == "Event":
+            save_event_to_firestore(parsed, user_id=user_id, file_id=file_id)
+            st.success("✅ Saved as Event")
+        elif option == "Ingredient":
+            save_ingredient_to_firestore(parsed, user_id=user_id, file_id=file_id)
+            st.success("✅ Saved as Ingredient")
+        elif option == "Shopping List":
+            create_shopping_list({
+                "name": uploaded_name,
+                "items": parsed.get("items", []),
+                "source_file": file_id,
+                "parsed_data": parsed,
+            }, user_id=user_id)
+            st.success("✅ Saved as Shopping List")
+        del st.session_state["saveas_file"]
+        st.rerun()
+    if st.button("Cancel", key=f"cancel_saveas_{file_id}"):
+        del st.session_state["saveas_file"]
+        st.rerun()
