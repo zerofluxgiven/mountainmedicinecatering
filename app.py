@@ -27,8 +27,10 @@ components.html("""
     device = /iphone|ipad|android/.test(ua) ? "mobile" : "desktop";
     localStorage.setItem('mm_device', device);
   }
+  const handled = localStorage.getItem('mm_token_handled') === 'true';
   const query = `?token=${token}&device=${device}`;
-  if (!window.location.search.includes("token=") && token) {
+  if (!window.location.search.includes("token=") && token && !handled) {
+    localStorage.setItem('mm_token_handled', 'true');
     window.location.href = window.location.pathname + query;
   }
 </script>
