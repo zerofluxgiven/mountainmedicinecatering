@@ -29,7 +29,7 @@ def recipe_editor_ui(recipe_id=None):
 
     recipe = doc.to_dict()
 
-    if "image_url" in recipe and recipe["image_url"]:
+    if recipe.get("image_url"):
         st.image(recipe["image_url"], use_column_width=True, caption="📷 Recipe Image")
 
     st.subheader(f"Editing: {recipe.get('name', 'Unnamed Recipe')}")
@@ -40,11 +40,10 @@ def recipe_editor_ui(recipe_id=None):
         instructions = st.text_area("Instructions", value=recipe.get("instructions", ""))
         notes = st.text_area("Notes", value=recipe.get("notes", ""))
         tags = st.text_input("Tags (comma-separated)", value=", ".join(recipe.get("tags", [])))
+        edit_note = st.text_input("📝 Edit Note (for version history)", value="", key="edit_note")
 
         if st.button("🧠 Suggest Tags with AI"):
             st.info("🧠 AI tag suggestion coming soon...")
-
-        edit_note = st.text_input("📝 Edit Note (for version history)", value="", key="edit_note")
 
         if recipe.get("ingredients_parsed"):
             render_allergy_warning(recipe)
@@ -61,7 +60,7 @@ def recipe_editor_ui(recipe_id=None):
         st.markdown("### 🧬 Variants (Sub-Recipes for Allergies/Diets)")
         variants = recipe.get("variants", [])
         for idx, variant in enumerate(variants):
-            with st.expander(f"Variant #{idx+1}: {variant.get('label', 'Untitled Variant')}"):
+            with st.expander(f"Variant #{idx + 1}: {variant.get('label', 'Untitled Variant')}"):
                 st.markdown(f"**Modified Instructions:**\n{variant.get('instructions', '-')}")
                 st.markdown(f"**Allergen Notes:** {variant.get('notes', '-')}")
 
@@ -108,18 +107,19 @@ def recipe_editor_ui(recipe_id=None):
             update_recipe_with_parsed_ingredients(recipe_id, ingredients)
             st.success("✅ Recipe updated!")
 
-    # Show version history
     st.markdown("---")
     st.markdown("### 🕓 Version History")
     versions = doc_ref.collection("versions").order_by("timestamp", direction=firestore.Query.DESCENDING).stream()
     for v in versions:
         vdata = v.to_dict()
-        with st.expander(f"🕓 {vdata.get('timestamp').strftime('%Y-%m-%d %H:%M')} - {vdata.get('edited_by')}"):
+        timestamp = vdata.get("timestamp")
+        label = timestamp.strftime("%Y-%m-%d %H:%M") if timestamp else "Unknown"
+        with st.expander(f"🕓 {label} - {vdata.get('edited_by')}"):
             st.write("**Name:**", vdata.get("name"))
             st.write("**Instructions:**")
             st.code(vdata.get("instructions", ""))
             st.write("**Notes:**", vdata.get("notes", ""))
-            edit_note = vdata.get("edit_note", "")
-            if edit_note:
-                st.info(f"📝 Edit Note: {edit_note}")
+            if vdata.get("edit_note"):
+                st.info(f"📝 Edit Note: {vdata.get('edit_note')}")
             st.caption(f"Tags: {', '.join(vdata.get('tags', []))}")
+

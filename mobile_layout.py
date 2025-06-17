@@ -34,7 +34,7 @@ def mobile_safe_columns(n: int):
 # 🔣 Mobile Select Dropdown
 # -----------------------------
 def mobile_select(label: str, options: List[str], index: int = 0) -> str:
-    return st.selectbox(label, options, index=index, key="auto_key"
+    return st.selectbox(label, options, index=index)
 
 
 # -----------------------------
@@ -73,7 +73,7 @@ def mobile_card(title: str, content: str = "", icon: Optional[str] = None):
 # -----------------------------
 def render_mobile_navigation():
     nav_items = ["Dashboard", "Events", "Recipes", "Chat", "Profile"]
-    selected = st.selectbox("📱 Mobile Nav", key="📱 Mobile Nav", nav_items, key="mobile_nav", key="auto_key"
+    selected = st.selectbox("📱 Mobile Nav", nav_items, key="mobile_nav")
     st.session_state.mobile_tab = selected
     return selected
 
@@ -98,8 +98,6 @@ class MobileLayout:
         return self._is_mobile
     
     def apply_mobile_theme(self):
-        if not st.session_state.get("mobile_mode", False):
-            return
         """Apply mobile-specific CSS and optimizations"""
         mobile_css = """
         <style>
@@ -136,9 +134,9 @@ class MobileLayout:
             
             col1, col2 = st.columns(2)
             with col1:
-                st.metric("👥 Guests", event.get("guest_count", 0)
+                st.metric("👥 Guests", event.get("guest_count", 0))
             with col2:
-                st.metric("🧑‍🍳 Staff", event.get("staff_count", 0)
+                st.metric("🧑‍🍳 Staff", event.get("staff_count", 0))
             
             st.markdown("### ✅ Quick Tasks")
             st.checkbox("Setup complete")

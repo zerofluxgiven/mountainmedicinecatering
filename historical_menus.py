@@ -33,7 +33,7 @@ def historical_menus_ui():
     elif sort_mode == "Oldest First":
         menu_events.sort(key=lambda e: e["date"] or "")
     else:
-        menu_events.sort(key=lambda e: e["name"].lower()
+        menu_events.sort(key=lambda e: e["name"].lower())
 
     for event in menu_events:
         st.markdown(f"## 🗓️ {event['name']} ({format_date(event['date'])})")
@@ -54,8 +54,8 @@ def historical_menus_ui():
                 st.markdown(f"**Meal:** {item.get('meal', '-').capitalize()}")
                 st.markdown(f"**Recipe:** {item.get('recipe', '-')}")
                 st.markdown(f"**Notes:** {item.get('notes', '-')}")
-                st.markdown(f"**Tags:** {', '.join(item.get('tags', [])}")
-                st.markdown(f"**Allergens:** {', '.join(item.get('allergens', [])}")
+                st.markdown(f"**Tags:** {', '.join(item.get('tags', []))}")
+                st.markdown(f"**Allergens:** {', '.join(item.get('allergens', []))}")
                 st.markdown("</div>", unsafe_allow_html=True)
 
         st.markdown("---")

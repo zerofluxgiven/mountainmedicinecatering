@@ -1,9 +1,9 @@
 import streamlit as st
-from firebase_init import get_db
+from firebase_admin import firestore
 from utils import generate_id, get_scoped_query, is_event_scoped, get_event_scope_message, get_active_event_id
 from datetime import datetime
 
-db = get_db()
+db = firestore.client()
 
 # ----------------------------
 # 📦 Packing & Loading UI
@@ -13,7 +13,7 @@ def packing_ui():
     st.title("📦 Packing & Loading")
     
     # Show current scope
-    st.info(get_event_scope_message()
+    st.info(get_event_scope_message())
     
     # Check if we're in event mode
     if not is_event_scoped():
@@ -33,7 +33,7 @@ def _show_all_events_packing():
     """Show packing lists for all events"""
     # Get all non-deleted events
     try:
-        events = get_db().collection("events").where("deleted", "==", False).order_by("start_date").stream()
+        events = db.collection("events").where("deleted", "==", False).order_by("start_date").stream()
         event_list = [doc.to_dict() | {"id": doc.id} for doc in events]
     except:
         event_list = []
@@ -55,7 +55,7 @@ def _show_all_events_packing():
             event_options.append(option)
             event_mapping[option] = event['id']
     
-    selected = st.selectbox("Choose Event", key="Choose Event", event_options, key="auto_key"
+    selected = st.selectbox("Choose Event", event_options)
     
     if selected != "Select an event...":
         event_id = event_mapping[selected]
@@ -86,7 +86,7 @@ def _render_event_packing(event_id):
 def _render_task_list(event_id):
     st.subheader("📝 Tasks")
     
-    tasks_ref = get_db().collection("events").document(event_id).collection("tasks")
+    tasks_ref = db.collection("events").document(event_id).collection("tasks")
     tasks = [doc.to_dict() for doc in tasks_ref.stream()]
     
     # Group tasks by priority
@@ -124,7 +124,7 @@ def _render_task_list(event_id):
             with col1:
                 new_task = st.text_input("Task Description")
             with col2:
-                priority = st.selectbox("Priority", key="Priority", ["High", "Medium", "Low"], key="auto_key"
+                priority = st.selectbox("Priority", ["High", "Medium", "Low"])
             
             if st.form_submit_button("Add Task"):
                 if new_task:
@@ -164,7 +164,7 @@ def _render_task_item(task, tasks_ref):
 def _render_equipment_list(event_id):
     st.subheader("🔧 Equipment")
     
-    items_ref = get_db().collection("events").document(event_id).collection("equipment")
+    items_ref = db.collection("events").document(event_id).collection("equipment")
     items = [doc.to_dict() for doc in items_ref.stream()]
     
     # Group by category
@@ -208,7 +208,7 @@ def _render_equipment_list(event_id):
             with col2:
                 quantity = st.number_input("Quantity", min_value=1, value=1)
             with col3:
-                category = st.selectbox("Category", key="Category", ["Cooking", "Serving", "Storage", "Transport", "Safety", "Other"], key="auto_key"
+                category = st.selectbox("Category", ["Cooking", "Serving", "Storage", "Transport", "Safety", "Other"])
             
             if st.form_submit_button("Add Equipment"):
                 if new_eq:
@@ -232,7 +232,7 @@ def _render_grocery_list(event_id):
     st.subheader("🛒 Groceries")
     
     # Use shopping_items collection instead of groceries for consistency
-    groc_ref = get_db().collection("events").document(event_id).collection("shopping_items")
+    groc_ref = db.collection("events").document(event_id).collection("shopping_items")
     items = [doc.to_dict() for doc in groc_ref.stream()]
     
     # Group by category
@@ -277,9 +277,9 @@ def _render_grocery_list(event_id):
             with col2:
                 quantity = st.text_input("Quantity")
             with col3:
-                unit = st.selectbox("Unit", key="Unit", ["", "lbs", "kg", "oz", "cups", "pieces", "dozen", "cases"], key="auto_key"
+                unit = st.selectbox("Unit", ["", "lbs", "kg", "oz", "cups", "pieces", "dozen", "cases"])
             
-            category = st.selectbox("Category", key="Category", ["Produce", "Protein", "Dairy", "Dry Goods", "Beverages", "Supplies", "Other"], key="auto_key"
+            category = st.selectbox("Category", ["Produce", "Protein", "Dairy", "Dry Goods", "Beverages", "Supplies", "Other"])
             
             if st.form_submit_button("Add Item"):
                 if new_groc:
@@ -304,9 +304,9 @@ def _render_packing_summary(event_id):
     st.subheader("📊 Packing Summary")
     
     # Get all data
-    tasks_ref = get_db().collection("events").document(event_id).collection("tasks")
-    equipment_ref = get_db().collection("events").document(event_id).collection("equipment")
-    shopping_ref = get_db().collection("events").document(event_id).collection("shopping_items")
+    tasks_ref = db.collection("events").document(event_id).collection("tasks")
+    equipment_ref = db.collection("events").document(event_id).collection("equipment")
+    shopping_ref = db.collection("events").document(event_id).collection("shopping_items")
     
     tasks = [doc.to_dict() for doc in tasks_ref.stream()]
     equipment = [doc.to_dict() for doc in equipment_ref.stream()]
@@ -375,7 +375,7 @@ def _export_packing_checklist(event_id, tasks, equipment, shopping):
 def _get_event_info(event_id):
     """Get event information"""
     try:
-        doc = get_db().collection("events").document(event_id).get()
+        doc = db.collection("events").document(event_id).get()
         if doc.exists:
             return doc.to_dict()
     except:

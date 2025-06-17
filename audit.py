@@ -1,6 +1,9 @@
 import streamlit as st
+from firebase_admin import firestore
 from utils import format_date
+from firebase_admin import firestore
 
+db = firestore.client()
 
 # ----------------------------
 # 📜 Fetch Recent Logs
@@ -21,6 +24,6 @@ def audit_log_ui(user=None):
         return
 
     for log in logs:
-        ts = format_date(log.get("timestamp")
+        ts = format_date(log.get("timestamp"))
         st.markdown(f"**{ts}** — {log.get('user', {}).get('name', 'Unknown')} → `{log.get('action')}`")
         st.caption(f"Target: `{log.get('target_type')}` / ID: `{log.get('target_id')}`")

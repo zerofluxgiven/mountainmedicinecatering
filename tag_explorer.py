@@ -1,6 +1,7 @@
 import streamlit as st
 import networkx as nx
 from pyvis.network import Network
+from firebase_admin import firestore
 from utils import session_get
 
 # ------------------------------
@@ -15,8 +16,8 @@ def tag_explorer_ui():
         return
 
     try:
-        tag_data = _get_tag_usage(tag_query.strip().lower()
-        if not any(tag_data.values():
+        tag_data = _get_tag_usage(tag_query.strip().lower())
+        if not any(tag_data.values()):
             st.warning("No usage found for this tag.")
             return
         _render_constellation(tag_query, tag_data)
@@ -28,6 +29,7 @@ def tag_explorer_ui():
 # 📊 Tag Usage Collector
 # ------------------------------
 def _get_tag_usage(tag: str) -> dict:
+    db = firestore.client()
     tag_data = {
         "events": [],
         "recipes": [],
@@ -74,7 +76,7 @@ def _render_constellation(tag: str, tag_data: dict):
     }
 
     for category, items in tag_data.items():
-        label = category_labels.get(category, category.title()
+        label = category_labels.get(category, category.title())
         for entry in items:
             name = entry.get("name") or entry.get("title") or entry.get("id")
             tooltip = f"{label}: {name}"

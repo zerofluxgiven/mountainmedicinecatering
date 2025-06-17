@@ -1,8 +1,8 @@
 import streamlit as st
 from auth import load_user_session, get_user_id, get_user_role
-from firebase_init import get_db
+from firebase_admin import firestore
 
-db = get_db()
+db = firestore.client()
 COLLECTION_USERS = "users"
 COLLECTION_EVENTS = "events"
 COLLECTION_RECIPES = "recipes"
@@ -23,7 +23,7 @@ def profile_page():
     st.title("👤 Your Profile")
 
     # Load user doc
-    user_doc = get_db().collection(COLLECTION_USERS).document(user_id).get()
+    user_doc = db.collection(COLLECTION_USERS).document(user_id).get()
     profile = user_doc.to_dict() if user_doc.exists else {}
 
     # Sidebar
@@ -35,26 +35,26 @@ def profile_page():
 
     # Editable Bio Section
     st.subheader("📝 Bio")
-    bio = st.text_area("Tell us a bit about yourself", value=profile.get("bio", "")
+    bio = st.text_area("Tell us a bit about yourself", value=profile.get("bio", ""))
     if st.button("Update Bio"):
-        get_db().collection(COLLECTION_USERS).document(user_id).update({"bio": bio})
+        db.collection(COLLECTION_USERS).document(user_id).update({"bio": bio})
         st.success("✅ Bio updated.")
 
     # Participation Analytics
     st.subheader("📊 Your Activity")
 
     # Events
-    created = get_db().collection(COLLECTION_EVENTS).where("created_by", "==", user_id).stream()
+    created = db.collection(COLLECTION_EVENTS).where("created_by", "==", user_id).stream()
     created_events = [doc.to_dict() for doc in created]
 
-    participated = get_db().collection(COLLECTION_EVENTS).where("participants", "array_contains", user_id).stream()
+    participated = db.collection(COLLECTION_EVENTS).where("participants", "array_contains", user_id).stream()
     participated_events = [doc.to_dict() for doc in participated]
 
-    recipes = get_db().collection(COLLECTION_RECIPES).where("author_id", "==", user_id).stream()
-    recipe_count = len(list(recipes)
+    recipes = db.collection(COLLECTION_RECIPES).where("author_id", "==", user_id).stream()
+    recipe_count = len(list(recipes))
 
-    st.metric("Events Hosted", len(created_events)
-    st.metric("Events Participated", len(participated_events)
+    st.metric("Events Hosted", len(created_events))
+    st.metric("Events Participated", len(participated_events))
     st.metric("Recipes Contributed", recipe_count)
     st.metric("Estimated Hours Worked", len(participated_events) * 4)  # placeholder logic
 

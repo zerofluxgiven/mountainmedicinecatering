@@ -19,7 +19,7 @@ def post_event_ui(user: dict) -> None:
     st.title("📋 Post-Event Interview")
     
     # Show current scope
-    st.info(get_event_scope_message()
+    st.info(get_event_scope_message())
     
     # Get completed events
     if is_event_scoped():
@@ -50,7 +50,7 @@ def _show_completed_events_list(user: dict) -> None:
     
     # Get all completed events
     try:
-        completed_events = get_db().collection("events").where(filter=FieldFilter("status", "==", "complete").where(filter=FieldFilter("deleted", "==", False).stream()
+        completed_events = get_db().collection("events").where(filter=FieldFilter("status", "==", "complete")).where(filter=FieldFilter("deleted", "==", False)).stream()
         events_list = [doc.to_dict() | {"id": doc.id} for doc in completed_events]
     except:
         events_list = []
@@ -73,7 +73,7 @@ def _show_completed_events_list(user: dict) -> None:
     if events_without_feedback:
         st.markdown("### 🔴 Events Needing Feedback")
         for event in events_without_feedback:
-            with st.expander(f"{event.get('name', 'Unnamed')} - {format_date(event.get('end_date')}"):
+            with st.expander(f"{event.get('name', 'Unnamed')} - {format_date(event.get('end_date'))}"):
                 st.write(f"**Location:** {event.get('location', 'Unknown')}")
                 st.write(f"**Guests:** {event.get('guest_count', 0)}")
                 
@@ -84,13 +84,13 @@ def _show_completed_events_list(user: dict) -> None:
     if events_with_feedback:
         st.markdown("### ✅ Events with Feedback")
         for event in events_with_feedback:
-            with st.expander(f"{event.get('name', 'Unnamed')} - {format_date(event.get('end_date')}"):
+            with st.expander(f"{event.get('name', 'Unnamed')} - {format_date(event.get('end_date'))}"):
                 st.write(f"**Location:** {event.get('location', 'Unknown')}")
                 st.write(f"**Guests:** {event.get('guest_count', 0)}")
                 
                 summary = event.get('post_event_summary', {})
                 st.write(f"**Feedback provided by:** {summary.get('completed_by', 'Unknown')}")
-                st.write(f"**Date:** {format_date(summary.get('completed_at')}")
+                st.write(f"**Date:** {format_date(summary.get('completed_at'))}")
                 
                 col1, col2 = st.columns(2)
                 with col1:
@@ -114,7 +114,7 @@ def _show_completed_events_list(user: dict) -> None:
 def _render_post_event_form(event_id: str, event_data: dict, user: dict) -> None:
     """Render the post-event feedback form"""
     st.markdown(f"## Feedback for: {event_data.get('name', 'Unnamed Event')}")
-    st.caption(f"Event Date: {format_date(event_data.get('end_date')} | Location: {event_data.get('location', 'Unknown')}")
+    st.caption(f"Event Date: {format_date(event_data.get('end_date'))} | Location: {event_data.get('location', 'Unknown')}")
     
     # Get existing summary if any
     existing_summary = event_data.get("post_event_summary", {})
@@ -173,7 +173,7 @@ def _render_post_event_form(event_id: str, event_data: dict, user: dict) -> None
             total_cost = st.number_input(
                 "Total Event Cost ($)",
                 min_value=0.0,
-                value=float(existing_summary.get("total_cost", 0.0),
+                value=float(existing_summary.get("total_cost", 0.0)),
                 step=10.0
             )
         with col2:

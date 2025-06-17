@@ -45,11 +45,11 @@ def full_menu_editor_ui(event_id=None):
         with st.expander(f"{item.get('day', 'Day')} - {item.get('meal', 'Meal')}", expanded=False):
             st.markdown(f"<div style='background-color:{bg_color};padding:1em;border-radius:8px;'>", unsafe_allow_html=True)
             day = st.text_input(f"Day #{i+1}", value=item.get("day", ""), key=f"day_{i}")
-            meal = st.selectbox(f"Meal #{i+1}", ["Breakfast", "Lunch", "Dinner", "Note"], index=_get_meal_index(item.get("meal", key="auto_key", key="auto_key"), key=f"meal_{i}")
+            meal = st.selectbox(f"Meal #{i+1}", ["Breakfast", "Lunch", "Dinner", "Note"], index=_get_meal_index(item.get("meal")), key=f"meal_{i}")
             recipe = st.text_input(f"Recipe Name #{i+1}", value=item.get("recipe", ""), key=f"recipe_{i}")
             notes = st.text_area(f"Notes #{i+1}", value=item.get("notes", ""), key=f"notes_{i}")
-            allergens = st.text_input(f"Allergens #{i+1}", value=", ".join(item.get("allergens", []), key=f"allergens_{i}")
-            tags = st.text_input(f"Tags #{i+1}", value=", ".join(item.get("tags", []), key=f"tags_{i}")
+            allergens = st.text_input(f"Allergens #{i+1}", value=", ".join(item.get("allergens", [])), key=f"allergens_{i}")
+            tags = st.text_input(f"Tags #{i+1}", value=", ".join(item.get("tags", [])), key=f"tags_{i}")
             st.markdown("</div>", unsafe_allow_html=True)
 
             updated_menu.append({
@@ -66,7 +66,7 @@ def full_menu_editor_ui(event_id=None):
         col1, col2 = st.columns(2)
         with col1:
             new_day = st.text_input("Day")
-            new_meal = st.selectbox("Meal", key="Meal", ["Breakfast", "Lunch", "Dinner", "Note"], key="auto_key"
+            new_meal = st.selectbox("Meal", ["Breakfast", "Lunch", "Dinner", "Note"])
             new_recipe = st.text_input("Recipe Name")
         with col2:
             new_notes = st.text_area("Notes")
@@ -99,4 +99,4 @@ def full_menu_editor_ui(event_id=None):
 
 def _get_meal_index(meal: str):
     options = ["Breakfast", "Lunch", "Dinner", "Note"]
-    return options.index(meal.capitalize() if meal and meal.capitalize() in options else 0
+    return options.index(meal.capitalize()) if meal and meal.capitalize() in options else 0
