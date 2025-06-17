@@ -2,10 +2,12 @@ import io
 import os
 import tempfile
 import mimetypes
+import csv
 import openai
 import fitz  # PyMuPDF
 from PIL import Image
 import pytesseract
+from docx import Document
 import requests
 from bs4 import BeautifulSoup
 import json
@@ -77,6 +79,13 @@ def extract_text(uploaded_file):
             return extract_text_from_pdf(uploaded_file)
         elif uploaded_file.type.startswith("image"):
             return extract_text_from_image(uploaded_file)
+        elif uploaded_file.type in ("text/csv", "application/vnd.ms-excel", "application/csv"):
+            return extract_text_from_csv(uploaded_file)
+        elif uploaded_file.type in (
+            "application/vnd.openxmlformats-officedocument.wordprocessingml.document",
+            "application/msword",
+        ):
+            return extract_text_from_docx(uploaded_file)
         else:
             return uploaded_file.read().decode("utf-8", errors="ignore")
     except Exception as e:
@@ -104,6 +113,26 @@ def extract_text_from_image(uploaded_file):
         return pytesseract.image_to_string(image)
     except Exception as e:
         print(f"Image OCR error: {e}")
+        return ""
+
+def extract_text_from_csv(uploaded_file):
+    """Read CSV content and return as plain text"""
+    try:
+        text = uploaded_file.read().decode("utf-8", errors="ignore")
+        uploaded_file.seek(0)
+        reader = csv.reader(io.StringIO(text))
+        return "\n".join([", ".join(row) for row in reader])
+    except Exception as e:
+        print(f"CSV parse error: {e}")
+        return ""
+
+def extract_text_from_docx(uploaded_file):
+    """Extract text from a DOCX file"""
+    try:
+        document = Document(uploaded_file)
+        return "\n".join([para.text for para in document.paragraphs])
+    except Exception as e:
+        print(f"DOCX parse error: {e}")
         return ""
 
 # --------------------------------------------

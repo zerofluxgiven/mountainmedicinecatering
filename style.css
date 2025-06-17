@@ -117,6 +117,7 @@ button:active, .stButton > button:active {
     align-items: center !important;
     justify-content: center !important;
     white-space: nowrap !important;
+    list-style: none !important;
 }
 .stRadio > div > label:last-child {
     border-right: none !important;
@@ -127,6 +128,12 @@ button:active, .stButton > button:active {
 }
 .stRadio input[type="radio"] {
     display: none !important;
+}
+
+.stRadio ul {
+    list-style: none !important;
+    padding-left: 0 !important;
+    margin: 0 !important;
 }
 
 /* -----------------------------
