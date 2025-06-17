@@ -103,7 +103,7 @@ def initialize_event_mode_state():
 
 def handle_auth_routing():
     import streamlit.components.v1 as components
-    query_params = st.experimental_get_query_params()
+    query_params = st.query_params
 
     if "token" not in query_params:
         components.html('''
@@ -141,7 +141,7 @@ def handle_auth_routing():
             st.session_state["user"] = user
             st.toast(f"Welcome {user.get('name', 'back')} 👋")
             log_user_action(user.get("id", "unknown"), user.get("role", "viewer"), "login")
-            st.experimental_set_query_params()
+            st.query_params.clear()
         else:
             st.error("Login failed. Invalid or expired token.")
             return
