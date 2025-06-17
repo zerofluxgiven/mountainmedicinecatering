@@ -193,11 +193,6 @@ def main():
 
     initialize_event_mode_state()
 
-    st.sidebar.markdown("### Debug Info")
-    st.sidebar.write("Selected Tab:", st.session_state.get("top_nav"))
-    st.sidebar.write("User:", st.session_state.get("user"))
-    st.sidebar.write("Event ID:", st.session_state.get("active_event_id"))
-
     visible_tabs = list(TABS.keys())
     role = user.get("role", "viewer") if user else "viewer"
     if role != "admin":

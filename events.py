@@ -30,10 +30,20 @@ def save_user_event_preference(user_id: str, event_id: str = None):
             st.warning(f"Could not save event preference: {e}")
 
 def get_all_events() -> list[dict]:
-    """Fetch all events from Firestore, sorted by start date."""
+    """Fetch all events with attached event_file data."""
     try:
-        docs = db.collection("events").order_by("start_date", direction=firestore.Query.ASCENDING).stream()
-        return [{"id": doc.id, **doc.to_dict()} for doc in docs]
+        events_ref = db.collection("events")
+        docs = events_ref.order_by("start_date", direction=firestore.Query.ASCENDING).stream()
+        events = []
+        for doc in docs:
+            data = doc.to_dict()
+            meta_ref = events_ref.document(doc.id).collection("meta").document("event_file")
+            meta_doc = meta_ref.get()
+            if meta_doc.exists:
+                data["event_file"] = meta_doc.to_dict()
+            data["id"] = doc.id
+            events.append(data)
+        return events
     except Exception as e:
         st.error(f"⚠️ Failed to fetch events: {e}")
         return []
@@ -431,10 +441,18 @@ def render_event_filters():
         search_term = st.text_input("Search events", placeholder="Search by name or location...")
     
     with col2:
-        status_filter = st.selectbox("Filter by status", ["All", "planning", "active", "complete"], key="auto_key")
-    
+        status_filter = st.selectbox(
+            "Filter by status",
+            ["All", "planning", "active", "complete"],
+            key="status_filter_select",
+        )
+
     with col3:
-        date_filter = st.selectbox("Date range", ["All time", "This month", "Next month", "Past events"], key="auto_key")
+        date_filter = st.selectbox(
+            "Date range",
+            ["All time", "This month", "Next month", "Past events"],
+            key="date_filter_select",
+        )
     
     return search_term, status_filter, date_filter
 

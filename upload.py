@@ -25,7 +25,11 @@ def upload_ui_desktop(event_id: str = None):
         for e in events if not e.get("deleted", False)
     }
 
-    eid_label = st.selectbox("Select Event (optional)", ["None"] + list(event_options.keys()), key="auto_key")
+    eid_label = st.selectbox(
+        "Select Event (optional)",
+        ["None"] + list(event_options.keys()),
+        key="upload_event_select",
+    )
     eid = event_options.get(eid_label) if eid_label != "None" else None
 
     if file and user:
