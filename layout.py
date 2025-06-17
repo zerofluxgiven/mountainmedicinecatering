@@ -66,28 +66,6 @@ def render_event_mode_indicator():
         """
         st.markdown(indicator_html, unsafe_allow_html=True)
 
-# ----------------------------
-# 💬 Fixed Floating AI Assistant (Bottom Right)
-# ----------------------------
-#def # render_floating_ai_chat()  # Disabled by patch:
-    """Render working floating AI chat bubble in bottom right"""
-    user = session_get("user")
-    if not user:
-        return
-    
-    # Initialize chat state properly
-    if "chat_window_open" not in st.session_state:
-        st.session_state.chat_window_open = False
-    if "chat_history" not in st.session_state:
-        st.session_state.chat_history = []
-    
-    # Render the chat interface
-    render_chat_bubble()
-    
-    if st.session_state.chat_window_open:
-        render_chat_window()
-
-# Complete updated section for layout.py to replace the existing render_chat_bubble function
 
 def render_chat_bubble():
     """Render the floating chat bubble with full drag functionality"""
@@ -902,7 +880,6 @@ def apply_theme():
     
     inject_custom_css()
     render_event_mode_indicator()
-    # render_floating_ai_chat()  # Disabled by patch
 
 # ----------------------------
 # 📱 Mobile Responsive Container
@@ -1068,7 +1045,6 @@ def render_info_card(title, content, icon="ℹ️", card_type="info"):
 # For backward compatibility
 def render_floating_assistant():
     """Legacy function name"""
-    # render_floating_ai_chat()  # Disabled by patch
 
 def show_event_mode_banner():
     """Empty function for compatibility"""
