@@ -6,6 +6,8 @@ from upload_integration import save_parsed_menu_ui, show_save_file_actions
 from ui_components import render_tag_group, edit_metadata_ui
 from events import get_all_events
 from mobile_helpers import safe_file_uploader
+from recipes import save_recipe_to_firestore
+from ai_parsing_engine import parse_file
 
 # ----------------------------
 # 📤 Desktop Upload UI
@@ -37,8 +39,7 @@ def upload_ui_desktop(event_id: str = None):
                     file.seek(0)
                     contents = file.read().decode("utf-8")
 
-                    from ai_parsing_engine import parse_file as parse_and_store_recipe_from_file
-                    recipe_draft = parse_and_store_recipe_from_file(contents)
+                    recipe_draft = parse_file(contents)
 
                     st.markdown("### 🧪 Auto-Detected Recipe Preview")
                     with st.form("confirm_recipe_from_upload"):
@@ -69,7 +70,6 @@ def upload_ui_desktop(event_id: str = None):
                                 "tags": [],
                                 "author_name": user.get("name", uploaded_by)
                             })
-                            from recipe_db import save_recipe_to_firestore
                             recipe_id = save_recipe_to_firestore(recipe_draft)
                             if recipe_id:
                                 st.success(f"✅ Recipe saved! ID: {recipe_id}")

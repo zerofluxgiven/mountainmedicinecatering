@@ -2,19 +2,14 @@ import streamlit as st
 from firebase_init import get_db
 from firebase_admin import firestore
 from utils import format_date, get_active_event_id
-from ingredients import parse_recipe_ingredients, update_recipe_with_parsed_ingredients
+from ingredients import (
+    parse_recipe_ingredients,
+    update_recipe_with_parsed_ingredients,
+    get_event_ingredient_list,
+)
 from allergies import render_allergy_warning
-from ingredients import get_event_ingredient_list
-
-
-db = get_db()import streamlit as st
-from firebase_init import get_db
-from firebase_admin import firestore
-from utils import format_date, get_active_event_id
-from ingredients import parse_recipe_ingredients, update_recipe_with_parsed_ingredients
-from allergies import render_allergy_warning
-from ingredients import get_event_ingredient_list
 from datetime import datetime
+from recipes_editor import recipe_editor_ui
 
 db = get_db()
 
@@ -63,16 +58,6 @@ def parse_and_store_recipe_from_file(file_text: str, uploaded_by: str) -> str | 
 
 # You previously gave many functions (_browse_recipes_tab, _search_by_ingredient_tab, etc.)
 # If you want me to fix the entire file, including those blocks, I’ll return all that in full — just say so.
-import streamlit as st
-from firebase_init import get_db
-from firebase_admin import firestore
-from utils import format_date, get_active_event_id
-from ingredients import parse_recipe_ingredients, update_recipe_with_parsed_ingredients
-from allergies import render_allergy_warning
-from ingredients import get_event_ingredient_list
-from datetime import datetime
-
-db = get_db()
 
 def parse_and_store_recipe_from_file(file_text: str, uploaded_by: str) -> str | None:
     from datetime import datetime
@@ -133,12 +118,16 @@ def parse_and_store_recipe_from_file(file_text: str, uploaded_by: str) -> str | 
     
     # Rough guesswork parsing for ingredients/instructions
     try:
-        ingredients_start = next(i for i, line in enumerate(lines) if "ingredient" in line.lower()
+        ingredients_start = next(
+            i for i, line in enumerate(lines) if "ingredient" in line.lower()
+        )
     except StopIteration:
         ingredients_start = 1
 
     try:
-        instructions_start = next(i for i, line in enumerate(lines) if "instruction" in line.lower()
+        instructions_start = next(
+            i for i, line in enumerate(lines) if "instruction" in line.lower()
+        )
     except StopIteration:
         instructions_start = len(lines) // 2
 
@@ -146,7 +135,7 @@ def parse_and_store_recipe_from_file(file_text: str, uploaded_by: str) -> str | 
     instructions = "\n".join(lines[instructions_start:]).strip()
 
     recipe_data = {
-        "id": str(uuid.uuid4())
+        "id": str(uuid.uuid4()),
         "name": name,
         "ingredients": ingredients,
         "instructions": instructions,
@@ -237,130 +226,6 @@ def recipes_page():
     with tab3:
         _recipe_analytics_tab()
 
-def recipe_editor_ui(recipe_id: str):
-    """Edit a recipe's structured metadata"""
-    recipe_ref = db.collection("recipes").document(recipe_id)
-
-    try:
-        doc = recipe_ref.get()
-        if not doc.exists:
-            st.error("Recipe not found.")
-            return
-        recipe = doc.to_dict()
-        from lock_utils import is_locked
-        locked = is_locked(recipe.get("event_id")
-
-    except Exception as e:
-        st.error(f"Error loading recipe: {e}")
-        return
-
-    st.title("📝 Edit Recipe")
-
-    name = st.text_input("Recipe Name", recipe.get("name", ""), disabled=locked)
-    if locked:
-        st.text_input("💡 Suggest a new name", key="suggest_name")
-
-    ingredients = st.text_area("Ingredients (one per line)", recipe.get("ingredients", ""), disabled=locked)
-    if locked:
-        st.text_area("💡 Suggest updated ingredients", key="suggest_ingredients")
-    instructions = st.text_area("Instructions", recipe.get("instructions", ""), disabled=locked)
-    if locked:
-        st.text_area("💡 Suggest updated instructions", key="suggest_instructions")
-    notes = st.text_area("Notes", recipe.get("notes", ""), disabled=locked)
-    if locked:
-        st.text_area("💡 Suggest updated notes", key="suggest_notes")
-
-    
-        # Optional: Edit parsed ingredients if present
-    parsed = recipe.get("parsed_ingredients", [])
-    if parsed:
-        st.markdown("### 🧪 Parsed Ingredients")
-        for i, ping in enumerate(parsed):
-            col1, col2, col3 = st.columns([2, 1, 3])
-            with col1:
-                parsed[i]["quantity"] = col1.text_input(f"Qty {i+1}", ping.get("quantity", ""), key=f"qty_{i}")
-            with col2:
-                parsed[i]["unit"] = col2.text_input(f"Unit {i+1}", ping.get("unit", ""), key=f"unit_{i}")
-            with col3:
-                parsed[i]["name"] = col3.text_input(f"Name {i+1}", ping.get("name", ""), key=f"name_{i}")
-
-
-    if st.button("🧪 Re-Parse Ingredients"):
-        try:
-            parsed = parse_recipe_ingredients(ingredients)
-            if parsed:
-                recipe_ref.update({
-                    "parsed_ingredients": parsed,
-                    "ingredients_parsed": True
-                })
-                st.success("✅ Ingredients re-parsed successfully.")
-            else:
-                st.warning("⚠️ No ingredients could be parsed.")
-        except Exception as e:
-            st.error(f"Failed to re-parse ingredients: {e}")
-    
-    if st.button("💾 Save Changes"):
-        try:
-            if parsed:
-                cleaned = []
-                for p in parsed:
-                    if p.get("name"):
-                        cleaned.append({
-                            "name": p.get("name", "").strip(),
-                            "quantity": p.get("quantity", "").strip(),
-                            "unit": p.get("unit", "").strip(),
-                        })
-                recipe_ref.update({"parsed_ingredients": cleaned})
-    
-            recipe_ref.update({
-                "name": name,
-                "ingredients": ingredients,
-                "instructions": instructions,
-                "notes": notes,
-                "updated_at": datetime.utcnow()
-            })
-            st.success("✅ Recipe saved successfully.")
-        except Exception as e:
-            st.error(f"❌ Failed to save recipe: {e}")
-
-        if locked:
-            from suggestions import create_suggestion as submit_suggestion
-            fields = {
-                "name": st.session_state.get("suggest_name"),
-                "ingredients": st.session_state.get("suggest_ingredients"),
-                "instructions": st.session_state.get("suggest_instructions"),
-                "notes": st.session_state.get("suggest_notes"),
-            }
-            for field, new_value in fields.items():
-                if new_value:
-                    submit_suggestion(
-                        doc_type="recipe",
-                        doc_id=recipe_id,
-                        field=field,
-                        new_value=new_value,
-                        event_id=recipe.get("event_id")
-                    )
-            st.success("💡 Suggestions submitted for review.")
-
-
-    # Optional: AI-Powered Tag Suggestions
-    if recipe.get("ingredients_parsed"):
-        from ai_chat import suggest_tags_for_ingredients
-        st.markdown("### 🤖 Suggested Tags")
-
-        try:
-            suggestions = suggest_tags_for_ingredients(parsed)
-            if suggestions:
-                selected = st.multiselect("Select suggested tags", suggestions)
-                if st.button("➕ Add Selected Tags") and selected:
-                    new_tags = list(set(recipe.get("tags", []) + selected)
-                    recipe_ref.update({"tags": new_tags})
-                    st.success(f"✅ Tags updated: {', '.join(new_tags)}")
-        except Exception as e:
-            st.warning(f"⚠️ AI tag suggestion failed: {e}")
-
-
-
 def _browse_recipes_tab():
     """Browse all recipes"""
     try:
@@ -384,9 +249,9 @@ def _browse_recipes_tab():
         # Get all unique tags
         all_tags = set()
         for recipe in recipes:
-            all_tags.update(recipe.get('tags', [])
+            all_tags.update(recipe.get('tags', []))
         
-        selected_tags = st.multiselect("Filter by tags", sorted(all_tags)
+        selected_tags = st.multiselect("Filter by tags", sorted(all_tags))
     
     with col3:
         show_parsed_only = st.checkbox("Show only parsed recipes")
@@ -412,8 +277,8 @@ def _browse_recipes_tab():
             col1, col2 = st.columns([4, 1])
             
             with col1:
-                st.subheader(recipe.get("name", "Unnamed Recipe")
-            
+                st.subheader(recipe.get("name", "Unnamed Recipe"))
+
             with col2:
                 if recipe.get('ingredients_parsed'):
                     st.success("✅ Parsed")
@@ -426,7 +291,9 @@ def _browse_recipes_tab():
                 render_allergy_warning(recipe["id"], active_event_id)
             
             st.markdown(f"👨‍🍳 By: *{recipe.get('author_name', 'Unknown')}*")
-            st.markdown(f"🕒 Created: {format_date(recipe.get('created_at')}")
+            st.markdown(
+                f"🕒 Created: {format_date(recipe.get('created_at'))}"
+            )
             
             # Show parsed ingredients if available
             if recipe.get('ingredients_parsed') and recipe.get('parsed_ingredients'):
@@ -468,14 +335,14 @@ def _browse_recipes_tab():
             else:
                 # Show raw ingredients
                 st.markdown("### Ingredients")
-                st.markdown(recipe.get("ingredients", "—")
+                st.markdown(recipe.get("ingredients", "—"))
             
             st.markdown("### Instructions")
-            st.markdown(recipe.get("instructions", "—")
+            st.markdown(recipe.get("instructions", "—"))
 
             tags = recipe.get("tags", [])
             if tags:
-                st.markdown("**Tags:** " + ", ".join(f"`{tag}`" for tag in tags)
+                st.markdown("**Tags:** " + ", ".join(f"`{tag}`" for tag in tags))
 
             st.markdown("---")
 
@@ -510,7 +377,9 @@ def _search_by_ingredient_tab():
                     for recipe in recipes:
                         with st.expander(f"📖 {recipe.get('name', 'Unnamed Recipe')}"):
                             st.write(f"**Author:** {recipe.get('author_name', 'Unknown')}")
-                            st.write(f"**Created:** {format_date(recipe.get('created_at')}")
+                            st.write(
+                                f"**Created:** {format_date(recipe.get('created_at'))}"
+                            )
                             
                             # Show how this ingredient is used
                             if recipe.get('parsed_ingredients'):
@@ -521,9 +390,13 @@ def _search_by_ingredient_tab():
                             # Show tags
                             tags = recipe.get('tags', [])
                             if tags:
-                                st.write("**Tags:** " + ", ".join(f"`{tag}`" for tag in tags)
-                else:
-                    st.info(f"No recipes found with {selected_ingredient['name']}")
+                                st.write(
+                                    "**Tags:** " + ", ".join(f"`{tag}`" for tag in tags)
+                                )
+                            else:
+                                st.info(
+                                    f"No recipes found with {selected_ingredient['name']}"
+                                )
         else:
             st.info("No matching ingredients found. Try a different search term.")
 
@@ -558,11 +431,15 @@ def _recipe_analytics_tab():
                 st.progress(parsed_recipes / total_recipes)
         
         with col3:
-            st.metric("Unique Ingredients", len(ingredients_list)
-        
+            st.metric("Unique Ingredients", len(ingredients_list))
+
         with col4:
             # Average ingredients per recipe
-            avg_ingredients = sum(len(r.get('ingredient_ids', []) for r in recipes) / total_recipes if total_recipes > 0 else 0
+            avg_ingredients = (
+                sum(len(r.get('ingredient_ids', [])) for r in recipes) / total_recipes
+                if total_recipes > 0
+                else 0
+            )
             st.metric("Avg Ingredients/Recipe", f"{avg_ingredients:.1f}")
         
         # Most used ingredients
@@ -582,7 +459,7 @@ def _recipe_analytics_tab():
                     st.write(f"Used {ingredient.get('usage_count', 0)}x")
                 
                 with col3:
-                    st.caption(ingredient.get('category', 'Other')
+                    st.caption(ingredient.get('category', 'Other'))
         
         # Tag distribution
         st.markdown("### 🏷️ Popular Tags")
