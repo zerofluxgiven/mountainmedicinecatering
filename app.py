@@ -21,7 +21,12 @@ import streamlit.components.v1 as components
 components.html("""
 <script>
   const token = localStorage.getItem('mm_token') || "";
-  const device = localStorage.getItem('mm_device') || "desktop";
+  let device = localStorage.getItem('mm_device');
+  if (!device) {
+    const ua = navigator.userAgent.toLowerCase();
+    device = /iphone|ipad|android/.test(ua) ? "mobile" : "desktop";
+    localStorage.setItem('mm_device', device);
+  }
   const query = `?token=${token}&device=${device}`;
   if (!window.location.search.includes("token=") && token) {
     window.location.href = window.location.pathname + query;

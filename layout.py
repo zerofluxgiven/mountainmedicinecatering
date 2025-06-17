@@ -895,12 +895,15 @@ def responsive_container():
         
         /* Mobile navigation */
         .nav-tabs {
-            flex-direction: column !important;
+            flex-direction: row !important;
+            flex-wrap: nowrap !important;
+            overflow-x: auto !important;
+            -webkit-overflow-scrolling: touch !important;
             gap: 0.5rem !important;
         }
-        
+
         .nav-tab {
-            width: 100% !important;
+            flex: 0 0 auto !important;
         }
         
         /* Mobile event indicator */
