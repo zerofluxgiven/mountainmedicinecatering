@@ -118,3 +118,36 @@ def save_ingredient_to_firestore(ingredient_data, user_id=None, file_id=None):
     }
     db.collection("ingredients").document(ing_id).set(doc)
     return ing_id
+
+
+# ----------------------------
+# 📖 Recipes Tab (Public)
+# ----------------------------
+
+def recipes_page():
+    """Simple recipe browsing page."""
+    st.title("📚 Recipes")
+
+    try:
+        recipes = [
+            doc.to_dict() | {"id": doc.id}
+            for doc in db.collection("recipes")
+            .order_by("created_at", direction=firestore.Query.DESCENDING)
+            .stream()
+        ]
+    except Exception as e:
+        st.error(f"Failed to load recipes: {e}")
+        return
+
+    if not recipes:
+        st.info("No recipes found.")
+        return
+
+    for recipe in recipes:
+        with st.expander(recipe.get("name", "Unnamed Recipe")):
+            st.markdown(
+                f"**Created:** {format_date(recipe.get('created_at'))}"
+            )
+            instructions = recipe.get("instructions") or "—"
+            st.markdown(instructions)
+            st.markdown("---")
