@@ -1,11 +1,14 @@
 import streamlit as st
 from firebase_admin import storage
 from utils import format_date, get_active_event_id, session_get, session_set, get_event_by_id, generate_id
+from recipe_viewer import render_recipe_preview
 from datetime import datetime
 import uuid
 import mimetypes
 from ai_parsing_engine import parse_file, extract_text
 from io import BytesIO
+
+
 
 # ----------------------------
 # 📁 File Manager UI
@@ -255,6 +258,8 @@ def _render_parsed_data_editor(file: dict, db):
         if st.button("Close", key=f"close_edit_{file['id']}"):
             del st.session_state["editing_parsed_file"]
         return
+
+    render_recipe_preview(parsed)
 
     edit_key = f"edit_json_{file['id']}"
     if st.session_state.get(f"edit_mode_{file['id']}"):
