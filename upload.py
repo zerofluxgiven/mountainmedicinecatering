@@ -18,7 +18,7 @@ def upload_ui_desktop(event_id: str = None):
 
     file = safe_file_uploader(
         "Select file to upload",
-        type=["pdf", "png", "jpg", "jpeg", "txt"],
+        type=["pdf", "png", "jpg", "jpeg", "txt", "csv", "docx"],
     )
     user = session_get("user")
 
