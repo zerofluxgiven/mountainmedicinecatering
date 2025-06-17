@@ -275,15 +275,30 @@ def mobile_select(
     for option in options:
         selected = 'selected' if option == value else ''
         select_html += f'<option value="{option}" {selected}>{option}</option>'
-    
+
     select_html += """
             </select>
         </div>
     </div>
     """
-    
-    st.markdown(select_html, unsafe_allow_html=True)
-    
+
+    select_js = f"""
+    <script>
+    const sel_{select_id} = document.getElementById('{select_id}');
+    if (sel_{select_id}) {{
+        sel_{select_id}.addEventListener('change', (e) => {{
+            window.parent.postMessage({{
+                type: 'streamlit:setComponentValue',
+                key: '{select_id}',
+                value: e.target.value
+            }}, '*');
+        }});
+    }}
+    </script>
+    """
+
+    st.markdown(select_html + select_js, unsafe_allow_html=True)
+
     return st.session_state.get(select_id, value or options[0] if options else "")
 
 def mobile_button(

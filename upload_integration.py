@@ -2,6 +2,7 @@ import streamlit as st
 from firebase_init import db
 from utils import get_active_event_id
 from auth import get_user_id
+from shopping_lists import create_shopping_list
 from datetime import datetime
 from recipes import save_menu_to_firestore
 
@@ -62,7 +63,7 @@ def show_save_file_actions(upload_info: dict):
     uploaded_name = parsed.get("title") or parsed.get("name") or "Unnamed File"
 
     st.markdown("### 💾 Save File As...")
-    col1, col2 = st.columns(2)
+    col1, col2, col3 = st.columns(3)
 
     with col1:
         if st.button("🍲 Save as Recipe", key=f"save_as_recipe_{file_id}"):
@@ -86,8 +87,6 @@ def show_save_file_actions(upload_info: dict):
             db.collection("events").document().set(event_doc)
             st.success("✅ File saved as Event")
 
-    col3, col4 = st.columns(2)
-
     with col3:
         if st.button("📖 Save as Menu", key=f"save_as_menu_{file_id}"):
             db.collection("menus").document().set({
@@ -98,6 +97,8 @@ def show_save_file_actions(upload_info: dict):
             })
             st.success("✅ File saved as Menu")
 
+    col4, col5 = st.columns(2)
+
     with col4:
         if st.button("🥬 Save as Ingredient", key=f"save_as_ingredient_{file_id}"):
             db.collection("ingredients").document().set({
@@ -107,3 +108,13 @@ def show_save_file_actions(upload_info: dict):
                 "parsed_data": parsed,
             })
             st.success("✅ File saved as Ingredient")
+
+    with col5:
+        if st.button("🛒 Save as Shopping List", key=f"save_as_shoplist_{file_id}"):
+            create_shopping_list({
+                "name": uploaded_name,
+                "source_file": file_id,
+                "parsed_data": parsed,
+                "items": parsed.get("items", []),
+            }, user_id=get_user_id())
+            st.success("✅ File saved as Shopping List")

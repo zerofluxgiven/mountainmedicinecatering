@@ -4,6 +4,7 @@ from utils import session_get, format_date, get_active_event_id
 from file_storage import save_uploaded_file, file_manager_ui
 from upload_integration import save_parsed_menu_ui, show_save_file_actions
 from ui_components import render_tag_group, edit_metadata_ui
+from firebase_init import get_db
 from events import get_all_events
 from mobile_helpers import safe_file_uploader
 from recipes import save_recipe_to_firestore
@@ -93,6 +94,7 @@ def upload_ui_mobile():
     st.title("📤 Upload Files")
     user_id = get_user_id()
     event_id = get_active_event_id()
+    db = get_db()
 
     st.markdown("### Upload a new file")
     uploaded_file = st.file_uploader("Drop or select a file", type=["pdf", "txt", "jpg", "png", "jpeg", "csv", "docx"])
@@ -104,12 +106,13 @@ def upload_ui_mobile():
 
         st.success("✅ File uploaded and parsed.")
 
-        if st.button("View / Edit Parsed Data"):
-            parsed = result.get("parsed", {})
-            parsed = edit_metadata_ui(parsed)
-            render_tag_group("Recipe", [parsed.get("title", "")], color="green")
-            render_tag_group("Allergens", parsed.get("allergens", []), color="red")
-            render_tag_group("Tags", parsed.get("tags", []), color="purple")
+        if st.button("View / Edit Data"):
+            from file_storage import _render_parsed_data_editor
+            _render_parsed_data_editor({
+                "id": result["file_id"],
+                "name": uploaded_file.name,
+                "parsed_data": {"parsed": result.get("parsed", {})}
+            }, db)
 
         show_save_file_actions(st.session_state["last_uploaded_file"])
 
