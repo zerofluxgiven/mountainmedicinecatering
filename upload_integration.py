@@ -3,7 +3,7 @@ from firebase_init import db
 from utils import get_active_event_id
 from auth import get_user_id
 from datetime import datetime
-from menus import save_menu_to_firestore
+from recipes import save_menu_to_firestore
 
 # ----------------------------
 # ⬆️ Upload Integration: Save as Menu
