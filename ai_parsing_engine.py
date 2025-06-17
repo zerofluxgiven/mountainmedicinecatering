@@ -28,11 +28,13 @@ def parse_file(uploaded_file, target_type="all", user_id=None, file_id=None):
     print("📄 STARTING parse_file()")
 
     raw_text = extract_text(uploaded_file)
-    st.warning("📄 Extracted some text:" + raw_text[:300])
-    print("📄 Extracted text:", raw_text[:300])
+    st.session_state["extracted_text"] = raw_text
 
-    if not raw_text:
-        st.error("❌ No text extracted from file.")
+    if raw_text and raw_text.strip():
+        st.success("✅ Some text extracted.")
+        print("📄 Extracted text:", raw_text[:300])
+    else:
+        st.warning("❌ No text extracted from file.")
         return {}
 
     parsed = {}
