@@ -105,7 +105,9 @@ def handle_auth_routing():
     import streamlit.components.v1 as components
     query_params = st.experimental_get_query_params()
 
-    if "token" not in query_params:
+    user_logged_in = "user" in st.session_state
+
+    if "token" not in query_params and not user_logged_in:
         components.html('''
         <script>
         const token = localStorage.getItem("mm_token") || "";
