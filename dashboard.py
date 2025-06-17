@@ -1,13 +1,14 @@
 import streamlit as st
 from event_mode import get_event_context
 from utils import format_date
-from mobile_layout import mobile_card, render_mobile_navigation
+from mobile_layout import mobile_card, mobile_layout
 
 def render_dashboard(user=None):
     st.title("📊 Dashboard")
 
     if st.session_state.get("mobile_mode"):
-        render_mobile_navigation()
+        mobile_layout.render_mobile_dashboard(user, get_event_context())
+        return
 
     event = get_event_context()
 
