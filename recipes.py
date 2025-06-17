@@ -146,7 +146,7 @@ def parse_and_store_recipe_from_file(file_text: str, uploaded_by: str) -> str | 
     instructions = "\n".join(lines[instructions_start:]).strip()
 
     recipe_data = {
-        "id": str(uuid.uuid4(),
+        "id": str(uuid.uuid4())
         "name": name,
         "ingredients": ingredients,
         "instructions": instructions,
