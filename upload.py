@@ -55,6 +55,8 @@ def upload_ui_desktop(event_id: str = None):
                     "Recipe Name",
                     recipe_draft.get("name") or recipe_draft.get("title", ""),
                 )
+        aq4cbc-codex/debug-recipe-editor-population-issue
+
                 ingredients = st.text_area(
                     "Ingredients",
                     value=value_to_text(recipe_draft.get("ingredients")),
@@ -67,6 +69,8 @@ def upload_ui_desktop(event_id: str = None):
                     "Notes",
                     value=value_to_text(recipe_draft.get("notes")),
                 )
+      aq4cbc-codex/debug-recipe-editor-population-issue
+
                 confirm = st.form_submit_button("Save Recipe")
 
                 if eid:
