@@ -11,13 +11,18 @@ from allergies import render_allergy_warning
 # 📖 Recipe Editor UI
 # ----------------------------
 
-def recipe_editor_ui(recipe_id=None):
+def recipe_editor_ui(recipe_id=None, prefill_data=None):
     st.title("📖 Recipe Editor")
 
     user_id = get_user_id()
     event_id = get_active_event_id()
 
     if not recipe_id:
+    if prefill_data:
+        recipe = prefill_data
+        doc_ref = None
+        st.session_state["creating_from_parsed"] = True
+    else:
         recipe = st.session_state.pop("prefill_recipe", None)
         if not recipe:
             st.warning("No recipe selected.")
