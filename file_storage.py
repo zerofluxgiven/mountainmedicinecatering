@@ -1,7 +1,11 @@
 import streamlit as st
 from firebase_admin import storage
 from utils import format_date, get_active_event_id, session_get, session_set, get_event_by_id, generate_id
-from recipe_viewer import render_recipe_preview
+from recipe_viewer import (
+    render_recipe_preview,
+    render_menu_preview,
+    render_ingredient_preview,
+)
 from datetime import datetime
 import uuid
 import mimetypes
@@ -289,14 +293,24 @@ def _render_parsed_data_editor(file: dict, db):
 
     likely = st.session_state.get("inline_editor_type")
     label = f"Likely: {likely.capitalize()}" if likely else ""
-    with st.expander("🧪 Auto-Detected Preview", expanded=False):
-        if label:
-            st.caption(label)
-        if st.session_state.get("inline_editor_type") == "recipe":
-            if render_recipe_preview(parsed, allow_edit=True, key_prefix=file["id"]):
-                st.session_state[f"edit_recipe_{file['id']}"] = True
-        else:
-            render_recipe_preview(parsed)
+        codex/fix-parsed-info-display-and-recipe-population
+    if label:
+        st.caption(label)
+
+    if likely == "recipe":
+        if render_recipe_preview(parsed, allow_edit=True, key_prefix=file["id"]):
+            st.session_state[f"edit_recipe_{file['id']}"] = True
+    elif likely == "menu":
+        from recipe_viewer import render_menu_preview
+        if render_menu_preview(parsed, allow_edit=True, key_prefix=file["id"]):
+            st.session_state[f"edit_menu_{file['id']}"] = True
+    elif likely == "ingredient":
+        from recipe_viewer import render_ingredient_preview
+        if render_ingredient_preview(parsed, allow_edit=True, key_prefix=file["id"]):
+            st.session_state[f"edit_ingredient_{file['id']}"] = True
+    else:
+        st.json(parsed)
+
 
     if "inline_editor_type" not in st.session_state:
         edit_key = f"edit_json_{file['id']}"
@@ -337,11 +351,11 @@ def _render_parsed_data_editor(file: dict, db):
         st.markdown("### ✏️ Edit This Recipe")
         from recipes_editor import recipe_editor_ui
         recipe_editor_ui(prefill_data=st.session_state["inline_editor_data"])
-    elif st.session_state.get("inline_editor_type") == "menu":
+    elif st.session_state.get(f"edit_menu_{file['id']}"):
         st.markdown("### ✏️ Edit This Menu")
         from menu_editor import menu_editor_ui
         menu_editor_ui(prefill_data=st.session_state["inline_editor_data"])
-    elif st.session_state.get("inline_editor_type") == "ingredient":
+    elif st.session_state.get(f"edit_ingredient_{file['id']}"):
         st.markdown("### ✏️ Edit This Ingredient")
         from ingredients_editor import ingredients_editor_ui
         ingredients_editor_ui(prefill_data=st.session_state["inline_editor_data"])
