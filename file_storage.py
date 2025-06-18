@@ -292,11 +292,7 @@ def _render_parsed_data_editor(file: dict, db):
     with st.expander("🧪 Auto-Detected Preview", expanded=False):
         if label:
             st.caption(label)
-        if st.session_state.get("inline_editor_type") == "recipe":
-            if render_recipe_preview(parsed, allow_edit=True, key_prefix=file["id"]):
-                st.session_state[f"edit_recipe_{file['id']}"] = True
-        else:
-            render_recipe_preview(parsed)
+        render_recipe_preview(parsed)
 
     if "inline_editor_type" not in st.session_state:
         edit_key = f"edit_json_{file['id']}"
@@ -333,7 +329,7 @@ def _render_parsed_data_editor(file: dict, db):
                 if st.button("Edit", key=f"start_edit_{file['id']}"):
                     st.session_state[f"edit_mode_{file['id']}"] = True
 
-    if st.session_state.get(f"edit_recipe_{file['id']}"):
+    if st.session_state.get("inline_editor_type") == "recipe":
         st.markdown("### ✏️ Edit This Recipe")
         from recipes_editor import recipe_editor_ui
         recipe_editor_ui(prefill_data=st.session_state["inline_editor_data"])
