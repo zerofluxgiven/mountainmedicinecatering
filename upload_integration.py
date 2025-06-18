@@ -62,7 +62,23 @@ def show_save_file_actions(upload_info: dict):
     raw_text = upload_info.get("raw_text", "")
     uploaded_name = parsed.get("title") or parsed.get("name") or "Unnamed File"
 
+    def _detect_likely(parsed_data: dict):
+        if parsed_data.get("recipes"):
+            return "Recipe"
+        if parsed_data.get("menus"):
+            return "Menu"
+        if parsed_data.get("ingredients"):
+            return "Ingredient"
+        if parsed_data.get("items"):
+            return "Shopping List"
+        if parsed_data.get("events"):
+            return "Event"
+        return None
+
     st.markdown("### 💾 Save File As...")
+    likely = _detect_likely(parsed)
+    if likely:
+        st.caption(f"Likely: {likely}")
     col1, col2, col3 = st.columns(3)
 
     with col1:
