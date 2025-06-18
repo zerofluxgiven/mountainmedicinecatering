@@ -293,7 +293,6 @@ def _render_parsed_data_editor(file: dict, db):
 
     likely = st.session_state.get("inline_editor_type")
     label = f"Likely: {likely.capitalize()}" if likely else ""
-        codex/fix-parsed-info-display-and-recipe-population
     if label:
         st.caption(label)
 

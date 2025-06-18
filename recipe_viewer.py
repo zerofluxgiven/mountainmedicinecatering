@@ -57,7 +57,6 @@ def render_recipe_preview(parsed_data, allow_edit: bool = False, key_prefix: str
         disabled=True,
         key=f"{key_prefix}_notes",
     )
-        codex/fix-parsed-info-display-and-recipe-population
 
     if allow_edit:
         return st.button("✏️ Edit Recipe", key=f"{key_prefix}_edit_btn")
