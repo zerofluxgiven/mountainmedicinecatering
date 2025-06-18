@@ -47,9 +47,11 @@ def recipe_editor_ui(recipe_id=None, prefill_data=None):
             "Recipe Name",
             value=recipe.get("name") or recipe.get("title", ""),
         )
+        
         ingredients = st.text_area("Ingredients", value=value_to_text(recipe.get("ingredients")))
         instructions = st.text_area("Instructions", value=value_to_text(recipe.get("instructions")))
         notes = st.text_area("Notes", value=value_to_text(recipe.get("notes")))
+      
         tags = st.text_input("Tags (comma-separated)", value=", ".join(recipe.get("tags", [])))
         edit_note = st.text_input("📝 Edit Note (for version history)", value="", key="edit_note")
 
