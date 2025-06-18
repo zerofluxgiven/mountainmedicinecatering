@@ -1,8 +1,59 @@
 import streamlit as st
 from firebase_init import db
-from utils import get_active_event_id
+from utils import get_active_event_id, generate_id
 from auth import get_user_id
 from datetime import datetime
+import json
+
+# ----------------------------
+# 🍽️ Menu Editor (Single)
+# ----------------------------
+
+def menu_editor_ui(menu_id=None, prefill_data=None):
+    """Edit or create a menu."""
+    st.title("🍽️ Menu Editor")
+
+    user_id = get_user_id()
+    doc_ref = None
+    menu = None
+
+    if menu_id:
+        doc_ref = db.collection("menus").document(menu_id)
+        doc = doc_ref.get()
+        if not doc.exists:
+            st.error("Menu not found.")
+            return
+        menu = doc.to_dict()
+    elif prefill_data:
+        menu = prefill_data
+        st.info("💡 This form is pre-filled from parsed data.")
+    else:
+        st.warning("No menu to show.")
+        return
+
+    with st.form("edit_menu_form"):
+        title = st.text_input("Menu Title", value=menu.get("title", ""))
+        meals_json = st.text_area("Meals (JSON)", value=json.dumps(menu.get("meals", []), indent=2))
+        tags = st.text_input("Tags (comma-separated)", value=", ".join(menu.get("tags", [])))
+
+        submitted = st.form_submit_button("💾 Save")
+        if submitted:
+            data = {
+                "title": title,
+                "meals": json.loads(meals_json) if meals_json else [],
+                "tags": [t.strip() for t in tags.split(",") if t.strip()],
+                "updated_at": datetime.utcnow(),
+                "updated_by": user_id,
+            }
+            if doc_ref:
+                doc_ref.update(data)
+                st.success("✅ Menu updated!")
+            else:
+                menu_id = generate_id("menu")
+                data["created_at"] = datetime.utcnow()
+                data["created_by"] = user_id
+                db.collection("menus").document(menu_id).set(data)
+                st.success("✅ Menu saved!")
 
 # ----------------------------
 # 🍽️ Full Menu Editor UI

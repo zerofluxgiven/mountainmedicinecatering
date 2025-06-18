@@ -253,39 +253,84 @@ def _render_parsed_data_editor(file: dict, db):
     import json
     st.markdown(f"### 📝 Parsed Data: {file.get('name', '')}")
     parsed = file.get("parsed_data", {}).get("parsed", {})
+    if st.session_state.get("_last_inline_file") != file["id"]:
+        st.session_state.pop("inline_editor_type", None)
+        st.session_state.pop("inline_editor_data", None)
+    st.session_state["_last_inline_file"] = file["id"]
+
     if not parsed:
         st.info("No parsed data available for this file.")
         if st.button("Close", key=f"close_edit_{file['id']}"):
             del st.session_state["editing_parsed_file"]
         return
 
+    # Determine inline editor type based on parsed content
+    if "recipes" in parsed and parsed["recipes"]:
+        st.session_state["inline_editor_type"] = "recipe"
+        st.session_state["inline_editor_data"] = (
+            parsed["recipes"][0] if isinstance(parsed["recipes"], list) else parsed["recipes"]
+        )
+    elif "menus" in parsed and parsed["menus"]:
+        st.session_state["inline_editor_type"] = "menu"
+        st.session_state["inline_editor_data"] = (
+            parsed["menus"][0] if isinstance(parsed["menus"], list) else parsed["menus"]
+        )
+    elif "ingredients" in parsed and parsed["ingredients"]:
+        st.session_state["inline_editor_type"] = "ingredient"
+        st.session_state["inline_editor_data"] = (
+            parsed["ingredients"][0]
+            if isinstance(parsed["ingredients"], list)
+            else parsed["ingredients"]
+        )
+
     render_recipe_preview(parsed)
 
-    edit_key = f"edit_json_{file['id']}"
-    if st.session_state.get(f"edit_mode_{file['id']}"):
-        json_text = st.text_area("JSON", st.session_state.get(edit_key, json.dumps(parsed, indent=2)), height=300, key=edit_key)
-        col1, col2 = st.columns(2)
-        with col1:
-            if st.button("Save", key=f"save_json_{file['id']}"):
-                try:
-                    new_data = json.loads(json_text)
-                    db.collection("files").document(file["id"]).update({
-                        "parsed_data.parsed": new_data,
-                        "parsed_data.last_updated": datetime.utcnow()
-                    })
-                    st.success("✅ Data saved")
+    if "inline_editor_type" not in st.session_state:
+        edit_key = f"edit_json_{file['id']}"
+        if st.session_state.get(f"edit_mode_{file['id']}"):
+            json_text = st.text_area(
+                "JSON",
+                st.session_state.get(edit_key, json.dumps(parsed, indent=2)),
+                height=300,
+                key=edit_key,
+            )
+            col1, col2 = st.columns(2)
+            with col1:
+                if st.button("Save", key=f"save_json_{file['id']}"):
+                    try:
+                        new_data = json.loads(json_text)
+                        db.collection("files").document(file["id"]).update(
+                            {
+                                "parsed_data.parsed": new_data,
+                                "parsed_data.last_updated": datetime.utcnow(),
+                            }
+                        )
+                        st.success("✅ Data saved")
+                        st.session_state[f"edit_mode_{file['id']}"] = False
+                        del st.session_state["editing_parsed_file"]
+                        st.rerun()
+                    except json.JSONDecodeError:
+                        st.error("Invalid JSON")
+            with col2:
+                if st.button("Cancel", key=f"cancel_json_{file['id']}"):
                     st.session_state[f"edit_mode_{file['id']}"] = False
-                    del st.session_state["editing_parsed_file"]
-                    st.rerun()
-                except json.JSONDecodeError:
-                    st.error("Invalid JSON")
-        with col2:
-            if st.button("Cancel", key=f"cancel_json_{file['id']}"):
-                st.session_state[f"edit_mode_{file['id']}"] = False
-    else:
-        st.json(parsed)
-        if st.button("Edit", key=f"start_edit_{file['id']}"):
-            st.session_state[f"edit_mode_{file['id']}"] = True
+        else:
+            st.json(parsed)
+            if st.button("Edit", key=f"start_edit_{file['id']}"):
+                st.session_state[f"edit_mode_{file['id']}"] = True
+
+    if st.session_state.get("inline_editor_type") == "recipe":
+        st.markdown("### ✏️ Edit This Recipe")
+        from recipes_editor import recipe_editor_ui
+        recipe_editor_ui(prefill_data=st.session_state["inline_editor_data"])
+    elif st.session_state.get("inline_editor_type") == "menu":
+        st.markdown("### ✏️ Edit This Menu")
+        from menu_editor import menu_editor_ui
+        menu_editor_ui(prefill_data=st.session_state["inline_editor_data"])
+    elif st.session_state.get("inline_editor_type") == "ingredient":
+        st.markdown("### ✏️ Edit This Ingredient")
+        from ingredients_editor import ingredients_editor_ui
+        ingredients_editor_ui(prefill_data=st.session_state["inline_editor_data"])
     if st.button("Close", key=f"close_view_{file['id']}"):
         if f"edit_mode_{file['id']}" in st.session_state:
             del st.session_state[f"edit_mode_{file['id']}"]
