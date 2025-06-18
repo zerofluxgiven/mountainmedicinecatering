@@ -8,6 +8,34 @@ from ingredients import parse_recipe_ingredients, update_recipe_with_parsed_ingr
 from allergies import render_allergy_warning
 from recipes import save_recipe_to_firestore
 
+
+def _value_to_text(value):
+    """Convert parsed lists/dicts into a newline-separated string."""
+    if isinstance(value, list):
+        lines = []
+        for item in value:
+            if isinstance(item, dict):
+                parts = []
+                qty = item.get("quantity") or item.get("qty")
+                if qty:
+                    parts.append(str(qty))
+                unit = item.get("unit")
+                if unit:
+                    parts.append(str(unit))
+                name = item.get("item") or item.get("name")
+                if name:
+                    parts.append(str(name))
+                else:
+                    # Fallback to joining dict content
+                    parts.append(" ".join(str(v) for v in item.values()))
+                lines.append(" ".join(parts).strip())
+            else:
+                lines.append(str(item))
+        return "\n".join(lines)
+    if isinstance(value, dict):
+        return "\n".join(f"{k}: {v}" for k, v in value.items())
+    return str(value or "")
+
 # ----------------------------
 # 📖 Recipe Editor UI
 # ----------------------------
@@ -37,13 +65,17 @@ def recipe_editor_ui(recipe_id=None, prefill_data=None):
     if recipe.get("image_url"):
         st.image(recipe["image_url"], use_column_width=True, caption="📷 Recipe Image")
 
-    st.subheader(f"Editing: {recipe.get('name', 'Unnamed Recipe')}")
+    display_name = recipe.get("name") or recipe.get("title", "Unnamed Recipe")
+    st.subheader(f"Editing: {display_name}")
 
     with st.form("edit_recipe_form"):
-        name = st.text_input("Recipe Name", value=recipe.get("name", ""))
-        ingredients = st.text_area("Ingredients", value=recipe.get("ingredients", ""))
-        instructions = st.text_area("Instructions", value=recipe.get("instructions", ""))
-        notes = st.text_area("Notes", value=recipe.get("notes", ""))
+        name = st.text_input(
+            "Recipe Name",
+            value=recipe.get("name") or recipe.get("title", ""),
+        )
+        ingredients = st.text_area("Ingredients", value=_value_to_text(recipe.get("ingredients")))
+        instructions = st.text_area("Instructions", value=_value_to_text(recipe.get("instructions")))
+        notes = st.text_area("Notes", value=_value_to_text(recipe.get("notes")))
         tags = st.text_input("Tags (comma-separated)", value=", ".join(recipe.get("tags", [])))
         edit_note = st.text_input("📝 Edit Note (for version history)", value="", key="edit_note")
 
@@ -112,13 +144,16 @@ def recipe_editor_ui(recipe_id=None, prefill_data=None):
                 st.success("✅ Recipe updated!")
             else:
                 # New recipe from parsed data
-                new_id = save_recipe_to_firestore({
-                    "title": name,
-                    "ingredients": ingredients,
-                    "instructions": instructions,
-                    "notes": notes,
-                    "tags": version_entry["tags"]
-                }, user_id=user_id)
+                new_id = save_recipe_to_firestore(
+                    {
+                        "name": name,
+                        "ingredients": ingredients,
+                        "instructions": instructions,
+                        "notes": notes,
+                        "tags": version_entry["tags"],
+                    },
+                    user_id=user_id,
+                )
                 if new_id:
                     st.success("✅ Recipe saved!")
 

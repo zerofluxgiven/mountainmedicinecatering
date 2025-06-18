@@ -13,6 +13,33 @@ def normalize_unit(value):
     return str(value).strip()
 
 
+def _value_to_text(value):
+    """Convert parsed lists/dicts into a newline string for display."""
+    if isinstance(value, list):
+        lines = []
+        for item in value:
+            if isinstance(item, dict):
+                parts = []
+                qty = item.get("quantity") or item.get("qty")
+                if qty:
+                    parts.append(str(qty))
+                unit = item.get("unit")
+                if unit:
+                    parts.append(str(unit))
+                name = item.get("item") or item.get("name")
+                if name:
+                    parts.append(str(name))
+                else:
+                    parts.append(" ".join(str(v) for v in item.values()))
+                lines.append(" ".join(parts).strip())
+            else:
+                lines.append(str(item))
+        return "\n".join(lines)
+    if isinstance(value, dict):
+        return "\n".join(f"{k}: {v}" for k, v in value.items())
+    return str(value or "")
+
+
 def render_recipe_preview(parsed_data):
     """Display a simple read-only preview of a parsed recipe."""
     recipe = parsed_data.get("recipes", {})
@@ -21,15 +48,10 @@ def render_recipe_preview(parsed_data):
 
     st.subheader("🧪 Auto-Detected Recipe Preview")
 
-    st.text_input("Recipe Name", value=recipe.get("name", ""))
+    st.text_input("Recipe Name", value=recipe.get("name") or recipe.get("title", ""))
 
-    ingredients = recipe.get("ingredients", [])
-    pretty_ingredients = []
-    for i in ingredients:
-        line = f"- {i.get('item', '').title()} ({normalize_quantity(i.get('quantity'))} {normalize_unit(i.get('unit'))})".strip()
-        pretty_ingredients.append(line)
-    st.text_area("Ingredients", value="\n".join(pretty_ingredients))
+    st.text_area("Ingredients", value=_value_to_text(recipe.get("ingredients")))
 
-    st.text_area("Instructions", value=recipe.get("instructions", ""))
-    st.text_area("Notes", value=recipe.get("notes", ""))
+    st.text_area("Instructions", value=_value_to_text(recipe.get("instructions")))
+    st.text_area("Notes", value=_value_to_text(recipe.get("notes")))
 

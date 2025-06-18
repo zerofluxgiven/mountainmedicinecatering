@@ -48,7 +48,10 @@ def upload_ui_desktop(event_id: str = None):
 
             st.markdown("### 🧪 Auto-Detected Recipe Preview")
             with st.form("confirm_recipe_from_upload"):
-                name = st.text_input("Recipe Name", recipe_draft.get("name", ""))
+                name = st.text_input(
+                    "Recipe Name",
+                    recipe_draft.get("name") or recipe_draft.get("title", ""),
+                )
                 ingredients = st.text_area("Ingredients", recipe_draft.get("ingredients", ""))
                 instructions = st.text_area("Instructions", recipe_draft.get("instructions", ""))
                 notes = st.text_area("Notes", recipe_draft.get("notes", ""))
