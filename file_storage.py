@@ -293,6 +293,7 @@ def _render_parsed_data_editor(file: dict, db):
 
     likely = st.session_state.get("inline_editor_type")
     label = f"Likely: {likely.capitalize()}" if likely else ""
+        codex/fix-parsed-info-display-and-recipe-population
     if label:
         st.caption(label)
 
@@ -309,6 +310,7 @@ def _render_parsed_data_editor(file: dict, db):
             st.session_state[f"edit_ingredient_{file['id']}"] = True
     else:
         st.json(parsed)
+
 
     if "inline_editor_type" not in st.session_state:
         edit_key = f"edit_json_{file['id']}"
