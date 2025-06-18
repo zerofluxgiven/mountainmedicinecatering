@@ -174,6 +174,41 @@ def safe_dict_merge(base, update):
     return base
 
 # ----------------------------
+# 📝 Convert Parsed Values
+# ----------------------------
+
+def value_to_text(value):
+    """Convert parsed lists or dicts into a newline-separated string.
+
+    This helper normalizes parsed recipe values so they can be used to
+    prefill Streamlit text areas. Lists become newline separated and
+    dictionaries are flattened into "key: value" lines.
+    """
+    if isinstance(value, list):
+        lines = []
+        for item in value:
+            if isinstance(item, dict):
+                parts = []
+                qty = item.get("quantity") or item.get("qty")
+                if qty:
+                    parts.append(str(qty))
+                unit = item.get("unit")
+                if unit:
+                    parts.append(str(unit))
+                name = item.get("item") or item.get("name")
+                if name:
+                    parts.append(str(name))
+                else:
+                    parts.append(" ".join(str(v) for v in item.values()))
+                lines.append(" ".join(parts).strip())
+            else:
+                lines.append(str(item))
+        return "\n".join(lines)
+    if isinstance(value, dict):
+        return "\n".join(f"{k}: {v}" for k, v in value.items())
+    return str(value or "")
+
+# ----------------------------
 # 🔍 Deep Get Utility
 # ----------------------------
 

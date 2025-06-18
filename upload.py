@@ -1,6 +1,6 @@
 import streamlit as st
 from auth import require_role, get_user, get_user_id
-from utils import session_get, format_date, get_active_event_id
+from utils import session_get, format_date, get_active_event_id, value_to_text
 from file_storage import save_uploaded_file, file_manager_ui
 from upload_integration import save_parsed_menu_ui, show_save_file_actions
 from ui_components import render_tag_group, edit_metadata_ui
@@ -45,13 +45,28 @@ def upload_ui_desktop(event_id: str = None):
         recipes = result.get("parsed", {}).get("recipes")
         if recipes:
             recipe_draft = recipes if isinstance(recipes, dict) else recipes[0]
+            st.session_state["last_recipe_draft"] = recipe_draft
+            with st.expander("Debug Parsed Recipe"):
+                st.json(recipe_draft)
 
             st.markdown("### 🧪 Auto-Detected Recipe Preview")
             with st.form("confirm_recipe_from_upload"):
-                name = st.text_input("Recipe Name", recipe_draft.get("name", ""))
-                ingredients = st.text_area("Ingredients", recipe_draft.get("ingredients", ""))
-                instructions = st.text_area("Instructions", recipe_draft.get("instructions", ""))
-                notes = st.text_area("Notes", recipe_draft.get("notes", ""))
+                name = st.text_input(
+                    "Recipe Name",
+                    recipe_draft.get("name") or recipe_draft.get("title", ""),
+                )
+                ingredients = st.text_area(
+                    "Ingredients",
+                    value=value_to_text(recipe_draft.get("ingredients")),
+                )
+                instructions = st.text_area(
+                    "Instructions",
+                    value=value_to_text(recipe_draft.get("instructions")),
+                )
+                notes = st.text_area(
+                    "Notes",
+                    value=value_to_text(recipe_draft.get("notes")),
+                )
                 confirm = st.form_submit_button("Save Recipe")
 
                 if eid:
