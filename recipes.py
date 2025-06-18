@@ -12,7 +12,6 @@ from ingredients import (
     search_recipes_by_ingredient,
 )
 from allergies import render_allergy_warning
-from recipes_editor import recipe_editor_ui
 
 db = get_db()
 bucket = get_bucket()
@@ -235,6 +234,7 @@ def recipes_page():
     # If a recipe has been selected for editing, open editor directly
     editing_id = st.session_state.pop("editing_recipe_id", None)
     if editing_id:
+        from recipes_editor import recipe_editor_ui
         recipe_editor_ui(editing_id)
         return
 
