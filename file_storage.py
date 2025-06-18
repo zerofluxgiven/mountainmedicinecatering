@@ -260,6 +260,10 @@ def _render_parsed_data_editor(file: dict, db):
         return
 
     render_recipe_preview(parsed)
+from recipes_editor import recipe_editor_ui
+
+    if st.session_state.get("inline_editor_type") == "recipe":
+        recipe_editor_ui(prefill_data=st.session_state["inline_editor_data"])
 
     # Optional: offer user the ability to fill in form from parsed result
     if "recipes" in parsed:
@@ -269,7 +273,8 @@ def _render_parsed_data_editor(file: dict, db):
 
         if st.button("📝 Use This Parsed Recipe", key=f"use_parsed_{file['id']}"):
             st.session_state["prefill_recipe"] = recipe_data
-            st.switch_page("pages/recipes_editor.py")  # adjust path as needed
+            st.session_state["inline_editor_type"] = "recipe"
+            st.session_state["inline_editor_data"] = recipe_data
 
     edit_key = f"edit_json_{file['id']}"
     if st.session_state.get(f"edit_mode_{file['id']}"):
