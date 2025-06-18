@@ -1,4 +1,5 @@
 import streamlit as st
+from utils import value_to_text
 
 
 def normalize_quantity(value):
@@ -13,6 +14,8 @@ def normalize_unit(value):
     return str(value).strip()
 
 
+
+
 def render_recipe_preview(parsed_data):
     """Display a simple read-only preview of a parsed recipe."""
     recipe = parsed_data.get("recipes", {})
@@ -21,15 +24,10 @@ def render_recipe_preview(parsed_data):
 
     st.subheader("🧪 Auto-Detected Recipe Preview")
 
-    st.text_input("Recipe Name", value=recipe.get("name", ""))
+    st.text_input("Recipe Name", value=recipe.get("name") or recipe.get("title", ""))
 
-    ingredients = recipe.get("ingredients", [])
-    pretty_ingredients = []
-    for i in ingredients:
-        line = f"- {i.get('item', '').title()} ({normalize_quantity(i.get('quantity'))} {normalize_unit(i.get('unit'))})".strip()
-        pretty_ingredients.append(line)
-    st.text_area("Ingredients", value="\n".join(pretty_ingredients))
+    st.text_area("Ingredients", value=value_to_text(recipe.get("ingredients")))
 
-    st.text_area("Instructions", value=recipe.get("instructions", ""))
-    st.text_area("Notes", value=recipe.get("notes", ""))
+    st.text_area("Instructions", value=value_to_text(recipe.get("instructions")))
+    st.text_area("Notes", value=value_to_text(recipe.get("notes")))
 
