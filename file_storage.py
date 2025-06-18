@@ -261,6 +261,16 @@ def _render_parsed_data_editor(file: dict, db):
 
     render_recipe_preview(parsed)
 
+    # Optional: offer user the ability to fill in form from parsed result
+    if "recipes" in parsed:
+        recipe_data = parsed["recipes"]
+        if isinstance(recipe_data, list):
+            recipe_data = recipe_data[0] if recipe_data else {}
+
+        if st.button("📝 Use This Parsed Recipe", key=f"use_parsed_{file['id']}"):
+            st.session_state["prefill_recipe"] = recipe_data
+            st.switch_page("pages/recipes_editor.py")  # adjust path as needed
+
     edit_key = f"edit_json_{file['id']}"
     if st.session_state.get(f"edit_mode_{file['id']}"):
         json_text = st.text_area("JSON", st.session_state.get(edit_key, json.dumps(parsed, indent=2)), height=300, key=edit_key)
