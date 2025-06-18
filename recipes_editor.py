@@ -18,33 +18,28 @@ def recipe_editor_ui(recipe_id=None, prefill_data=None):
     event_id = get_active_event_id()
 
     if not recipe_id:
-    if prefill_data:
-        recipe = prefill_data
-        doc_ref = None
-        st.session_state["creating_from_parsed"] = True
-    else:
-        recipe = st.session_state.pop("prefill_recipe", None)
-        if not recipe:
-            st.warning("No recipe selected.")
-            return
-        else:
+        if prefill_data:
+            recipe = prefill_data
+            doc_ref = None
             st.session_state["creating_from_parsed"] = True
-            doc_ref = None  # skip loading from Firestore
-
-    doc_ref = db.collection("recipes").document(recipe_id)
-    doc = doc_ref.get()
-    if not doc.exists:
-        st.error("Recipe not found.")
-        return
-
-    recipe = doc.to_dict()
+        else:
+            recipe = st.session_state.pop("prefill_recipe", None)
+            if not recipe:
+                st.warning("No recipe selected.")
+                return
+            doc_ref = None
+    else:
+        doc_ref = db.collection("recipes").document(recipe_id)
+        doc = doc_ref.get()
+        if not doc.exists():
+            st.error("Recipe not found.")
+            return
+        recipe = doc.to_dict()
 
     if recipe.get("image_url"):
         st.image(recipe["image_url"], use_column_width=True, caption="📷 Recipe Image")
 
     st.subheader(f"Editing: {recipe.get('name', 'Unnamed Recipe')}")
-    if st.session_state.get("creating_from_parsed"):
-        st.info("💡 This form is pre-filled from parsed file data.")
 
     with st.form("edit_recipe_form"):
         name = st.text_input("Recipe Name", value=recipe.get("name", ""))
@@ -53,9 +48,6 @@ def recipe_editor_ui(recipe_id=None, prefill_data=None):
         notes = st.text_area("Notes", value=recipe.get("notes", ""))
         tags = st.text_input("Tags (comma-separated)", value=", ".join(recipe.get("tags", [])))
         edit_note = st.text_input("📝 Edit Note (for version history)", value="", key="edit_note")
-
-        if st.button("🧠 Suggest Tags with AI"):
-            st.info("🧠 AI tag suggestion coming soon...")
 
         if recipe.get("ingredients_parsed"):
             render_allergy_warning(recipe)
@@ -73,8 +65,8 @@ def recipe_editor_ui(recipe_id=None, prefill_data=None):
         variants = recipe.get("variants", [])
         for idx, variant in enumerate(variants):
             with st.expander(f"Variant #{idx + 1}: {variant.get('label', 'Untitled Variant')}"):
-                st.markdown(f"**Modified Instructions:**
-{variant.get('instructions', '-')}")
+                st.markdown(f"""**Modified Instructions:**
+{variant.get('instructions', '-')}""")
                 st.markdown(f"**Allergen Notes:** {variant.get('notes', '-')}")
 
         new_variant_label = st.text_input("➕ New Variant Label", key="new_variant_label")
@@ -90,8 +82,9 @@ def recipe_editor_ui(recipe_id=None, prefill_data=None):
                 "created_at": datetime.utcnow(),
                 "created_by": user_id
             }
-            doc_ref.update({"variants": firestore.ArrayUnion([variant])})
-            st.success("Variant added.")
+            if doc_ref:
+                doc_ref.update({"variants": firestore.ArrayUnion([variant])})
+                st.success("Variant added.")
 
         submitted = st.form_submit_button("🗕 Save Changes")
         if submitted:
@@ -105,24 +98,28 @@ def recipe_editor_ui(recipe_id=None, prefill_data=None):
                 "timestamp": datetime.utcnow(),
                 "edited_by": user_id
             }
-            doc_ref.collection("versions").document(generate_id("ver")).set(version_entry)
-
-            doc_ref.update({
-                "name": name,
-                "ingredients": ingredients,
-                "instructions": instructions,
-                "notes": notes,
-                "tags": version_entry["tags"],
-                "updated_at": datetime.utcnow(),
-                "updated_by": user_id
-            })
+            if doc_ref:
+                doc_ref.collection("versions").document(generate_id("ver")).set(version_entry)
+                doc_ref.update({
+                    "name": name,
+                    "ingredients": ingredients,
+                    "instructions": instructions,
+                    "notes": notes,
+                    "tags": version_entry["tags"],
+                    "updated_at": datetime.utcnow(),
+                    "updated_by": user_id
+                })
 
             update_recipe_with_parsed_ingredients(recipe_id, ingredients)
             st.success("✅ Recipe updated!")
 
     st.markdown("---")
     st.markdown("### 🕓 Version History")
-    versions = doc_ref.collection("versions").order_by("timestamp", direction=firestore.Query.DESCENDING).stream()
+    if doc_ref:
+        versions = doc_ref.collection("versions").order_by("timestamp", direction=firestore.Query.DESCENDING).stream()
+    else:
+        versions = []
+
     for v in versions:
         vdata = v.to_dict()
         timestamp = vdata.get("timestamp")
