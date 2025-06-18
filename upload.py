@@ -45,6 +45,9 @@ def upload_ui_desktop(event_id: str = None):
         recipes = result.get("parsed", {}).get("recipes")
         if recipes:
             recipe_draft = recipes if isinstance(recipes, dict) else recipes[0]
+            st.session_state["last_recipe_draft"] = recipe_draft
+            with st.expander("Debug Parsed Recipe"):
+                st.json(recipe_draft)
 
             st.markdown("### 🧪 Auto-Detected Recipe Preview")
             with st.form("confirm_recipe_from_upload"):
@@ -52,7 +55,8 @@ def upload_ui_desktop(event_id: str = None):
                     "Recipe Name",
                     recipe_draft.get("name") or recipe_draft.get("title", ""),
                 )
-                
+        aq4cbc-codex/debug-recipe-editor-population-issue
+
                 ingredients = st.text_area(
                     "Ingredients",
                     value=value_to_text(recipe_draft.get("ingredients")),
@@ -65,7 +69,8 @@ def upload_ui_desktop(event_id: str = None):
                     "Notes",
                     value=value_to_text(recipe_draft.get("notes")),
                 )
-      
+      aq4cbc-codex/debug-recipe-editor-population-issue
+
                 confirm = st.form_submit_button("Save Recipe")
 
                 if eid:
