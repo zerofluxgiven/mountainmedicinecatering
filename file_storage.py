@@ -157,20 +157,6 @@ def save_uploaded_file(file, event_id: str, uploaded_by: str):
     blob.upload_from_string(content, content_type=mimetype)
     blob.make_public()
 
-    # Save initial metadata before parsing so the file exists in Firestore
-    initial_metadata = {
-        "name": filename,
-        "size": len(content),
-        "type": mimetype,
-        "uploaded_by": uploaded_by,
-        "event_id": event_id,
-        "created_at": datetime.utcnow(),
-        "storage_path": storage_path,
-        "public_url": blob.public_url,
-        "deleted": False,
-    }
-    db.collection("files").document(file_id).set(initial_metadata)
-
     raw_text = None
     parsed = {}
     try:
@@ -182,21 +168,31 @@ def save_uploaded_file(file, event_id: str, uploaded_by: str):
     except Exception as e:
         print(f"AI parsing failed: {e}")
 
-    update_data = {"raw_text": raw_text}
-    if parsed:
-        update_data["parsed_data"] = {
+    metadata = {
+        "name": filename,
+        "size": len(content),
+        "type": mimetype,
+        "uploaded_by": uploaded_by,
+        "event_id": event_id,
+        "created_at": datetime.utcnow(),
+        "storage_path": storage_path,
+        "public_url": blob.public_url,
+        "deleted": False,
+        "raw_text": raw_text,
+        "parsed_data": {
             "parsed": parsed,
             "version": 1,
             "status": "pending_review",
             "last_updated": datetime.utcnow(),
-            "user_id": uploaded_by,
-        }
-    db.collection("files").document(file_id).update(update_data)
+            "user_id": uploaded_by
+        } if parsed else {},
+    }
 
+    db.collection("files").document(file_id).set(metadata)
     return {
         "file_id": file_id,
         "parsed": parsed,
-        "raw_text": raw_text,
+        "raw_text": raw_text
     }
 
 # ----------------------------
@@ -287,12 +283,7 @@ def _render_parsed_data_editor(file: dict, db):
             else parsed["ingredients"]
         )
 
-    likely = st.session_state.get("inline_editor_type")
-    label = f"Likely: {likely.capitalize()}" if likely else ""
-    with st.expander("🧪 Auto-Detected Preview", expanded=False):
-        if label:
-            st.caption(label)
-        render_recipe_preview(parsed)
+    render_recipe_preview(parsed)
 
     if "inline_editor_type" not in st.session_state:
         edit_key = f"edit_json_{file['id']}"
@@ -324,10 +315,9 @@ def _render_parsed_data_editor(file: dict, db):
                 if st.button("Cancel", key=f"cancel_json_{file['id']}"):
                     st.session_state[f"edit_mode_{file['id']}"] = False
         else:
-            with st.expander("Show Parsed JSON", expanded=False):
-                st.json(parsed)
-                if st.button("Edit", key=f"start_edit_{file['id']}"):
-                    st.session_state[f"edit_mode_{file['id']}"] = True
+            st.json(parsed)
+            if st.button("Edit", key=f"start_edit_{file['id']}"):
+                st.session_state[f"edit_mode_{file['id']}"] = True
 
     if st.session_state.get("inline_editor_type") == "recipe":
         st.markdown("### ✏️ Edit This Recipe")

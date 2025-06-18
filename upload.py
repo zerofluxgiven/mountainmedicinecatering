@@ -46,28 +46,32 @@ def upload_ui_desktop(event_id: str = None):
         if recipes:
             recipe_draft = recipes if isinstance(recipes, dict) else recipes[0]
             st.session_state["last_recipe_draft"] = recipe_draft
-            with st.expander("🧪 Auto-Detected Recipe", expanded=False):
-                st.caption("Likely: Recipe")
-                with st.form("confirm_recipe_from_upload"):
-                    name = st.text_input(
-                        "Recipe Name",
-                        recipe_draft.get("name") or recipe_draft.get("title", ""),
-                    )
+            with st.expander("Debug Parsed Recipe"):
+                st.json(recipe_draft)
 
-                    ingredients = st.text_area(
-                        "Ingredients",
-                        value=value_to_text(recipe_draft.get("ingredients")),
-                    )
-                    instructions = st.text_area(
-                        "Instructions",
-                        value=value_to_text(recipe_draft.get("instructions")),
-                    )
-                    notes = st.text_area(
-                        "Notes",
-                        value=value_to_text(recipe_draft.get("notes")),
-                    )
+            st.markdown("### 🧪 Auto-Detected Recipe Preview")
+            with st.form("confirm_recipe_from_upload"):
+                name = st.text_input(
+                    "Recipe Name",
+                    recipe_draft.get("name") or recipe_draft.get("title", ""),
+                )
+        aq4cbc-codex/debug-recipe-editor-population-issue
 
-                    confirm = st.form_submit_button("Save Recipe")
+                ingredients = st.text_area(
+                    "Ingredients",
+                    value=value_to_text(recipe_draft.get("ingredients")),
+                )
+                instructions = st.text_area(
+                    "Instructions",
+                    value=value_to_text(recipe_draft.get("instructions")),
+                )
+                notes = st.text_area(
+                    "Notes",
+                    value=value_to_text(recipe_draft.get("notes")),
+                )
+      aq4cbc-codex/debug-recipe-editor-population-issue
+
+                confirm = st.form_submit_button("Save Recipe")
 
                 if eid:
                     st.markdown("### 🍽️ Save as Menu Item for Event")
