@@ -18,8 +18,13 @@ def recipe_editor_ui(recipe_id=None):
     event_id = get_active_event_id()
 
     if not recipe_id:
-        st.warning("No recipe selected.")
-        return
+        recipe = st.session_state.pop("prefill_recipe", None)
+        if not recipe:
+            st.warning("No recipe selected.")
+            return
+        else:
+            st.session_state["creating_from_parsed"] = True
+            doc_ref = None  # skip loading from Firestore
 
     doc_ref = db.collection("recipes").document(recipe_id)
     doc = doc_ref.get()
@@ -33,6 +38,8 @@ def recipe_editor_ui(recipe_id=None):
         st.image(recipe["image_url"], use_column_width=True, caption="📷 Recipe Image")
 
     st.subheader(f"Editing: {recipe.get('name', 'Unnamed Recipe')}")
+    if st.session_state.get("creating_from_parsed"):
+        st.info("💡 This form is pre-filled from parsed file data.")
 
     with st.form("edit_recipe_form"):
         name = st.text_input("Recipe Name", value=recipe.get("name", ""))
@@ -61,7 +68,8 @@ def recipe_editor_ui(recipe_id=None):
         variants = recipe.get("variants", [])
         for idx, variant in enumerate(variants):
             with st.expander(f"Variant #{idx + 1}: {variant.get('label', 'Untitled Variant')}"):
-                st.markdown(f"**Modified Instructions:**\n{variant.get('instructions', '-')}")
+                st.markdown(f"**Modified Instructions:**
+{variant.get('instructions', '-')}")
                 st.markdown(f"**Allergen Notes:** {variant.get('notes', '-')}")
 
         new_variant_label = st.text_input("➕ New Variant Label", key="new_variant_label")
@@ -122,4 +130,3 @@ def recipe_editor_ui(recipe_id=None):
             if vdata.get("edit_note"):
                 st.info(f"📝 Edit Note: {vdata.get('edit_note')}")
             st.caption(f"Tags: {', '.join(vdata.get('tags', []))}")
-
