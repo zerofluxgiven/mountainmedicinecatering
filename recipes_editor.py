@@ -2,11 +2,13 @@ import streamlit as st
 from firebase_init import db
 from firebase_admin import firestore
 from datetime import datetime
-from utils import get_active_event_id, generate_id
+from utils import get_active_event_id, generate_id, value_to_text
 from auth import get_user_id
 from ingredients import parse_recipe_ingredients, update_recipe_with_parsed_ingredients
 from allergies import render_allergy_warning
 from recipes import save_recipe_to_firestore
+
+
 
 # ----------------------------
 # 📖 Recipe Editor UI
@@ -45,9 +47,11 @@ def recipe_editor_ui(recipe_id=None, prefill_data=None):
             "Recipe Name",
             value=recipe.get("name") or recipe.get("title", ""),
         )
-        ingredients = st.text_area("Ingredients", value=recipe.get("ingredients", ""))
-        instructions = st.text_area("Instructions", value=recipe.get("instructions", ""))
-        notes = st.text_area("Notes", value=recipe.get("notes", ""))
+        
+        ingredients = st.text_area("Ingredients", value=value_to_text(recipe.get("ingredients")))
+        instructions = st.text_area("Instructions", value=value_to_text(recipe.get("instructions")))
+        notes = st.text_area("Notes", value=value_to_text(recipe.get("notes")))
+      
         tags = st.text_input("Tags (comma-separated)", value=", ".join(recipe.get("tags", [])))
         edit_note = st.text_input("📝 Edit Note (for version history)", value="", key="edit_note")
 
