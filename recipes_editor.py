@@ -47,7 +47,7 @@ def recipe_editor_ui(recipe_id=None, prefill_data=None):
             "Recipe Name",
             value=recipe.get("name") or recipe.get("title", ""),
         )
-        aq4cbc-codex/debug-recipe-editor-population-issue
+        
         ingredients = st.text_area("Ingredients", value=value_to_text(recipe.get("ingredients")))
         instructions = st.text_area("Instructions", value=value_to_text(recipe.get("instructions")))
         notes = st.text_area("Notes", value=value_to_text(recipe.get("notes")))
