@@ -21,7 +21,7 @@ def render_recipe_preview(parsed_data):
 
     st.subheader("🧪 Auto-Detected Recipe Preview")
 
-    st.text_input("Recipe Name", value=recipe.get("name", ""))
+    st.text_input("Recipe Name", value=recipe.get("name") or recipe.get("title", ""))
 
     ingredients = recipe.get("ingredients", [])
     pretty_ingredients = []

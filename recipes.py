@@ -68,7 +68,7 @@ def save_recipe_to_firestore(recipe_data, user_id=None, file_id=None):
     recipe_id = str(uuid.uuid4())
     doc = {
         "id": recipe_id,
-        "name": recipe_data.get("title", "Untitled"),
+        "name": recipe_data.get("title") or recipe_data.get("name", "Untitled"),
         "ingredients": recipe_data.get("ingredients", []),
         "instructions": recipe_data.get("instructions", []),
         "tags": recipe_data.get("tags", []),
