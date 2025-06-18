@@ -178,7 +178,6 @@ def safe_dict_merge(base, update):
 # ----------------------------
 
 def value_to_text(value):
-        aq4cbc-codex/debug-recipe-editor-population-issue
     """Convert parsed lists or dicts into a newline-separated string.
 
     This helper normalizes parsed recipe values so they can be used to
