@@ -193,6 +193,56 @@ def add_recipe_via_link_ui():
     st.markdown("</div>", unsafe_allow_html=True)
 
 
+# ----------------------------
+# ✍️ Add Recipe Manually UI
+# ----------------------------
+
+def add_recipe_manual_ui():
+    """Create a recipe manually."""
+    st.markdown(
+        "<div class='card' style='max-width:600px;margin:0 auto'>",
+        unsafe_allow_html=True,
+    )
+    st.markdown("**Add Recipe Manually**")
+
+    with st.form("manual_recipe_form"):
+        name = st.text_input("Recipe Name")
+        ingredients = st.text_area("Ingredients")
+        instructions = st.text_area("Instructions")
+        notes = st.text_area("Notes")
+        tags = st.text_input("Tags (comma-separated)")
+        submitted = st.form_submit_button("Save Recipe")
+
+    if submitted:
+        import uuid
+
+        user = get_user()
+        recipe_id = str(uuid.uuid4())
+        data = {
+            "id": recipe_id,
+            "name": name,
+            "ingredients": ingredients,
+            "instructions": instructions,
+            "notes": notes,
+            "tags": [t.strip() for t in tags.split(",") if t.strip()],
+            "created_at": datetime.utcnow(),
+            "author_id": user.get("id") if user else None,
+            "author_name": user.get("name") if user else "unknown",
+            "ingredients_parsed": False,
+        }
+
+        try:
+            db.collection("recipes").document(recipe_id).set(data)
+            parsed = parse_recipe_ingredients(ingredients)
+            if parsed:
+                update_recipe_with_parsed_ingredients(recipe_id, parsed)
+            st.success("✅ Recipe saved!")
+        except Exception as e:
+            st.error(f"Failed to save recipe: {e}")
+
+    st.markdown("</div>", unsafe_allow_html=True)
+
+
 def _render_recipe_card(recipe: dict):
     """Render a single recipe preview card."""
     ing_preview = "".join(
@@ -230,6 +280,7 @@ def recipes_page():
     st.title("📚 Recipes")
 
     add_recipe_via_link_ui()
+    add_recipe_manual_ui()
 
     # If a recipe has been selected for editing, open editor directly
     editing_id = st.session_state.pop("editing_recipe_id", None)
