@@ -2,7 +2,7 @@ import streamlit as st
 from firebase_init import get_db, get_bucket
 from firebase_admin import firestore
 from datetime import datetime
-from utils import format_date, get_active_event_id
+from utils import format_date, get_active_event_id, value_to_text
 from auth import get_user
 from ingredients import (
     parse_recipe_ingredients,
@@ -151,16 +151,8 @@ def add_recipe_via_link_ui():
 
     if data:
         title = st.text_input("Title", value=data.get("title", ""))
-        ingredients_value = (
-            "\n".join(data.get("ingredients", []))
-            if isinstance(data.get("ingredients"), list)
-            else data.get("ingredients", "")
-        )
-        instructions_value = (
-            "\n".join(data.get("instructions", []))
-            if isinstance(data.get("instructions"), list)
-            else data.get("instructions", "")
-        )
+        ingredients_value = value_to_text(data.get("ingredients"))
+        instructions_value = value_to_text(data.get("instructions"))
         ingredients = st.text_area("Ingredients", value=ingredients_value)
         instructions = st.text_area("Instructions", value=instructions_value)
         image_file = st.file_uploader("Recipe Photo", type=["png", "jpg", "jpeg"])
