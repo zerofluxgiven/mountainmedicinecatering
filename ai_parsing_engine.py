@@ -232,11 +232,20 @@ def parse_recipe_from_url(url: str) -> dict:
     cleaned_text = clean_raw_text(text)
     parsed = query_ai_parser(cleaned_text, "recipes")
 
-    if not is_meaningful_recipe(parsed):
-        st.warning("⚠️ Recipe content extracted from URL appears to be incomplete or unusable.")
+    # API may return the recipe nested under a "recipes" key
+    recipe = parsed
+    if isinstance(parsed, dict) and "recipes" in parsed:
+        recipe = parsed["recipes"]
+        if isinstance(recipe, list):
+            recipe = recipe[0] if recipe else {}
+
+    if not is_meaningful_recipe(recipe):
+        st.warning(
+            "⚠️ Recipe content extracted from URL appears to be incomplete or unusable."
+        )
         return {}
 
-    return parsed
+    return recipe
 
 # --------------------------------------------
 # 💾 Modular Save Buttons
