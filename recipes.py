@@ -2,7 +2,7 @@ import streamlit as st
 from firebase_init import get_db, get_bucket
 from firebase_admin import firestore
 from datetime import datetime
-from utils import format_date, get_active_event_id, value_to_text
+from utils import format_date, get_active_event_id, value_to_text, generate_id
 from auth import get_user
 from ingredients import (
     parse_recipe_ingredients,
@@ -45,6 +45,7 @@ def parse_and_store_recipe_from_file(file_text: str, uploaded_by: str) -> str | 
         "ingredients": ingredients,
         "instructions": instructions,
         "notes": "",
+        "special_version": "",
         "created_at": datetime.utcnow(),
         "author_id": uploaded_by,
         "author_name": uploaded_by,
@@ -71,6 +72,7 @@ def save_recipe_to_firestore(recipe_data, user_id=None, file_id=None):
         "name": recipe_data.get("title") or recipe_data.get("name", "Untitled"),
         "ingredients": recipe_data.get("ingredients", []),
         "instructions": recipe_data.get("instructions", []),
+        "special_version": recipe_data.get("special_version", ""),
         "tags": recipe_data.get("tags", []),
         "created_by": user_id,
         "source_file_id": file_id,
@@ -154,6 +156,7 @@ def add_recipe_via_link_ui():
             "Title",
             value=data.get("name") or data.get("title", ""),
         )
+        special_version = st.text_input("Special Version")
         ingredients_value = value_to_text(data.get("ingredients"))
         instructions_value = value_to_text(data.get("instructions"))
         ingredients = st.text_area("Ingredients", value=ingredients_value)
@@ -177,6 +180,7 @@ def add_recipe_via_link_ui():
                 "name": title,
                 "ingredients": ingredients,
                 "instructions": instructions,
+                "special_version": special_version,
                 "image_url": image_url,
                 "created_at": datetime.utcnow(),
                 "author_name": user.get("name") if user else "unknown",
@@ -202,6 +206,7 @@ def add_recipe_manual_ui():
 
     with st.form("manual_recipe_form"):
         name = st.text_input("Recipe Name")
+        special_version = st.text_input("Special Version")
         ingredients = st.text_area("Ingredients")
         instructions = st.text_area("Instructions")
         notes = st.text_area("Notes")
@@ -218,6 +223,7 @@ def add_recipe_manual_ui():
             "name": name,
             "ingredients": ingredients,
             "instructions": instructions,
+            "special_version": special_version,
             "notes": notes,
             "tags": [t.strip() for t in tags.split(",") if t.strip()],
             "created_at": datetime.utcnow(),
@@ -239,31 +245,65 @@ def add_recipe_manual_ui():
 
 
 def _render_recipe_card(recipe: dict):
-    """Render a single recipe preview card."""
-    ing_preview = "".join(
-        f"- {line}\n" for line in (recipe.get("ingredients", "").splitlines()[:3])
-    )
-    if st.session_state.get("mobile_mode"):
-        content = ""
-        if recipe.get("image_url"):
-            content += f"<img src='{recipe['image_url']}' style='width:100%;border-radius:8px;'>"
-        content += f"<pre style='white-space:pre-wrap'>{ing_preview}</pre>"
-        from mobile_layout import mobile_card
+    """Render a collapsible recipe card showing only the name by default."""
+    doc_ref = db.collection("recipes").document(recipe["id"])
+    try:
+        version_count = len(list(doc_ref.collection("versions").stream()))
+    except Exception:
+        version_count = 0
+    version_label = f"v1.{version_count}"
 
-        mobile_card(recipe.get("name", "Unnamed"), content, icon="🍲", key=recipe["id"])
-        if st.button("Edit", key=f"edit_{recipe['id']}"):
-            st.session_state["editing_recipe_id"] = recipe["id"]
-            st.experimental_rerun()
-    else:
-        st.markdown("<div class='card'>", unsafe_allow_html=True)
+    with st.expander(recipe.get("name", "Unnamed")):
         if recipe.get("image_url"):
             st.image(recipe["image_url"], use_column_width=True)
-        st.markdown(f"### {recipe.get('name', 'Unnamed')}")
-        st.markdown(ing_preview)
-        if st.button("Edit", key=f"edit_{recipe['id']}"):
+        st.markdown("#### Ingredients")
+        st.markdown(recipe.get("ingredients", ""))
+        st.markdown("#### Instructions")
+        st.markdown(recipe.get("instructions", ""))
+        if recipe.get("notes"):
+            st.markdown("#### Notes")
+            st.markdown(recipe.get("notes"))
+        st.caption(version_label)
+
+        col_edit, col_add, col_del = st.columns(3)
+        if col_edit.button("Edit", key=f"edit_{recipe['id']}"):
             st.session_state["editing_recipe_id"] = recipe["id"]
             st.experimental_rerun()
-        st.markdown("</div>", unsafe_allow_html=True)
+        if col_add.button("Add Version", key=f"addver_{recipe['id']}"):
+            st.session_state[f"add_ver_{recipe['id']}"] = True
+        if col_del.button("Delete", key=f"del_{recipe['id']}"):
+            db.collection("recipes").document(recipe["id"]).delete()
+            st.experimental_rerun()
+
+        if st.session_state.get(f"add_ver_{recipe['id']}"):
+            with st.form(f"ver_form_{recipe['id']}"):
+                name = st.text_input("Title", value=recipe.get("name", ""), key=f"ver_name_{recipe['id']}")
+                special_version = st.text_input("Special Version", value=recipe.get("special_version", ""), key=f"ver_sp_{recipe['id']}")
+                ingredients = st.text_area("Ingredients", value=recipe.get("ingredients", ""), key=f"ver_ing_{recipe['id']}")
+                instructions = st.text_area("Instructions", value=recipe.get("instructions", ""), key=f"ver_inst_{recipe['id']}")
+                notes = st.text_area("Notes", value=recipe.get("notes", ""), key=f"ver_notes_{recipe['id']}")
+                tags = st.text_input("Tags (comma-separated)", value=", ".join(recipe.get("tags", [])), key=f"ver_tags_{recipe['id']}")
+                col_c, col_s = st.columns(2)
+                save = col_s.form_submit_button("Save")
+                cancel = col_c.form_submit_button("Cancel")
+
+            if save:
+                user = get_user()
+                version_entry = {
+                    "name": name,
+                    "ingredients": ingredients,
+                    "instructions": instructions,
+                    "notes": notes,
+                    "special_version": special_version,
+                    "tags": [t.strip() for t in tags.split(',') if t.strip()],
+                    "timestamp": datetime.utcnow(),
+                    "edited_by": user.get("id") if user else None,
+                }
+                doc_ref.collection("versions").document(generate_id("ver")).set(version_entry)
+                st.session_state.pop(f"add_ver_{recipe['id']}", None)
+                st.experimental_rerun()
+            elif cancel:
+                st.session_state.pop(f"add_ver_{recipe['id']}", None)
 
 
 # ----------------------------
