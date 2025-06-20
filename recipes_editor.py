@@ -47,6 +47,7 @@ def recipe_editor_ui(recipe_id=None, prefill_data=None):
             "Recipe Name",
             value=recipe.get("name") or recipe.get("title", ""),
         )
+        special_version = st.text_input("Special Version", value=recipe.get("special_version", ""))
         
         ingredients = st.text_area("Ingredients", value=value_to_text(recipe.get("ingredients")))
         instructions = st.text_area("Instructions", value=value_to_text(recipe.get("instructions")))
@@ -99,6 +100,7 @@ def recipe_editor_ui(recipe_id=None, prefill_data=None):
                 "name": name,
                 "ingredients": ingredients,
                 "instructions": instructions,
+                "special_version": special_version,
                 "notes": notes,
                 "tags": [t.strip() for t in tags.split(",") if t.strip()],
                 "edit_note": edit_note,
@@ -111,6 +113,7 @@ def recipe_editor_ui(recipe_id=None, prefill_data=None):
                     "name": name,
                     "ingredients": ingredients,
                     "instructions": instructions,
+                    "special_version": special_version,
                     "notes": notes,
                     "tags": version_entry["tags"],
                     "updated_at": datetime.utcnow(),
@@ -125,6 +128,7 @@ def recipe_editor_ui(recipe_id=None, prefill_data=None):
                         "name": name,
                         "ingredients": ingredients,
                         "instructions": instructions,
+                        "special_version": special_version,
                         "notes": notes,
                         "tags": version_entry["tags"],
                     },
@@ -148,6 +152,8 @@ def recipe_editor_ui(recipe_id=None, prefill_data=None):
                 st.write("**Instructions:")
                 st.code(vdata.get("instructions", ""))
                 st.write("**Notes:**", vdata.get("notes", ""))
+                if vdata.get("special_version"):
+                    st.info(f"Special Version: {vdata.get('special_version')}")
                 if vdata.get("edit_note"):
                     st.info(f"📝 Edit Note: {vdata.get('edit_note')}")
                 st.caption(f"Tags: {', '.join(vdata.get('tags', []))}")
