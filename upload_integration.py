@@ -26,7 +26,10 @@ def save_parsed_menu_ui(parsed_data: dict):
             ["Breakfast", "Lunch", "Dinner", "Note"],
             key="upload_meal_select",
         )
-        recipe = st.text_input("Recipe Name", value=parsed_data.get("title", ""))
+        recipe = st.text_input(
+            "Recipe Name",
+            value=parsed_data.get("name") or parsed_data.get("title", ""),
+        )
         notes = st.text_area("Notes", value=parsed_data.get("notes", ""))
         allergens = st.text_input("Allergens (comma-separated)", value=", ".join(parsed_data.get("allergens", [])))
         tags = st.text_input("Tags (comma-separated)", value=", ".join(parsed_data.get("tags", [])))

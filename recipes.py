@@ -150,7 +150,10 @@ def add_recipe_via_link_ui():
     data = st.session_state.get("parsed_link_recipe")
 
     if data:
-        title = st.text_input("Title", value=data.get("title", ""))
+        title = st.text_input(
+            "Title",
+            value=data.get("name") or data.get("title", ""),
+        )
         ingredients_value = value_to_text(data.get("ingredients"))
         instructions_value = value_to_text(data.get("instructions"))
         ingredients = st.text_area("Ingredients", value=ingredients_value)
