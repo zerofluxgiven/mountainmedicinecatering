@@ -31,7 +31,7 @@ def login_ui():
         st.success(f"✅ Logged in as {user.get('name') or user.get('email')}")
         if st.button("🔓 Log out", key="logout_btn"):
             st.session_state.pop("firebase_user", None)
-            st.experimental_rerun()
+            st.rerun()
         return
 
     # Load secrets from .streamlit/secrets.toml

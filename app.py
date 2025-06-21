@@ -221,7 +221,7 @@ def main():
     if selected_tab not in visible_tabs:
         st.warning(f"⚠️ Invalid tab: {selected_tab}. Resetting.")
         st.session_state["top_nav"] = visible_tabs[0]
-        st.experimental_rerun()
+        st.rerun()
 
     try:
         if selected_tab == "Dashboard":

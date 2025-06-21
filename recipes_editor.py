@@ -7,6 +7,16 @@ from auth import get_user_id
 from ingredients import parse_recipe_ingredients, update_recipe_with_parsed_ingredients
 from allergies import render_allergy_warning
 from recipes import save_recipe_to_firestore
+from tag_utils import suggest_recipe_tags
+
+
+def render_ingredient_columns(items):
+    if not isinstance(items, list):
+        items = [i.strip() for i in str(items).splitlines() if i.strip()]
+    cols = st.columns(2)
+    for idx, item in enumerate(items):
+        col = cols[idx % 2]
+        col.markdown(f"- {item}")
 
 
 
@@ -50,6 +60,8 @@ def recipe_editor_ui(recipe_id=None, prefill_data=None):
         special_version = st.text_input("Special Version", value=recipe.get("special_version", ""))
         
         ingredients = st.text_area("Ingredients", value=value_to_text(recipe.get("ingredients")))
+        if prefill_data and recipe.get("ingredients"):
+            render_ingredient_columns(recipe.get("ingredients"))
         instructions = st.text_area("Instructions", value=value_to_text(recipe.get("instructions")))
         notes = st.text_area("Notes", value=value_to_text(recipe.get("notes")))
       
@@ -96,46 +108,26 @@ def recipe_editor_ui(recipe_id=None, prefill_data=None):
 
         submitted = st.form_submit_button("🗕 Save Changes")
         if submitted:
-            version_entry = {
-                "name": name,
-                "ingredients": ingredients,
-                "instructions": instructions,
-                "special_version": special_version,
-                "notes": notes,
-                "tags": [t.strip() for t in tags.split(",") if t.strip()],
-                "edit_note": edit_note,
-                "timestamp": datetime.utcnow(),
-                "edited_by": user_id
-            }
-            if doc_ref:
-                doc_ref.collection("versions").document(generate_id("ver")).set(version_entry)
-                doc_ref.update({
+            tag_list = [t.strip() for t in tags.split(",") if t.strip()]
+            if special_version:
+                suggested = suggest_recipe_tags(name, ingredients, instructions, special_version)
+                for t in suggested:
+                    if t not in tag_list:
+                        tag_list.append(t)
+            st.session_state["pending_recipe_save"] = {
+                "doc_id": recipe_id if doc_ref else None,
+                "data": {
                     "name": name,
                     "ingredients": ingredients,
                     "instructions": instructions,
                     "special_version": special_version,
                     "notes": notes,
-                    "tags": version_entry["tags"],
-                    "updated_at": datetime.utcnow(),
-                    "updated_by": user_id
-                })
-                update_recipe_with_parsed_ingredients(recipe_id, ingredients)
-                st.success("✅ Recipe updated!")
-            else:
-                # New recipe from parsed data
-                new_id = save_recipe_to_firestore(
-                    {
-                        "name": name,
-                        "ingredients": ingredients,
-                        "instructions": instructions,
-                        "special_version": special_version,
-                        "notes": notes,
-                        "tags": version_entry["tags"],
-                    },
-                    user_id=user_id,
-                )
-                if new_id:
-                    st.success("✅ Recipe saved!")
+                    "tags": tag_list,
+                    "edit_note": edit_note,
+                },
+            }
+            st.session_state["confirm_tags"] = ", ".join(tag_list)
+            st.rerun()
 
     if doc_ref:
         st.markdown("---")
@@ -157,4 +149,39 @@ def recipe_editor_ui(recipe_id=None, prefill_data=None):
                 if vdata.get("edit_note"):
                     st.info(f"📝 Edit Note: {vdata.get('edit_note')}")
                 st.caption(f"Tags: {', '.join(vdata.get('tags', []))}")
+
+    pending = st.session_state.get("pending_recipe_save")
+    if pending:
+        st.markdown("---")
+        st.markdown("### Confirm Tags")
+        tags_val = st.text_input("Tags", value=st.session_state.get("confirm_tags", ""), key="confirm_tags_final")
+        col_ok, col_cancel = st.columns(2)
+        if col_ok.button("✅ Confirm Save"):
+            data = pending["data"]
+            data["tags"] = [t.strip() for t in tags_val.split(',') if t.strip()]
+            doc_id = pending.get("doc_id")
+            if doc_id:
+                doc_ref = db.collection("recipes").document(doc_id)
+                doc_ref.collection("versions").document(generate_id("ver")).set(data | {
+                    "timestamp": datetime.utcnow(),
+                    "edited_by": user_id,
+                })
+                doc_ref.update(data | {
+                    "updated_at": datetime.utcnow(),
+                    "updated_by": user_id,
+                })
+                update_recipe_with_parsed_ingredients(doc_id, data["ingredients"])
+            else:
+                new_id = save_recipe_to_firestore(data, user_id=user_id)
+                if new_id:
+                    update_recipe_with_parsed_ingredients(new_id, data["ingredients"])
+            st.session_state.pop("pending_recipe_save")
+            st.session_state.pop("confirm_tags", None)
+            st.success("✅ Recipe saved!")
+            st.rerun()
+        if col_cancel.button("Cancel", key="cancel_save_tags"):
+            st.session_state.pop("pending_recipe_save")
+            st.session_state.pop("confirm_tags", None)
+            st.rerun()
+        return
 
