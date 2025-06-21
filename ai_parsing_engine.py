@@ -161,7 +161,8 @@ def extract_text_from_docx(uploaded_file):
 def query_ai_parser(raw_text, target_type):
     system_prompt = (
         "You are an expert data parser. Extract only structured data from unstructured text.\n"
-        "Return only a JSON object.\n"
+        "Return only a JSON object using proper capitalization.\n"
+        "When parsing recipes, include a concise list of relevant tags such as cuisine, meal type, diets or allergens.\n"
         "- recipes → include name, ingredients, instructions, servings, tags\n"
         "- menus → day, meal, items\n"
         "- tags → list of relevant tags\n"

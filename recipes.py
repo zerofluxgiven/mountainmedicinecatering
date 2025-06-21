@@ -16,6 +16,15 @@ from allergies import render_allergy_warning
 db = get_db()
 bucket = get_bucket()
 
+
+def render_ingredient_columns(items):
+    if not isinstance(items, list):
+        items = [i.strip() for i in str(items).splitlines() if i.strip()]
+    cols = st.columns(2)
+    for idx, item in enumerate(items):
+        col = cols[idx % 2]
+        col.markdown(f"- {item}")
+
 # ----------------------------
 # 🔄 Parse and Store Recipe From File
 # ----------------------------
@@ -160,6 +169,8 @@ def add_recipe_via_link_ui():
         ingredients_value = value_to_text(data.get("ingredients"))
         instructions_value = value_to_text(data.get("instructions"))
         ingredients = st.text_area("Ingredients", value=ingredients_value)
+        if data.get("ingredients"):
+            render_ingredient_columns(data.get("ingredients"))
         instructions = st.text_area("Instructions", value=instructions_value)
         image_file = st.file_uploader("Recipe Photo", type=["png", "jpg", "jpeg"])
         if image_file:
@@ -268,12 +279,12 @@ def _render_recipe_card(recipe: dict):
         col_edit, col_add, col_del = st.columns(3)
         if col_edit.button("Edit", key=f"edit_{recipe['id']}"):
             st.session_state["editing_recipe_id"] = recipe["id"]
-            st.experimental_rerun()
+            st.rerun()
         if col_add.button("Add Version", key=f"addver_{recipe['id']}"):
             st.session_state[f"add_ver_{recipe['id']}"] = True
         if col_del.button("Delete", key=f"del_{recipe['id']}"):
             db.collection("recipes").document(recipe["id"]).delete()
-            st.experimental_rerun()
+            st.rerun()
 
         if st.session_state.get(f"add_ver_{recipe['id']}"):
             with st.form(f"ver_form_{recipe['id']}"):
@@ -301,7 +312,7 @@ def _render_recipe_card(recipe: dict):
                 }
                 doc_ref.collection("versions").document(generate_id("ver")).set(version_entry)
                 st.session_state.pop(f"add_ver_{recipe['id']}", None)
-                st.experimental_rerun()
+                st.rerun()
             elif cancel:
                 st.session_state.pop(f"add_ver_{recipe['id']}", None)
 
