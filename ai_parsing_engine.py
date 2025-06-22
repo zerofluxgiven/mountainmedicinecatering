@@ -15,6 +15,7 @@ import json
 from datetime import datetime
 import streamlit as st
 from firebase_init import db, firestore
+from utils import normalize_keys
 from recipes import (
     save_recipe_to_firestore,
     save_event_to_firestore,
@@ -37,7 +38,7 @@ def clean_raw_text(text: str) -> str:
 def is_meaningful_recipe(recipe: dict) -> bool:
     if not isinstance(recipe, dict):
         return False
-    if not recipe.get("name"):
+    if not (recipe.get("name") or recipe.get("title")):
         return False
     return bool(recipe.get("ingredients") or recipe.get("instructions"))
 
@@ -68,6 +69,15 @@ def parse_file(uploaded_file, target_type="all", user_id=None, file_id=None):
 
     for t in target_types:
         parsed[t] = query_ai_parser(cleaned_text, t)
+        if t == "recipes":
+            recipe_data = parsed[t]
+            if isinstance(recipe_data, dict) and "recipes" in recipe_data:
+                recipe_data = recipe_data["recipes"]
+            if isinstance(recipe_data, list):
+                recipe_data = [normalize_keys(r) for r in recipe_data]
+            else:
+                recipe_data = normalize_keys(recipe_data)
+            parsed[t] = recipe_data
 
     if file_id:
         parsed_record = {
@@ -239,6 +249,9 @@ def parse_recipe_from_url(url: str) -> dict:
         recipe = parsed["recipes"]
         if isinstance(recipe, list):
             recipe = recipe[0] if recipe else {}
+
+    # Normalize key casing for downstream logic
+    recipe = normalize_keys(recipe)
 
     if not is_meaningful_recipe(recipe):
         st.warning(

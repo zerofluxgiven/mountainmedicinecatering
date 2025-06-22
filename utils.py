@@ -174,6 +174,18 @@ def safe_dict_merge(base, update):
     return base
 
 # ----------------------------
+# 📑 Normalize Dict Keys
+# ----------------------------
+
+def normalize_keys(obj):
+    """Recursively lowercase dictionary keys for consistent access."""
+    if isinstance(obj, dict):
+        return {str(k).lower(): normalize_keys(v) for k, v in obj.items()}
+    if isinstance(obj, list):
+        return [normalize_keys(v) for v in obj]
+    return obj
+
+# ----------------------------
 # 📝 Convert Parsed Values
 # ----------------------------
 
