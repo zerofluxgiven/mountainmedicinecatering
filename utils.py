@@ -1,6 +1,7 @@
 import streamlit as st
 import uuid
 from datetime import datetime
+from fractions import Fraction
 
 # ✅ Fixed: Avoid circular import by lazy loading db when needed
 def get_db():
@@ -186,6 +187,55 @@ def normalize_keys(obj):
     return obj
 
 # ----------------------------
+# 🥄 Quantity Formatting
+# ----------------------------
+
+def format_fraction(value, max_denominator: int = 8) -> str:
+    """Convert numeric values like 0.5 into nice cooking fractions."""
+    if value is None:
+        return ""
+
+    # Preserve existing fraction strings
+    if isinstance(value, str):
+        stripped = value.strip()
+        if "/" in stripped:
+            return stripped
+        try:
+            value = float(stripped)
+        except ValueError:
+            return stripped
+
+    try:
+        frac = Fraction(value).limit_denominator(max_denominator)
+    except Exception:
+        return str(value)
+
+    numerator, denominator = frac.numerator, frac.denominator
+    whole = numerator // denominator
+    remainder = numerator % denominator
+
+    if remainder == 0:
+        return str(whole)
+    if whole == 0:
+        return f"{remainder}/{denominator}"
+    return f"{whole} {remainder}/{denominator}"
+
+def normalize_recipe_quantities(data):
+    """Recursively apply fraction formatting to recipe ingredient quantities."""
+    if isinstance(data, dict):
+        ingredients = data.get("ingredients")
+        if isinstance(ingredients, list):
+            for ing in ingredients:
+                if isinstance(ing, dict):
+                    qty_key = "quantity" if "quantity" in ing else "qty" if "qty" in ing else None
+                    if qty_key and ing.get(qty_key) is not None:
+                        ing[qty_key] = format_fraction(ing[qty_key])
+    elif isinstance(data, list):
+        for item in data:
+            normalize_recipe_quantities(item)
+    return data
+
+# ----------------------------
 # 📝 Convert Parsed Values
 # ----------------------------
 
@@ -198,7 +248,7 @@ def value_to_text(value):
                 parts = []
                 qty = item.get("quantity") or item.get("qty")
                 if qty:
-                    parts.append(str(qty))
+                    parts.append(format_fraction(qty))
                 unit = item.get("unit")
                 if unit:
                     parts.append(str(unit))

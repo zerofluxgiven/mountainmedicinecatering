@@ -15,7 +15,7 @@ import json
 from datetime import datetime
 import streamlit as st
 from firebase_init import db, firestore
-from utils import normalize_keys
+from utils import normalize_keys, normalize_recipe_quantities
 from recipes import (
     save_recipe_to_firestore,
     save_event_to_firestore,
@@ -77,6 +77,7 @@ def parse_file(uploaded_file, target_type="all", user_id=None, file_id=None):
                 recipe_data = [normalize_keys(r) for r in recipe_data]
             else:
                 recipe_data = normalize_keys(recipe_data)
+            normalize_recipe_quantities(recipe_data)
             parsed[t] = recipe_data
 
     if file_id:
@@ -252,6 +253,7 @@ def parse_recipe_from_url(url: str) -> dict:
 
     # Normalize key casing for downstream logic
     recipe = normalize_keys(recipe)
+    normalize_recipe_quantities(recipe)
 
     if not is_meaningful_recipe(recipe):
         st.warning(
