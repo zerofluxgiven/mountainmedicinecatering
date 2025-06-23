@@ -99,6 +99,9 @@ def enrich_session_from_token(token: str) -> dict | None:
             user_data = doc.to_dict()
             st.session_state["_auth_debug"]["found_in_firestore"] = True
             st.session_state["_auth_debug"]["role"] = user_data.get("role", "none")
+            exp = decoded_token.get("exp")
+            if exp:
+                st.session_state["token_expiry"] = exp
             return user_data
 
         # Not in DB → create new user
@@ -116,6 +119,9 @@ def enrich_session_from_token(token: str) -> dict | None:
 
         st.session_state["_auth_debug"]["created_new_user"] = True
         st.session_state["_auth_debug"]["assigned_role"] = user_data["role"]
+        exp = decoded_token.get("exp")
+        if exp:
+            st.session_state["token_expiry"] = exp
         return user_data
 
     except Exception as e:
