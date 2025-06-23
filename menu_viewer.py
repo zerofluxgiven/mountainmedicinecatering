@@ -2,6 +2,7 @@
 
 import streamlit as st
 from auth import require_role, get_user_id
+from firebase_init import db
 from utils import get_active_event_id
 from event_file import get_event_file, update_event_file_field, initialize_event_file
 from recipes import save_menu_to_firestore
@@ -41,7 +42,7 @@ def menu_viewer_ui(event_id=None, key_prefix: str = ""):
             )
             category = st.selectbox(
                 f"Category #{i+1}",
-                ["Appetizer", "Main", "Side", "Dessert", "Drink", "Other"],
+                ["Breakfast", "Lunch", "Dinner", "Snack", "Post-Ceremony"],
                 index=_get_category_index(item.get("category")),
                 key=f"{key_prefix}cat_{i}"
             )
@@ -62,26 +63,50 @@ def menu_viewer_ui(event_id=None, key_prefix: str = ""):
                 "tags": [t.strip() for t in tags.split(",") if t.strip()]
             })
 
-    st.markdown("### ➕ Add New Menu Item")
-    form_key = f"{key_prefix}new_menu_item_form"
-    with st.form(form_key, clear_on_submit=True):
-        new_name = st.text_input("New Dish Name", key=f"{key_prefix}new_name")
-        new_category = st.selectbox(
-            "New Category",
-            ["Appetizer", "Main", "Side", "Dessert", "Drink", "Other"],
-            key=f"{key_prefix}new_category",
-        )
-        new_description = st.text_area("New Description", key=f"{key_prefix}new_desc")
-        new_tags = st.text_input("New Tags (comma-separated)", key=f"{key_prefix}new_tags")
-        submitted = st.form_submit_button("Add Menu Item")
-        if submitted and new_name.strip():
-            updated_menu.append({
-                "name": new_name.strip(),
-                "category": new_category,
-                "description": new_description.strip(),
-                "tags": [t.strip() for t in new_tags.split(",") if t.strip()]
-            })
-            st.success(f"✅ Added: {new_name.strip()}")
+    with st.expander("➕ Add New Menu Item", expanded=False):
+        form_key = f"{key_prefix}new_menu_item_form"
+        with st.form(form_key, clear_on_submit=True):
+            # Fetch recipe options for autocomplete dropdown
+            recipe_docs = db.collection("recipes").stream()
+            recipe_map: dict[str, list[str]] = {}
+            for doc in recipe_docs:
+                data = doc.to_dict() or {}
+                base = data.get("name", "Unnamed Recipe")
+                special = data.get("special_version", "").strip()
+                recipe_map.setdefault(base, [])
+                if special:
+                    recipe_map[base].append(special)
+
+            options = []
+            for base in sorted(recipe_map.keys()):
+                options.append({"label": base, "value": base})
+                for sp in recipe_map[base]:
+                    options.append({"label": f"   \u21b3 {sp}", "value": f"{base} - {sp}"})
+
+            new_name_choice = st.selectbox(
+                "New Dish Name",
+                options,
+                format_func=lambda x: x["label"],
+                key=f"{key_prefix}new_name"
+            )
+            new_name = new_name_choice["value"]
+
+            new_category = st.selectbox(
+                "New Category",
+                ["Breakfast", "Lunch", "Dinner", "Snack", "Post-Ceremony"],
+                key=f"{key_prefix}new_category",
+            )
+            new_description = st.text_area("New Description", key=f"{key_prefix}new_desc")
+
+            submitted = st.form_submit_button("Add Menu Item")
+            if submitted and new_name.strip():
+                updated_menu.append({
+                    "name": new_name.strip(),
+                    "category": new_category,
+                    "description": new_description.strip(),
+                    "tags": []
+                })
+                st.success(f"✅ Added: {new_name.strip()}")
 
     if st.button("💾 Save Menu", key=f"{key_prefix}save_menu_btn"):
         update_event_file_field(event_id, "menu", updated_menu, user_id)
@@ -93,7 +118,7 @@ def menu_viewer_ui(event_id=None, key_prefix: str = ""):
 # ----------------------------
 
 def _get_category_index(category: str):
-    options = ["Appetizer", "Main", "Side", "Dessert", "Drink", "Other"]
+    options = ["Breakfast", "Lunch", "Dinner", "Snack", "Post-Ceremony"]
     return options.index(category) if category in options else 0
 
 
