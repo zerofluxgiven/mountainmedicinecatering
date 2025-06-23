@@ -227,7 +227,11 @@ def _display_receipts(receipts: list) -> None:
 
             with col2:
                 if receipt.get('url'):
-                    st.link_button("📥 Download Original", receipt['url'])
+                    st.link_button(
+                        "📥 Download Original",
+                        receipt['url'],
+                        key=f"download_{receipt['id']}"
+                    )
 
                 if not is_event_scoped() and receipt.get('event_id'):
                     st.markdown(f"**Event ID:** {receipt.get('event_id')}")
