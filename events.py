@@ -302,20 +302,20 @@ def _render_event_details(event: dict, user: dict) -> None:
     col1, col2, col3 = st.columns(3)
     if col1.button("Back"):
         st.session_state.pop("selected_event_id", None)
-        st.experimental_rerun()
+        st.rerun()
     if col2.button("Edit"):
         st.session_state["editing_event_id"] = event["id"]
         st.session_state["next_nav"] = "Events"
         st.session_state["show_event_dashboard"] = True
         st.session_state.pop("selected_event_id", None)
-        st.experimental_rerun()
+        st.rerun()
     can_delete = (user.get("id") == event.get("created_by") or st.session_state.get("user_role") == "admin")
     if can_delete:
         if col3.button("Delete"):
             if delete_event(event["id"]):
                 st.success("Event deleted")
                 st.session_state.pop("selected_event_id", None)
-                st.experimental_rerun()
+                st.rerun()
 # ----------------------------
 # 🎛 Enhanced Events Tab UI
 # ----------------------------
@@ -355,7 +355,7 @@ def event_ui(user: dict | None, events: list[dict]) -> None:
 
         if st.button(top_line, key=f"view_{event['id']}", use_container_width=True):
             st.session_state["selected_event_id"] = event["id"]
-            st.experimental_rerun()
+            st.rerun()
         st.markdown(bottom_line)
 
     if st.session_state.get("show_event_dashboard"):
@@ -483,8 +483,12 @@ def enhanced_event_ui(user: dict | None) -> None:
         for ev in upcoming:
             name = ev.get("name", "Unnamed Event")
             date_str = format_date(ev.get("start_date"))
-            st.markdown(f"**{name}** {date_str}")
-            st.markdown(f"{ev.get('guest_count', '-') } guests - {ev.get('location', 'Unknown')}")
+            top_line = f"**{name}** {date_str}"
+            bottom_line = f"{ev.get('guest_count', '-') } guests - {ev.get('location', 'Unknown')}"
+            if st.button(top_line, key=f"upcoming_{ev['id']}", use_container_width=True):
+                st.session_state["selected_event_id"] = ev["id"]
+                st.rerun()
+            st.markdown(bottom_line)
     else:
         st.write("No upcoming events.")
 
