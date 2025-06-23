@@ -354,15 +354,17 @@ def event_ui(user: dict | None, events: list[dict]) -> None:
         bottom_line = f"{event.get('guest_count', '-') } guests - {event.get('location', 'Unknown')}"
 
         if st.button(top_line, key=f"view_{event['id']}", use_container_width=True):
-            st.session_state["selected_event_id"] = event["id"]
+            st.session_state["editing_event_id"] = event["id"]
+            st.session_state["show_event_dashboard"] = True
+            st.session_state["next_nav"] = "Events"
             st.rerun()
         st.markdown(bottom_line)
 
     if st.session_state.get("show_event_dashboard"):
-        from event_planning_dashboard import event_planning_dashboard
+        from event_planning_dashboard import event_planning_dashboard_ui
         editing_event_id = st.session_state.get("editing_event_id")
         if editing_event_id:
-            event_planning_dashboard(editing_event_id)
+            event_planning_dashboard_ui(editing_event_id)
 
     show_event_mode_banner()
 
@@ -486,7 +488,9 @@ def enhanced_event_ui(user: dict | None) -> None:
             top_line = f"**{name}** {date_str}"
             bottom_line = f"{ev.get('guest_count', '-') } guests - {ev.get('location', 'Unknown')}"
             if st.button(top_line, key=f"upcoming_{ev['id']}", use_container_width=True):
-                st.session_state["selected_event_id"] = ev["id"]
+                st.session_state["editing_event_id"] = ev["id"]
+                st.session_state["show_event_dashboard"] = True
+                st.session_state["next_nav"] = "Events"
                 st.rerun()
             st.markdown(bottom_line)
     else:

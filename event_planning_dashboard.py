@@ -189,8 +189,8 @@ def event_planning_dashboard_ui(event_id):
     # Menu Planning Section - FIXED
     with st.expander("🍽️ Menu Planning", expanded=True):
         try:
-            # ✅ FIXED: Properly scope the menu editor without affecting global state
-            render_menu_editor_scoped(event_id, user)
+            # ✅ Use the new menu viewer/editor which leverages event_file
+            menu_viewer_ui(event_id=event_id, key_prefix=f"{event_id}_")
         except Exception as e:
             st.error(f"Could not load menu editor: {e}")
             st.info("You can manage menus from the Recipes tab.")
@@ -687,3 +687,12 @@ def _render_ai_suggestions(event_id):
     except Exception as e:
         st.error(f"Failed to generate suggestions: {e}")
         st.info("AI suggestions temporarily unavailable")
+
+
+# ----------------------------
+# 🔄 Backward Compatibility
+# ----------------------------
+
+def event_planning_dashboard(event_id: str):
+    """Compatibility wrapper calling the updated UI function."""
+    return event_planning_dashboard_ui(event_id)
