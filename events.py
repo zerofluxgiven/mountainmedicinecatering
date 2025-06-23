@@ -241,7 +241,7 @@ def event_ui(user: dict | None) -> None:
     # Create new event section
     with st.container():
         st.markdown("### Create New Event")
-        
+
         with st.form("create_event_form"):
             col1, col2 = st.columns(2)
             
@@ -279,7 +279,7 @@ def event_ui(user: dict | None) -> None:
                         st.success(f"✅ Event created: {name}")
 
     st.markdown("---")
-    
+
     # List existing events
     events = get_all_events()
     active_event_id = get_active_event_id()
@@ -288,26 +288,27 @@ def event_ui(user: dict | None) -> None:
         st.info("No events found. Create your first event above!")
         return
 
-    st.markdown("### Existing Events")
-    
-    # Event Mode status
-    if active_event_id:
-        active_event = next((e for e in events if e["id"] == active_event_id), None)
-        if active_event:
-            st.info(f"🟣 Event Mode Active: **{active_event.get('name', 'Unknown Event')}**")
-    
-    for idx, event in enumerate(events):
-        if event.get("deleted"):
-            continue  # Skip deleted events in main view
-            
-        is_active = event["id"] == active_event_id
-        
-        # Use different styling for active event
-        container_class = "active-event" if is_active else "inactive-event"
-        
-        with st.expander(f"{'🟣 ' if is_active else '⚪ '}{event.get('name', 'Unnamed Event')}", expanded=is_active):
-            # Event details
-            col1, col2 = st.columns(2)
+    # Wrap existing events in an expander
+    with st.expander("Existing Events", expanded=False):
+
+        # Event Mode status
+        if active_event_id:
+            active_event = next((e for e in events if e["id"] == active_event_id), None)
+            if active_event:
+                st.info(f"🟣 Event Mode Active: **{active_event.get('name', 'Unknown Event')}**")
+
+        for idx, event in enumerate(events):
+            if event.get("deleted"):
+                continue  # Skip deleted events in main view
+
+            is_active = event["id"] == active_event_id
+
+            # Use different styling for active event
+            container_class = "active-event" if is_active else "inactive-event"
+
+            with st.expander(f"{'🟣 ' if is_active else '⚪ '}{event.get('name', 'Unnamed Event')}", expanded=is_active):
+                # Event details
+                col1, col2 = st.columns(2)
 
             if event.get('description'):
                 st.markdown(f"**Description:** {event.get('description')}")
@@ -487,11 +488,14 @@ def filter_events(events, search_term, status_filter, date_filter):
 
 def enhanced_event_ui(user: dict | None) -> None:
     """Enhanced event UI with statistics and filters"""
-    show_event_statistics()
+    # Show statistics in a collapsible section
+    with st.expander("Event Statistics", expanded=False):
+        show_event_statistics()
     st.markdown("---")
-    
-    # Add search and filter controls
-    search_term, status_filter, date_filter = render_event_filters()
+
+    # Add search and filter controls inside an expander
+    with st.expander("Search Events", expanded=False):
+        search_term, status_filter, date_filter = render_event_filters()
     
     # Get and filter events
     events = get_all_events()
