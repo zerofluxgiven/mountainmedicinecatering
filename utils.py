@@ -153,9 +153,9 @@ def format_date(ts):
     if not ts:
         return "Unknown"
     if isinstance(ts, datetime):
-        return ts.strftime("%d/%m/%y")  # ← New format
+        return ts.strftime("%m/%d/%y")
     try:
-        return ts.to_datetime().strftime("%d/%m/%y")  # ← New format
+        return ts.to_datetime().strftime("%m/%d/%y")
     except (AttributeError, Exception):
         return str(ts)
 

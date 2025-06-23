@@ -34,7 +34,7 @@ def get_all_events() -> list[dict]:
     """Fetch all events with attached event_file data."""
     try:
         events_ref = db.collection("events")
-        docs = events_ref.order_by("start_date", direction=firestore.Query.ASCENDING).stream()
+        docs = events_ref.order_by("start_date", direction=firestore.Query.DESCENDING).stream()
         events = []
         for doc in docs:
             data = doc.to_dict()
@@ -232,15 +232,13 @@ def delete_event(event_id: str) -> bool:
 
 def event_ui(user: dict | None) -> None:
     """Enhanced Events tab UI with smart context buttons."""
-    st.markdown("## 📅 All Events")
 
     if not user:
         st.warning("Please log in to manage events.")
         return
 
-    # Create new event section
-    with st.container():
-        st.markdown("### Create New Event")
+    # Create new event section inside an expander
+    with st.expander("Create New Event", expanded=False):
 
         with st.form("create_event_form"):
             col1, col2 = st.columns(2)
@@ -248,11 +246,14 @@ def event_ui(user: dict | None) -> None:
             with col1:
                 name = st.text_input("Event Name *", placeholder="e.g., Summer Retreat 2025")
                 location = st.text_input("Location *", placeholder="e.g., Mountain Lodge")
-                start_date = st.date_input("Start Date *", format="DD/MM/YYYY")
-                
+                sd_col1, sd_col2 = st.columns(2)
+                with sd_col1:
+                    start_date = st.date_input("Start Date *", format="MM/DD/YYYY")
+                with sd_col2:
+                    end_date = st.date_input("End Date *", format="MM/DD/YYYY")
+
             with col2:
                 description = st.text_area("Description", placeholder="Brief description of the event...")
-                end_date = st.date_input("End Date *", format="DD/MM/YYYY")
                 guest_count = st.number_input("Expected Guests", min_value=0, value=20)
             
             # ✅ FIXED: Added the submit button inside the form
@@ -289,7 +290,7 @@ def event_ui(user: dict | None) -> None:
         return
 
     # Wrap existing events in an expander
-    with st.expander("Existing Events", expanded=False):
+    with st.expander("📅 All Events", expanded=False):
 
         # Event Mode status
         if active_event_id:
@@ -306,7 +307,9 @@ def event_ui(user: dict | None) -> None:
             # Use different styling for active event
             container_class = "active-event" if is_active else "inactive-event"
 
-            with st.expander(f"{'🟣 ' if is_active else '⚪ '}{event.get('name', 'Unnamed Event')}", expanded=is_active):
+            event_label_date = format_date(event.get('start_date'))
+            label = f"{'🟣 ' if is_active else '⚪ '}{event.get('name', 'Unnamed Event')}, {event_label_date}"
+            with st.expander(label, expanded=is_active):
                 # Event details
                 col1, col2 = st.columns(2)
 
@@ -317,7 +320,9 @@ def event_ui(user: dict | None) -> None:
             
             with col1:
                 st.markdown(f"**Location:** {event.get('location', 'Unknown')}")
-                st.markdown(f"**Dates:** {event.get('start_date', '?')} → {event.get('end_date', '?')}")
+                start_fmt = format_date(event.get('start_date'))
+                end_fmt = format_date(event.get('end_date'))
+                st.markdown(f"**Dates:** {start_fmt} → {end_fmt}")
                 st.markdown(f"**Guests:** {event.get('guest_count', '-')}")
                 
             with col2:
