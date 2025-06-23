@@ -20,6 +20,12 @@ import streamlit.components.v1 as components
 
 components.html("""
 <script>
+  const expiry = parseInt(localStorage.getItem('mm_token_expiry') || '0', 10);
+  if (expiry && Date.now() > expiry) {
+    localStorage.removeItem('mm_token');
+    localStorage.removeItem('mm_token_expiry');
+    localStorage.removeItem('mm_remember');
+  }
   const token = localStorage.getItem('mm_token') || "";
   let device = localStorage.getItem('mm_device');
   if (!device) {
@@ -29,10 +35,13 @@ components.html("""
   }
   const handled = localStorage.getItem('mm_token_handled') === 'true';
   const query = `?token=${token}&device=${device}`;
-  if (!window.location.search.includes("token=") && token && !handled) {
+  if (!window.location.search.includes('token=') && token && !handled) {
     localStorage.setItem('mm_token_handled', 'true');
     window.location.href = window.location.pathname + query;
   }
+  window.addEventListener('pagehide', () => {
+    localStorage.setItem('mm_token_handled', 'false');
+  });
 </script>
 """, height=0)
 
