@@ -293,7 +293,7 @@ def event_ui(user: dict | None) -> None:
         if active_event:
             st.info(f"🟣 Event Mode Active: **{active_event.get('name', 'Unknown Event')}**")
     
-    for event in events:
+    for idx, event in enumerate(events):
         if event.get("deleted"):
             continue  # Skip deleted events in main view
             
@@ -333,10 +333,10 @@ def event_ui(user: dict | None) -> None:
             
             with col1:
                 # Smart context button (replaces Activate and Start Event)
-                render_smart_event_button(event, user)
+                render_smart_event_button(event, user, key_suffix=str(idx))
 
             with col2:
-                if st.button("Edit", key=f"edit_{event['id']}"):
+                if st.button("Edit", key=f"edit_{event['id']}_{idx}"):
                     st.session_state["editing_event_id"] = event["id"]
                     st.session_state["next_nav"] = "Events"  # force tab to stay
                     st.session_state["show_event_dashboard"] = True
@@ -347,7 +347,7 @@ def event_ui(user: dict | None) -> None:
                             st.session_state.get("user_role") == "admin")
                 
                 if can_delete:
-                    if st.button("Delete", key=f"del_{event['id']}"):
+                    if st.button("Delete", key=f"del_{event['id']}_{idx}"):
                         # Use session state for confirmation
                         confirm_key = f"confirm_delete_{event['id']}"
                         if st.session_state.get(confirm_key):
@@ -363,7 +363,7 @@ def event_ui(user: dict | None) -> None:
                 current_status = event.get('status', 'planning')
                 
                 if current_status == 'active':
-                    if st.button("Complete Event", key=f"complete_{event['id']}"):
+                    if st.button("Complete Event", key=f"complete_{event['id']}_{idx}"):
                         if complete_event_and_end_sessions(event["id"]):
                             st.success("✅ Event marked as complete.")
 
