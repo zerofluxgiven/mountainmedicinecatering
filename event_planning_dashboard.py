@@ -58,6 +58,12 @@ def event_planning_dashboard_ui(event_id):
     render_event_toolbar(event_id, context="editing")
 
     st.markdown("# 📝 Event Planning Dashboard")
+
+    if st.button("⬅️ Back", key="epd_back_btn"):
+        st.session_state["show_event_dashboard"] = False
+        st.session_state.pop("editing_event_id", None)
+        st.rerun()
+
     st.info(f"Editing: **{event.get('name', 'Unnamed Event')}**")
 
     # Show basic event info with status
