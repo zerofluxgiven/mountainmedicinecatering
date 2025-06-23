@@ -116,8 +116,15 @@
       .then((token) => {
         if (!token) return;
         const deviceType = detectDeviceType();
+        const remember = localStorage.getItem("mm_remember") === "true";
         localStorage.setItem("mm_token", token);
         localStorage.setItem("mm_device", deviceType);
+        if (remember) {
+          const expiry = Date.now() + 30 * 24 * 60 * 60 * 1000;
+          localStorage.setItem("mm_token_expiry", String(expiry));
+        } else {
+          localStorage.removeItem("mm_token_expiry");
+        }
         localStorage.setItem("mm_token_handled", "true");
         window.location.href = `https://mountainmedicine.streamlit.app/?token=${token}&device=${deviceType}`;
       })
@@ -126,6 +133,8 @@
       });
 
     window.login = function () {
+      const remember = document.getElementById('rememberMe').checked;
+      localStorage.setItem('mm_remember', remember ? 'true' : 'false');
       signInWithRedirect(auth, provider);
     }
   </script>
@@ -136,6 +145,9 @@
       <img src="/mountain_logo.png" alt="Mountain Medicine Logo" />
     </div>
     <p>Bringing humanity closer through man's original primal ceremony.</p>
+    <label style="margin-bottom:0.5rem;display:flex;align-items:center;gap:4px;">
+      <input type="checkbox" id="rememberMe" /> Remember me for 30 days
+    </label>
     <button class="login-button" onclick="login()">🔐 Login with Google</button>
     <footer>&copy; 2025 Mountain Medicine</footer>
   </div>
