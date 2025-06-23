@@ -980,15 +980,26 @@ def render_enhanced_sidebar():
 # ----------------------------
 # 🎯 Smart Context Buttons
 # ----------------------------
-def render_smart_event_button(event, user):
-    """Render context-aware event button with unique keys"""
+def render_smart_event_button(event, user, key_suffix: str = ""):
+    """Render context-aware event button with unique keys.
+
+    Parameters
+    ----------
+    event : dict
+        Event data dictionary containing at least an ``id`` field.
+    user : dict
+        The currently logged in user.
+    key_suffix : str, optional
+        Extra string appended to the widget key to guarantee uniqueness
+        when this function is called multiple times within loops.
+    """
     from utils import get_active_event_id
     from events import activate_event, deactivate_event_mode, update_event
     
     active_event_id = get_active_event_id()
     event_id = event["id"]
     
-    button_key = f"smart_event_btn_{event_id}"
+    button_key = f"smart_event_btn_{event_id}_{key_suffix}"
     
     if active_event_id == event_id:
         button_text = "🚪 Deactivate Event Mode"
