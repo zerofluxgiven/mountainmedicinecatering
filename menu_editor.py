@@ -1,6 +1,7 @@
 import streamlit as st
 from firebase_init import db
 from utils import get_active_event_id, generate_id
+from event_file import generate_menu_template
 from auth import get_user_id
 from datetime import datetime
 import json
@@ -83,6 +84,12 @@ def full_menu_editor_ui(event_id=None, key_prefix: str = ""):
     data = doc.to_dict()
     menu = data.get("menu", [])
 
+    # Auto-generate blank menu for each event day if empty
+    if not menu:
+        event_doc = db.collection("events").document(event_id).get()
+        event_data = event_doc.to_dict() if event_doc.exists else {}
+        menu = generate_menu_template(event_data.get("start_date", ""), event_data.get("end_date", ""))
+
     st.markdown("### 📋 Current Menu")
     meal_colors = {
         "breakfast": "#ADD8E6",
@@ -91,87 +98,39 @@ def full_menu_editor_ui(event_id=None, key_prefix: str = ""):
         "note": "#D3D3D3"
     }
 
+    # Fetch recipe options once for dropdowns
+    recipe_docs = db.collection("recipes").stream()
+    recipe_options = [""] + sorted([d.to_dict().get("name", "") for d in recipe_docs])
+
     updated_menu = []
     for i, item in enumerate(menu):
         bg_color = meal_colors.get(item.get("meal", "note").lower(), "#f0f0f0")
         with st.expander(
-            f"{item.get('day', 'Day')} - {item.get('meal', 'Meal')}",
+            f"{item.get('day', 'Day')} - {item.get('meal', 'Meal').capitalize()}",
             expanded=False,
         ):
             st.markdown(
                 f"<div style='background-color:{bg_color};padding:1em;border-radius:8px;'>",
                 unsafe_allow_html=True,
             )
-            day = st.text_input(
-                f"Day #{i+1}",
-                value=item.get("day", ""),
-                key=f"{key_prefix}day_{i}"
-            )
-            meal = st.selectbox(
-                f"Meal #{i+1}",
-                ["Breakfast", "Lunch", "Dinner", "Note"],
-                index=_get_meal_index(item.get("meal")),
-                key=f"{key_prefix}meal_{i}"
-            )
-            recipe = st.text_input(
-                f"Recipe Name #{i+1}",
-                value=item.get("recipe", ""),
+            st.markdown(f"**Date:** {item.get('day','')}")
+            st.markdown(f"**Meal:** {item.get('meal','').capitalize()}")
+            recipe_name = st.selectbox(
+                "Recipe",
+                recipe_options,
+                index=recipe_options.index(item.get("recipe", "")) if item.get("recipe", "") in recipe_options else 0,
                 key=f"{key_prefix}recipe_{i}"
-            )
-            notes = st.text_area(
-                f"Notes #{i+1}",
-                value=item.get("notes", ""),
-                key=f"{key_prefix}notes_{i}"
-            )
-            allergens = st.text_input(
-                f"Allergens #{i+1}",
-                value=", ".join(item.get("allergens", [])),
-                key=f"{key_prefix}allergens_{i}"
-            )
-            tags = st.text_input(
-                f"Tags #{i+1}",
-                value=", ".join(item.get("tags", [])),
-                key=f"{key_prefix}tags_{i}"
             )
             st.markdown("</div>", unsafe_allow_html=True)
 
             updated_menu.append({
-                "day": day.strip(),
-                "meal": meal.lower(),
-                "recipe": recipe.strip(),
-                "notes": notes.strip(),
-                "allergens": [a.strip() for a in allergens.split(",") if a.strip()],
-                "tags": [t.strip() for t in tags.split(",") if t.strip()]
+                "day": item.get("day", ""),
+                "meal": item.get("meal", ""),
+                "recipe": recipe_name,
+                "notes": "",
+                "allergens": [],
+                "tags": []
             })
-
-    st.markdown("### ➕ Add New Menu Item")
-    form_key = f"{key_prefix}new_menu_item_form"
-    with st.form(form_key, clear_on_submit=True):
-        col1, col2 = st.columns(2)
-        with col1:
-            new_day = st.text_input("Day", key=f"{key_prefix}new_day")
-            new_meal = st.selectbox(
-                "Meal",
-                ["Breakfast", "Lunch", "Dinner", "Note"],
-                key=f"{key_prefix}new_meal"
-            )
-            new_recipe = st.text_input("Recipe Name", key=f"{key_prefix}new_recipe")
-        with col2:
-            new_notes = st.text_area("Notes", key=f"{key_prefix}new_notes")
-            new_allergens = st.text_input("Allergens (comma-separated)", key=f"{key_prefix}new_allergens")
-            new_tags = st.text_input("Tags (comma-separated)", key=f"{key_prefix}new_tags")
-
-        submit_new = st.form_submit_button("Add Menu Item")
-        if submit_new:
-            updated_menu.append({
-                "day": new_day.strip(),
-                "meal": new_meal.lower(),
-                "recipe": new_recipe.strip(),
-                "notes": new_notes.strip(),
-                "allergens": [a.strip() for a in new_allergens.split(",") if a.strip()],
-                "tags": [t.strip() for t in new_tags.split(",") if t.strip()]
-            })
-            st.success(f"✅ Added: {new_recipe.strip()}")
 
     if st.button("💾 Save Menu"):
         ref.update({
