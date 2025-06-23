@@ -257,9 +257,11 @@ button:active, .stButton > button:active {
 .stSelectbox div[data-baseweb="select"] span {
     color: #000 !important;
 }
+
 .stSelectbox div[data-baseweb="select"] input::placeholder {
     color: #6c757d !important;
 }
+
 
 /* Touch-friendly checkboxes */
 .stCheckbox label {
