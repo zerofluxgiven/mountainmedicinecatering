@@ -1,7 +1,7 @@
 # event_file.py
 
 from firebase_init import db, firestore
-from datetime import datetime
+from datetime import datetime, timedelta
 from utils import generate_id
 
 # ----------------------------
@@ -15,6 +15,34 @@ def get_default_event_file():
         "last_updated": datetime.utcnow(),
         "updated_by": None
     }
+
+# ----------------------------
+# 🗓️ Generate Menu Template
+# ----------------------------
+
+def generate_menu_template(start_date: str, end_date: str) -> list[dict]:
+    """Create blank breakfast/lunch/dinner entries for each event day."""
+    try:
+        start = datetime.fromisoformat(start_date).date()
+        end = datetime.fromisoformat(end_date).date()
+    except Exception:
+        return []
+
+    menu = []
+    current = start
+    while current <= end:
+        day_str = current.isoformat()
+        for meal in ["breakfast", "lunch", "dinner"]:
+            menu.append({
+                "day": day_str,
+                "meal": meal,
+                "recipe": "",
+                "notes": "",
+                "allergens": [],
+                "tags": []
+            })
+        current += timedelta(days=1)
+    return menu
 
 # ----------------------------
 # 📥 Create or Overwrite Event File
