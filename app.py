@@ -25,6 +25,7 @@ components.html("""
     localStorage.removeItem('mm_token');
     localStorage.removeItem('mm_token_expiry');
     localStorage.removeItem('mm_remember');
+    window.location.href = '/login';
   }
   const token = localStorage.getItem('mm_token') || "";
   let device = localStorage.getItem('mm_device');
@@ -73,6 +74,15 @@ from ai_chat import ai_chat_ui
 from recipes import recipes_page
 from admin_utilities import admin_utilities_ui
 from historical_menus import historical_menus_ui
+
+def enforce_session_expiry():
+    expiry_ts = st.session_state.get("token_expiry")
+    if expiry_ts and datetime.utcnow().timestamp() > expiry_ts:
+        st.session_state.pop("user", None)
+        st.session_state.pop("token_expiry", None)
+        import streamlit.components.v1 as components
+        components.html("<script>localStorage.removeItem('mm_token');localStorage.removeItem('mm_token_expiry');localStorage.removeItem('mm_remember');window.location.href='/login';</script>", height=0)
+        st.stop()
 
 PUBLIC_MODE = False
 
@@ -128,8 +138,12 @@ def handle_auth_routing():
         <script>
         const token = localStorage.getItem("mm_token") || "";
         const device = localStorage.getItem("mm_device") || "desktop";
-        const query = `?token=${token}&device=${device}`;
-        if (token) window.location.href = window.location.pathname + query;
+        if (token) {
+            const query = `?token=${token}&device=${device}`;
+            window.location.href = window.location.pathname + query;
+        } else {
+            window.location.href = "/login";
+        }
         </script>
         ''', height=0)
         st.stop()
@@ -174,6 +188,7 @@ def validate_tab_state(visible_tabs):
         st.session_state["top_nav"] = visible_tabs[0] if visible_tabs else "Dashboard"
 
 def main():
+    enforce_session_expiry()
     handle_auth_routing()
     if not get_user():
         st.error("🚫 Login failed or not completed. Please refresh or reauthenticate.")

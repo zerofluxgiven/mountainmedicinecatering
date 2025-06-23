@@ -25,6 +25,9 @@ def enrich_session_from_token(token: str) -> dict:
             db.collection("users").document(user_id).set(user_data)
 
         st.session_state["user"] = user_data  # ✅ Persist user in session
+        exp = decoded_token.get("exp")
+        if exp:
+            st.session_state["token_expiry"] = exp
         return user_data
 
     except Exception as e:
