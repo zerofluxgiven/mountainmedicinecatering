@@ -781,14 +781,23 @@ def render_top_navbar(tabs):
     if not main_tabs:
         main_tabs = tabs  # fallback
 
-    selected = st.radio(
-        "Navigation",
-        main_tabs,
-        index=main_tabs.index(current_tab) if current_tab in main_tabs else 0,
-        key="top_nav",
-        horizontal=True,
-        label_visibility="collapsed"
-    )
+    if "top_nav" in st.session_state and st.session_state["top_nav"] in main_tabs:
+        selected = st.radio(
+            "Navigation",
+            main_tabs,
+            key="top_nav",
+            horizontal=True,
+            label_visibility="collapsed"
+        )
+    else:
+        selected = st.radio(
+            "Navigation",
+            main_tabs,
+            index=main_tabs.index(current_tab) if current_tab in main_tabs else 0,
+            key="top_nav",
+            horizontal=True,
+            label_visibility="collapsed"
+        )
 
     # Stylize the nav bar
     st.markdown(
