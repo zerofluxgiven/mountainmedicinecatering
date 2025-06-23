@@ -207,8 +207,9 @@ def event_planning_dashboard_ui(event_id):
     # Menu Planning Section - FIXED
     with st.expander("🍽️ Menu Planning", expanded=True):
         try:
-            # ✅ Use the new menu viewer/editor which leverages event_file
-            menu_viewer_ui(event_id=event_id, key_prefix=f"{event_id}_")
+            # Nested expander for current menu
+            with st.expander("🍽️ Current Menu", expanded=True):
+                menu_viewer_ui(event_id=event_id, key_prefix=f"{event_id}_", show_headers=False)
         except Exception as e:
             st.error(f"Could not load menu editor: {e}")
             st.info("You can manage menus from the Recipes tab.")

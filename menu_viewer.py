@@ -12,9 +12,10 @@ from recipes import save_menu_to_firestore
 # ----------------------------
 
 @require_role("user")
-def menu_viewer_ui(event_id=None, key_prefix: str = ""):
+def menu_viewer_ui(event_id=None, key_prefix: str = "", show_headers: bool = True):
     """Display and edit an event menu with scoped widget keys."""
-    st.title("🍽️ Event Menu")
+    if show_headers:
+        st.title("🍽️ Event Menu")
 
     if not event_id:
         event_id = get_active_event_id()
@@ -30,7 +31,8 @@ def menu_viewer_ui(event_id=None, key_prefix: str = ""):
     event_file = get_event_file(event_id)
     menu = event_file.get("menu", [])
 
-    st.markdown("### 🧾 Current Menu")
+    if show_headers:
+        st.markdown("### 🧾 Current Menu")
 
     updated_menu = []
     for i, item in enumerate(menu):
