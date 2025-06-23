@@ -1,7 +1,7 @@
 import streamlit as st
-from mobile_helpers import safe_columns, safe_dataframe, safe_file_uploader
-from firebase_init import db, firestore
-from utils import session_get, generate_id, get_scoped_query, is_event_scoped, get_event_scope_message
+from mobile_helpers import safe_columns, safe_file_uploader
+from firebase_init import db
+from utils import session_get, generate_id, format_date
 from menu_viewer import menu_viewer_ui
 from file_storage import save_uploaded_file
 from datetime import datetime
@@ -59,6 +59,18 @@ def event_planning_dashboard_ui(event_id):
 
     st.markdown("# 📝 Event Planning Dashboard")
     st.info(f"Editing: **{event.get('name', 'Unnamed Event')}**")
+
+    # Show basic event info with status
+    start_fmt = format_date(event.get("start_date"))
+    end_fmt = format_date(event.get("end_date"))
+    status = event.get("status", "planning").title()
+    st.write(f"**Dates:** {start_fmt} → {end_fmt} | Status: {status}")
+
+    if status.lower() != "complete":
+        if st.button("Mark Event Complete", key="complete_event"):
+            from events import complete_event_and_end_sessions
+            if complete_event_and_end_sessions(event_id):
+                st.rerun()
 
     # ✅ FIXED: Use session state to preserve form values between reruns
     form_key = f"event_form_{event_id}"
@@ -662,7 +674,7 @@ def _render_ai_suggestions(event_id):
             menu_count = len(list(db.collection("menus").where("event_id", "==", event_id).stream()))
             if menu_count == 0:
                 suggestions.append("No menu items yet - start planning your menu")
-        except:
+        except Exception:
             pass
             
         # Default suggestions if none generated
