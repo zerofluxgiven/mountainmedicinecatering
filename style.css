@@ -252,6 +252,12 @@ button:active, .stButton > button:active {
     color: #000000 !important;
 }
 
+/* Ensure select inputs and selected values use black text */
+.stSelectbox div[data-baseweb="select"] input,
+.stSelectbox div[data-baseweb="select"] span {
+    color: #000 !important;
+}
+
 /* Touch-friendly checkboxes */
 .stCheckbox label {
     padding: 0.75rem 0 !important;
