@@ -83,7 +83,7 @@ def menu_viewer_ui(event_id=None, key_prefix: str = ""):
             })
             st.success(f"✅ Added: {new_name.strip()}")
 
-    if st.button("💾 Save Menu"):
+    if st.button("💾 Save Menu", key=f"{key_prefix}save_menu_btn"):
         update_event_file_field(event_id, "menu", updated_menu, user_id)
         st.success("✅ Menu saved successfully!")
         st.rerun()
