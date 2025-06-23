@@ -327,6 +327,13 @@ def event_ui(user: dict | None, events: list[dict]) -> None:
         st.warning("Please log in to manage events.")
         return
 
+    if st.session_state.get("show_event_dashboard"):
+        from event_planning_dashboard import event_planning_dashboard_ui
+        editing_event_id = st.session_state.get("editing_event_id")
+        if editing_event_id:
+            event_planning_dashboard_ui(editing_event_id)
+        return
+
     # Detail view of a single event
     selected_id = st.session_state.pop("selected_event_id", None)
     if selected_id:
@@ -472,6 +479,13 @@ def filter_events(events, search_term, status_filter, date_filter):
 
 def enhanced_event_ui(user: dict | None) -> None:
     """Reimagined event UI with upcoming events and expandable sections."""
+
+    if st.session_state.get("show_event_dashboard"):
+        from event_planning_dashboard import event_planning_dashboard_ui
+        editing_event_id = st.session_state.get("editing_event_id")
+        if editing_event_id:
+            event_planning_dashboard_ui(editing_event_id)
+        return
 
     events = get_all_events()
 
