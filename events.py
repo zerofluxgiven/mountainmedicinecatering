@@ -1,10 +1,9 @@
 # events.py - Complete Fixed Version with Smart Context Buttons
 
 import streamlit as st
-from utils import session_get, get_active_event_id, format_date, generate_id
+from utils import get_active_event_id, format_date, generate_id
 from ui_components import show_event_mode_banner
-from layout import render_smart_event_button, render_status_indicator
-from menu_viewer import menu_viewer_ui
+from layout import render_status_indicator
 from event_file import generate_menu_template
 from datetime import datetime
 from firebase_init import db, firestore
@@ -329,14 +328,12 @@ def event_ui(user: dict | None, events: list[dict]) -> None:
         return
 
     # Detail view of a single event
-    selected_id = st.session_state.get("selected_event_id")
+    selected_id = st.session_state.pop("selected_event_id", None)
     if selected_id:
-        event = next((e for e in events if e["id"] == selected_id), None)
-        if event:
-            _render_event_details(event, user)
-            return
-        else:
-            st.session_state.pop("selected_event_id", None)
+        st.session_state["editing_event_id"] = selected_id
+        st.session_state["show_event_dashboard"] = True
+        st.session_state["next_nav"] = "Events"
+        st.rerun()
 
     active_event_id = get_active_event_id()
     if active_event_id:
