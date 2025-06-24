@@ -173,10 +173,15 @@ def add_recipe_via_link_ui():
         if data.get("ingredients"):
             render_ingredient_columns(data.get("ingredients"))
         instructions = st.text_area("Instructions", value=instructions_value)
+
+        parsed_image_url = data.get("image_url")
         image_file = st.file_uploader("Recipe Photo", type=["png", "jpg", "jpeg"])
         if image_file:
             # Display a preview of the uploaded image with a standard width
             st.image(image_file, width=400)
+        elif parsed_image_url:
+            # Show the image parsed from the URL if no file uploaded
+            st.image(parsed_image_url, width=400)
 
         if st.button("Save Recipe", key="save_link_recipe"):
             user = get_user()
@@ -188,6 +193,8 @@ def add_recipe_via_link_ui():
                 blob.upload_from_file(image_file)
                 blob.make_public()
                 image_url = blob.public_url
+            elif parsed_image_url:
+                image_url = parsed_image_url
 
             recipe_doc = {
                 "name": title,
