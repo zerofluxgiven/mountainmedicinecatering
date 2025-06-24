@@ -94,28 +94,39 @@ button:active, .stButton > button:active {
 
 .stRadio > div {
     display: flex !important;
-    gap: 0.5rem !important;
-    overflow-x: auto !important;
-    -webkit-overflow-scrolling: touch !important;
-    padding-bottom: 0.5rem !important;
+    gap: 0 !important;
+    overflow: hidden !important;
+    background: var(--primary-purple, #6C4AB6) !important;
+    border-radius: var(--border-radius) !important;
 }
 
 .stRadio > div > label {
-    background: white !important;
-    color: var(--primary-purple) !important;
-    border: 2px solid var(--primary-purple) !important;
-    border-radius: var(--border-radius) !important;
+    flex: 1 1 auto !important;
+    background: transparent !important;
+    color: #ffffff !important;
+    opacity: 0.85 !important;
+    border: none !important;
+    border-right: 1px solid rgba(255, 255, 255, 0.4) !important;
+    border-radius: 0 !important;
     padding: 0.75rem 1.25rem !important;
     font-weight: 500 !important;
     font-size: 0.9rem !important;
     cursor: pointer !important;
     transition: var(--transition) !important;
     min-height: var(--touch-target-size) !important;
-    display: inline-flex !important;
+    display: flex !important;
     align-items: center !important;
     justify-content: center !important;
     white-space: nowrap !important;
-    flex-shrink: 0 !important;
+    list-style: none !important;
+}
+.stRadio > div > label:last-child {
+    border-right: none !important;
+}
+.stRadio > div > label[aria-checked="true"] {
+    background: var(--accent-purple, #563a9d) !important;
+    color: #ffffff !important;
+    opacity: 1 !important;
 }
 
 /* -----------------------------
