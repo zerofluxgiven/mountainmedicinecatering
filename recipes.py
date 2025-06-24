@@ -17,6 +17,22 @@ db = get_db()
 bucket = get_bucket()
 
 
+def find_recipe_by_name(name: str):
+    """Return existing recipe with the same name if any."""
+    try:
+        query = (
+            db.collection("recipes")
+            .where("name", "==", name.strip())
+            .limit(1)
+            .stream()
+        )
+        for doc in query:
+            return doc.to_dict() | {"id": doc.id}
+    except Exception as e:
+        print(f"Duplicate lookup failed: {e}")
+    return None
+
+
 def render_ingredient_columns(items):
     if not isinstance(items, list):
         items = [i.strip() for i in str(items).splitlines() if i.strip()]
@@ -142,6 +158,44 @@ def save_ingredient_to_firestore(ingredient_data, user_id=None, file_id=None):
 
 def add_recipe_via_link_ui():
     """Allow users to paste a link and create a recipe."""
+    dup_state = st.session_state.get("dup_link_recipe")
+    if dup_state:
+        st.warning("A recipe with this name already exists.")
+        option = st.selectbox(
+            "Choose how to proceed:",
+            ["Add Version", "Save under Different Name", "Cancel"],
+            key="dup_link_choice",
+        )
+        new_name = None
+        if option == "Save under Different Name":
+            new_name = st.text_input(
+                "New Recipe Name",
+                value=dup_state["data"].get("name"),
+                key="dup_link_newname",
+            )
+        if st.button("Continue", key="dup_link_continue"):
+            user_id = dup_state.get("user_id")
+            if option == "Add Version":
+                doc_ref = db.collection("recipes").document(dup_state["existing_id"])
+                doc_ref.collection("versions").document(generate_id("ver")).set(
+                    dup_state["data"] | {
+                        "timestamp": datetime.utcnow(),
+                        "edited_by": user_id,
+                    }
+                )
+                st.success("✅ Added as new version")
+            elif option == "Save under Different Name":
+                dup_state["data"]["name"] = new_name or dup_state["data"].get("name")
+                save_recipe_to_firestore(dup_state["data"], user_id=user_id)
+                st.success("✅ Recipe saved")
+            st.session_state.pop("dup_link_recipe")
+            st.session_state.pop("parsed_link_recipe", None)
+            st.rerun()
+        if st.button("Cancel", key="dup_link_cancel"):
+            st.session_state.pop("dup_link_recipe")
+            st.rerun()
+        return
+
     with st.expander("Add Recipe via Link", expanded=False):
         st.markdown(
             "<div class='card' style='max-width:600px;margin:0 auto'>",
@@ -214,17 +268,25 @@ def add_recipe_via_link_ui():
                     "created_at": datetime.utcnow(),
                     "author_name": user.get("name") if user else "unknown",
                 }
-                db.collection("recipes").document().set(recipe_doc)
-                st.success("Recipe saved!")
-                st.session_state.pop("parsed_link_recipe", None)
-                # reset form fields
-                st.session_state["recipe_link_input"] = ""
-                st.session_state["link_recipe_title"] = ""
-                st.session_state["link_special_version"] = ""
-                st.session_state["link_ingredients"] = ""
-                st.session_state["link_instructions"] = ""
-                st.session_state["link_image_upload"] = None
-                st.rerun()
+                existing = find_recipe_by_name(recipe_doc["name"])
+                if existing:
+                    st.session_state["dup_link_recipe"] = {
+                        "existing_id": existing["id"],
+                        "data": recipe_doc,
+                        "user_id": user.get("id") if user else None,
+                    }
+                    st.rerun()
+                else:
+                    db.collection("recipes").document().set(recipe_doc)
+                    st.success("Recipe saved!")
+                    st.session_state.pop("parsed_link_recipe", None)
+                    st.session_state["recipe_link_input"] = ""
+                    st.session_state["link_recipe_title"] = ""
+                    st.session_state["link_special_version"] = ""
+                    st.session_state["link_ingredients"] = ""
+                    st.session_state["link_instructions"] = ""
+                    st.session_state["link_image_upload"] = None
+                    st.rerun()
 
         st.markdown("</div>", unsafe_allow_html=True)
 

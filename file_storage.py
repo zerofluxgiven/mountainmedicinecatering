@@ -2,6 +2,7 @@ import streamlit as st
 from firebase_admin import storage
 from utils import format_date, get_active_event_id, session_get, session_set, get_event_by_id, generate_id
 from recipe_viewer import render_recipe_preview
+from recipes import find_recipe_by_name
 from datetime import datetime
 import uuid
 import mimetypes
@@ -355,6 +356,46 @@ def _render_save_as_options(file: dict):
     parsed = file.get("parsed_data", {}).get("parsed", {})
     uploaded_name = parsed.get("title") or parsed.get("name") or file.get("name", "Unnamed File")
 
+    dup_key = f"dup_saveas_{file_id}"
+    dup_state = st.session_state.get(dup_key)
+    if dup_state:
+        st.warning("A recipe with this name already exists.")
+        option = st.selectbox(
+            "Choose how to proceed:",
+            ["Add Version", "Save under Different Name", "Cancel"],
+            key=f"dup_saveas_choice_{file_id}",
+        )
+        new_name = None
+        if option == "Save under Different Name":
+            new_name = st.text_input(
+                "New Recipe Name",
+                value=dup_state["data"].get("name"),
+                key=f"dup_saveas_newname_{file_id}",
+            )
+        if st.button("Continue", key=f"dup_saveas_continue_{file_id}"):
+            if option == "Add Version":
+                doc_ref = db.collection("recipes").document(dup_state["existing_id"])
+                doc_ref.collection("versions").document(generate_id("ver")).set(
+                    dup_state["data"] | {
+                        "timestamp": datetime.utcnow(),
+                        "edited_by": dup_state.get("user_id"),
+                    }
+                )
+                st.success("✅ Added as new version")
+            elif option == "Save under Different Name":
+                dup_state["data"]["name"] = new_name or dup_state["data"].get("name")
+                save_recipe_to_firestore(
+                    dup_state["data"], user_id=dup_state.get("user_id"), file_id=file_id
+                )
+                st.success("✅ Recipe saved")
+            st.session_state.pop(dup_key)
+            del st.session_state["saveas_file"]
+            st.rerun()
+        if st.button("Cancel", key=f"dup_saveas_cancel_{file_id}"):
+            st.session_state.pop(dup_key)
+            st.rerun()
+        return
+
     st.markdown(f"### 💾 Save '{uploaded_name}' As...")
     option = st.selectbox(
         "Select type",
@@ -365,8 +406,17 @@ def _render_save_as_options(file: dict):
     if st.button("Create", key=f"create_{file_id}"):
         user_id = get_user_id()
         if option == "Recipe":
-            save_recipe_to_firestore(parsed, user_id=user_id, file_id=file_id)
-            st.success("✅ Saved as Recipe")
+            existing = find_recipe_by_name(uploaded_name)
+            if existing:
+                st.session_state[dup_key] = {
+                    "existing_id": existing["id"],
+                    "data": parsed,
+                    "user_id": user_id,
+                }
+                st.rerun()
+            else:
+                save_recipe_to_firestore(parsed, user_id=user_id, file_id=file_id)
+                st.success("✅ Saved as Recipe")
         elif option == "Menu":
             save_menu_to_firestore(parsed, user_id=user_id, file_id=file_id)
             st.success("✅ Saved as Menu")
