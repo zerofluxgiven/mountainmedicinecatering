@@ -238,6 +238,15 @@ button:active, .stButton > button:active {
     background: #edeafa !important;
 }
 
+/* Style for recipe version expanders */
+.version-expander {
+    margin-left: calc(var(--touch-target-size) / 2);
+}
+
+.version-expander .streamlit-expanderHeader {
+    min-height: calc(var(--touch-target-size) / 2) !important;
+}
+
 /* -----------------------------
    MOBILE FORMS
 ----------------------------- */

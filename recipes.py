@@ -379,33 +379,40 @@ def _render_recipe_card(recipe: dict, *, is_version: bool = False):
 
     header = recipe.get("special_version") if is_version else recipe.get("name", "Unnamed")
     if is_version:
-        header = "    " + (header or "Unnamed")
+        header = header or "Unnamed"
 
-    with st.expander(header):
-        if recipe.get("image_url"):
-            # Center the image and standardize its display size
-            col_center = st.columns([1, 6, 1])[1]
-            with col_center:
-                st.image(recipe["image_url"], width=400)
-        st.markdown("#### Ingredients")
-        render_ingredient_columns(recipe.get("ingredients"))
-        st.markdown("#### Instructions")
-        st.markdown(value_to_text(recipe.get("instructions", "")))
-        if recipe.get("notes"):
-            st.markdown("#### Notes")
-            st.markdown(recipe.get("notes"))
-        if version_label:
-            st.caption(version_label)
+    container = st.container()
+    if is_version:
+        container.markdown('<div class="version-expander">', unsafe_allow_html=True)
+    with container:
+        with st.expander(header):
+            if recipe.get("image_url"):
+                # Center the image and standardize its display size
+                col_center = st.columns([1, 6, 1])[1]
+                with col_center:
+                    st.image(recipe["image_url"], width=400)
+            st.markdown("#### Ingredients")
+            render_ingredient_columns(recipe.get("ingredients"))
+            st.markdown("#### Instructions")
+            st.markdown(value_to_text(recipe.get("instructions", "")))
+            if recipe.get("notes"):
+                st.markdown("#### Notes")
+                st.markdown(recipe.get("notes"))
+            if version_label:
+                st.caption(version_label)
 
-        col_edit, col_add, col_del = st.columns(3)
-        if col_edit.button("Edit", key=f"edit_{recipe['id']}"):
-            st.session_state["editing_recipe_id"] = recipe["id"]
-            st.rerun()
-        if col_add.button("Add Version", key=f"addver_{recipe['id']}"):
-            st.session_state[f"add_ver_{recipe['id']}"] = True
-        if delete_button("Delete", key=f"del_{recipe['id']}"):
-            db.collection("recipes").document(recipe["id"]).delete()
-            st.rerun()
+            col_edit, col_add, col_del = st.columns(3)
+            if col_edit.button("Edit", key=f"edit_{recipe['id']}"):
+                st.session_state["editing_recipe_id"] = recipe["id"]
+                st.rerun()
+            if col_add.button("Add Version", key=f"addver_{recipe['id']}"):
+                st.session_state[f"add_ver_{recipe['id']}"] = True
+            if delete_button("Delete", key=f"del_{recipe['id']}"):
+                if is_version:
+                    doc_ref.collection("versions").document(recipe["id"]).delete()
+                else:
+                    db.collection("recipes").document(recipe["id"]).delete()
+                st.rerun()
 
         if st.session_state.get(f"add_ver_{recipe['id']}"):
             with st.form(f"ver_form_{recipe['id']}"):
@@ -448,6 +455,9 @@ def _render_recipe_card(recipe: dict, *, is_version: bool = False):
                 st.rerun()
             elif cancel:
                 st.session_state.pop(f"add_ver_{recipe['id']}", None)
+
+    if is_version:
+        container.markdown('</div>', unsafe_allow_html=True)
 
 
 # ----------------------------
