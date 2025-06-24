@@ -297,6 +297,20 @@ def add_recipe_via_link_ui():
 
 def add_recipe_manual_ui():
     """Create a recipe manually."""
+
+    # Clear form fields on rerun if requested
+    if st.session_state.get("clear_manual_recipe_form"):
+        for key in [
+            "manual_recipe_name",
+            "manual_special_version",
+            "manual_ingredients",
+            "manual_instructions",
+            "manual_notes",
+            "manual_tags",
+        ]:
+            st.session_state[key] = ""
+        st.session_state["clear_manual_recipe_form"] = False
+
     with st.expander("Add Recipe Manually", expanded=False):
         st.markdown(
             "<div class='card' style='max-width:600px;margin:0 auto'>",
@@ -339,13 +353,8 @@ def add_recipe_manual_ui():
             if parsed:
                 update_recipe_with_parsed_ingredients(recipe_id, parsed)
             st.success("✅ Recipe saved!")
-            # reset form fields
-            st.session_state["manual_recipe_name"] = ""
-            st.session_state["manual_special_version"] = ""
-            st.session_state["manual_ingredients"] = ""
-            st.session_state["manual_instructions"] = ""
-            st.session_state["manual_notes"] = ""
-            st.session_state["manual_tags"] = ""
+            # flag to clear form fields on the next run
+            st.session_state["clear_manual_recipe_form"] = True
             st.rerun()
         except Exception as e:
             st.error(f"Failed to save recipe: {e}")
