@@ -129,6 +129,9 @@ button:active, .stButton > button:active {
     color: #ffffff !important;
     opacity: 1 !important;
 }
+.stRadio > div > label[aria-checked="true"] * {
+    color: #ffffff !important;
+}
 .stRadio input[type="radio"] {
     display: none !important;
 }

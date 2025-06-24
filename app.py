@@ -40,9 +40,30 @@ components.html("""
     localStorage.setItem('mm_token_handled', 'true');
     window.location.href = window.location.pathname + query;
   }
+  const refreshSession = () => {
+    const token = localStorage.getItem('mm_token') || "";
+    const device = localStorage.getItem('mm_device') || 'desktop';
+    const handled = localStorage.getItem('mm_token_handled') === 'true';
+    if (!window.location.search.includes('token=') && token && !handled) {
+      localStorage.setItem('mm_token_handled', 'true');
+      window.location.href = window.location.pathname + `?token=${token}&device=${device}`;
+    }
+  };
+
   window.addEventListener('pagehide', () => {
     localStorage.setItem('mm_token_handled', 'false');
   });
+
+  document.addEventListener('visibilitychange', () => {
+    if (document.visibilityState === 'hidden') {
+      localStorage.setItem('mm_token_handled', 'false');
+    } else if (document.visibilityState === 'visible') {
+      refreshSession();
+    }
+  });
+
+  window.addEventListener('pageshow', refreshSession);
+  window.addEventListener('focus', refreshSession);
 </script>
 """, height=0)
 
