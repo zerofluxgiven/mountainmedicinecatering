@@ -153,7 +153,7 @@ def add_recipe_via_link_ui():
             placeholder="Just paste a link to an online recipe",
             key="recipe_link_input",
         )
-        parse_clicked = st.button("Parse", key="parse_link_btn")
+        parse_clicked = st.button("Get Recipe", key="parse_link_btn")
 
         if parse_clicked and url:
             with st.spinner("Parsing recipe..."):
@@ -223,6 +223,7 @@ def add_recipe_via_link_ui():
                 st.session_state["link_ingredients"] = ""
                 st.session_state["link_instructions"] = ""
                 st.session_state["link_image_upload"] = None
+                st.rerun()
 
         st.markdown("</div>", unsafe_allow_html=True)
 
@@ -282,6 +283,7 @@ def add_recipe_manual_ui():
             st.session_state["manual_instructions"] = ""
             st.session_state["manual_notes"] = ""
             st.session_state["manual_tags"] = ""
+            st.rerun()
         except Exception as e:
             st.error(f"Failed to save recipe: {e}")
 
