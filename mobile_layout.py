@@ -1,4 +1,5 @@
 import streamlit as st
+from pathlib import Path
 from typing import List, Dict, Any, Optional
 
 # -----------------------------
@@ -99,27 +100,32 @@ class MobileLayout:
     
     def apply_mobile_theme(self):
         """Apply mobile-specific CSS and optimizations"""
-        mobile_css = """
-        <style>
-        /* Mobile optimizations */
-        .main .block-container {
-            padding: 0 1rem 1rem !important;
-            max-width: 100% !important;
-        }
-        
-        @media (max-width: 768px) {
-            .stColumns {
-                flex-direction: column !important;
+        css_file = Path(__file__).resolve().parent / "mobile_style.css"
+        try:
+            with open(css_file, "r") as f:
+                mobile_css = f.read()
+            st.markdown(f"<style>{mobile_css}</style>", unsafe_allow_html=True)
+        except FileNotFoundError:
+            # Fallback minimal CSS
+            mobile_css = """
+            <style>
+            .main .block-container {
+                padding: 0 1rem 1rem !important;
+                max-width: 100% !important;
             }
-            
-            .stButton > button {
-                width: 100% !important;
-                min-height: 48px !important;
+
+            @media (max-width: 768px) {
+                .stColumns {
+                    flex-direction: column !important;
+                }
+                .stButton > button {
+                    width: 100% !important;
+                    min-height: 48px !important;
+                }
             }
-        }
-        </style>
-        """
-        st.markdown(mobile_css, unsafe_allow_html=True)
+            </style>
+            """
+            st.markdown(mobile_css, unsafe_allow_html=True)
     
     def render_mobile_navigation(self):
         """Wrapper around the existing render_mobile_navigation function"""
