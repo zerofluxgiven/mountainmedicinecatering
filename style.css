@@ -245,6 +245,7 @@ button:active, .stButton > button:active {
 }
 
 .version-expander .streamlit-expanderHeader {
+    padding: 0.5rem !important;
     min-height: calc(var(--touch-target-size) / 2) !important;
     font-size: 0.75rem;
 }
