@@ -701,7 +701,7 @@ def mobile_toast(
 def inject_mobile_styles() -> None:
     """Inject all mobile-specific CSS"""
     try:
-        with open("style_mobile.css", "r") as f:
+        with open("mobile_style.css", "r") as f:
             mobile_css = f.read()
         st.markdown(f"<style>{mobile_css}</style>", unsafe_allow_html=True)
     except FileNotFoundError:

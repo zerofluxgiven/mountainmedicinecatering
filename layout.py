@@ -889,6 +889,11 @@ def apply_theme():
     from mobile_layout import mobile_layout
     if st.session_state.get("mobile_mode"):
         mobile_layout.apply_mobile_theme()
+        try:
+            from mobile_components import inject_mobile_styles
+            inject_mobile_styles()
+        except Exception:
+            pass
     render_event_mode_indicator()
 
 # ----------------------------
