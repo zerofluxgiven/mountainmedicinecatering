@@ -360,29 +360,42 @@ def add_recipe_manual_ui():
             st.error(f"Failed to save recipe: {e}")
 
 
-def _render_recipe_card(recipe: dict):
-    """Render a collapsible recipe card showing only the name by default."""
-    doc_ref = db.collection("recipes").document(recipe["id"])
-    try:
-        version_count = len(list(doc_ref.collection("versions").stream()))
-    except Exception:
-        version_count = 0
-    version_label = f"v1.{version_count}"
+def _render_recipe_card(recipe: dict, *, is_version: bool = False):
+    """Render a collapsible recipe card showing only the name by default.
 
-    with st.expander(recipe.get("name", "Unnamed")):
+    When ``is_version`` is ``True`` the recipe represents a saved version and
+    will be displayed indented with the ``special_version`` text as its title.
+    """
+    parent_id = recipe.get("parent_id") if is_version else recipe.get("id")
+    doc_ref = db.collection("recipes").document(parent_id)
+
+    version_label = ""
+    if not is_version:
+        try:
+            version_count = len(list(doc_ref.collection("versions").stream()))
+        except Exception:
+            version_count = 0
+        version_label = f"v1.{version_count}"
+
+    header = recipe.get("special_version") if is_version else recipe.get("name", "Unnamed")
+    if is_version:
+        header = "    " + (header or "Unnamed")
+
+    with st.expander(header):
         if recipe.get("image_url"):
             # Center the image and standardize its display size
             col_center = st.columns([1, 6, 1])[1]
             with col_center:
                 st.image(recipe["image_url"], width=400)
         st.markdown("#### Ingredients")
-        st.markdown(value_to_text(recipe.get("ingredients", "")))
+        render_ingredient_columns(recipe.get("ingredients"))
         st.markdown("#### Instructions")
         st.markdown(value_to_text(recipe.get("instructions", "")))
         if recipe.get("notes"):
             st.markdown("#### Notes")
             st.markdown(recipe.get("notes"))
-        st.caption(version_label)
+        if version_label:
+            st.caption(version_label)
 
         col_edit, col_add, col_del = st.columns(3)
         if col_edit.button("Edit", key=f"edit_{recipe['id']}"):
@@ -478,4 +491,23 @@ def recipes_page():
 
     for recipe in recipes:
         _render_recipe_card(recipe)
+
+        # Display saved versions indented under the base recipe
+        try:
+            ver_docs = (
+                db.collection("recipes")
+                .document(recipe["id"])
+                .collection("versions")
+                .order_by("timestamp", direction=firestore.Query.ASCENDING)
+                .stream()
+            )
+        except Exception:
+            ver_docs = []
+
+        for v in ver_docs:
+            vdata = v.to_dict() or {}
+            vdata.update({"id": v.id, "parent_id": recipe["id"]})
+            if "name" not in vdata:
+                vdata["name"] = recipe.get("name")
+            _render_recipe_card(vdata, is_version=True)
 

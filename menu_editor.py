@@ -93,9 +93,23 @@ def full_menu_editor_ui(event_id=None, key_prefix: str = ""):
         "note": "#D3D3D3"
     }
 
-    # Fetch recipe options once for dropdowns
-    recipe_docs = db.collection("recipes").stream()
-    recipe_options = [""] + sorted([d.to_dict().get("name", "") for d in recipe_docs])
+    # Fetch recipe options once for dropdowns including saved versions
+    recipe_docs = list(db.collection("recipes").stream())
+    recipe_options = [""]
+    for doc in sorted(recipe_docs, key=lambda d: d.to_dict().get("name", "")):
+        data = doc.to_dict() or {}
+        base_name = data.get("name", "")
+        if base_name:
+            recipe_options.append(base_name)
+
+        try:
+            versions = doc.reference.collection("versions").stream()
+        except Exception:
+            versions = []
+        for v in versions:
+            vdata = v.to_dict() or {}
+            label = vdata.get("special_version") or base_name
+            recipe_options.append("    " + label)
 
     updated_menu = []
     for i, item in enumerate(menu):
