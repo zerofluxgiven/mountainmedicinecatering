@@ -1,0 +1,18 @@
+The menu subsystem manages menu items for each event. When a new event is
+created the application stores a canonical `event_file` document under
+`/events/{eventId}/meta/event_file`. This document now starts with an empty
+`menu` list instead of pre‑generated meal entries.
+
+`menu_viewer_ui` provides the interface for viewing and editing an event’s
+menu. Each existing item is editable in place and all changes are persisted to
+the `event_file`. Adding a menu item immediately updates the stored JSON and
+refreshes the interface so no separate save step is required.
+
+`menu_editor_ui` (used less frequently) follows the same pattern—all menu
+entries are written back to the event document automatically when the screen is
+rendered.
+
+These changes remove the previous logic that generated placeholder menu items
+based on event duration and eliminate the explicit “Save Menu” buttons. Menu
+items are stored per event and are displayed in the event planning dashboard
+through the menu viewer component.

@@ -65,6 +65,10 @@ def menu_viewer_ui(event_id=None, key_prefix: str = "", show_headers: bool = Tru
                 "tags": [t.strip() for t in tags.split(",") if t.strip()]
             })
 
+    # Persist edits to existing items on each interaction
+    if updated_menu != menu:
+        update_event_file_field(event_id, "menu", updated_menu, user_id)
+
     with st.expander("➕ Add New Menu Item", expanded=False):
         form_key = f"{key_prefix}new_menu_item_form"
         with st.form(form_key, clear_on_submit=True):
@@ -108,12 +112,11 @@ def menu_viewer_ui(event_id=None, key_prefix: str = "", show_headers: bool = Tru
                     "description": new_description.strip(),
                     "tags": []
                 })
+                update_event_file_field(event_id, "menu", updated_menu, user_id)
                 st.success(f"✅ Added: {new_name.strip()}")
+                st.rerun()
 
-    if st.button("💾 Save Menu", key=f"{key_prefix}save_menu_btn"):
-        update_event_file_field(event_id, "menu", updated_menu, user_id)
-        st.success("✅ Menu saved successfully!")
-        st.rerun()
+
 
 # ----------------------------
 # 🔧 Helpers
