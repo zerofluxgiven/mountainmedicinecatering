@@ -813,9 +813,10 @@ def render_top_navbar(tabs):
     .stRadio > div > label {
         flex: 1 1 auto !important;
         background: transparent !important;
-        color: rgba(255,255,255,0.6) !important;
+        color: #ffffff !important;
+        opacity: 0.85 !important;
         border: none !important;
-        border-right: 1px solid rgba(255,255,255,0.3) !important;
+        border-right: 1px solid rgba(255,255,255,0.4) !important;
         border-radius: 0 !important;
         padding: 0.5rem 1rem !important;
         font-weight: 500 !important;
@@ -826,8 +827,9 @@ def render_top_navbar(tabs):
         border-right: none !important;
     }
     .stRadio > div > label[aria-checked="true"] {
-        background: var(--dark-purple, #4a3280) !important;
+        background: var(--accent-purple, #563a9d) !important;
         color: #fff !important;
+        opacity: 1 !important;
     }
     .stRadio input[type="radio"] { display: none !important; }
     </style>
