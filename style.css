@@ -241,10 +241,12 @@ button:active, .stButton > button:active {
 /* Style for recipe version expanders */
 .version-expander {
     margin-left: calc(var(--touch-target-size) / 2);
+    margin-bottom: 1rem;
 }
 
 .version-expander .streamlit-expanderHeader {
     min-height: calc(var(--touch-target-size) / 2) !important;
+    font-size: 0.75rem;
 }
 
 /* -----------------------------
