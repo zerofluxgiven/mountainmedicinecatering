@@ -5,14 +5,15 @@
   <title>Redirecting...</title>
   <script>
     window.onload = function() {
-      const params = new URLSearchParams(window.location.search);
-      const token = params.get("token");
-      const device = params.get("device") || "desktop";
-      if (token) {
+      const token = localStorage.getItem("mm_token");
+      const device = localStorage.getItem("mm_device") || "desktop";
+      const expiry = parseInt(localStorage.getItem("mm_token_expiry") || "0", 10);
+
+      if (token && Date.now() < expiry) {
         const dest = `https://mountainmedicine.streamlit.app/?token=${token}&device=${device}`;
         window.location.replace(dest);
       } else {
-        document.body.innerHTML = "<h1>Error: No token found</h1>";
+        document.body.innerHTML = "<h1>Session expired. Please <a href='/'>log in again</a>.</h1>";
       }
     };
   </script>
