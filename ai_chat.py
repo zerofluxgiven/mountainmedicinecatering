@@ -2,7 +2,7 @@ import streamlit as st
 from datetime import datetime
 from auth import get_user_role
 from firebase_init import db
-from utils import format_date, generate_id, get_active_event, get_active_event_id
+from utils import format_date, generate_id, get_active_event, get_active_event_id, value_to_text
 import json
 from google.cloud.firestore_v1.base_query import FieldFilter
 from firebase_admin import firestore
@@ -88,8 +88,8 @@ def ai_chat_ui():
         with st.expander("📘 Recipe Context (linked)", expanded=False):
             st.markdown(f"**Name:** {recipe_context.get('name', 'Unnamed')}")
             st.markdown(f"**Author:** {recipe_context.get('author_name', 'Unknown')}")
-            st.markdown(f"**Ingredients:**\n{recipe_context.get('ingredients', '—')}")
-            st.markdown(f"**Instructions:**\n{recipe_context.get('instructions', '—')}")
+            st.markdown(f"**Ingredients:**\n{value_to_text(recipe_context.get('ingredients', ''))}")
+            st.markdown(f"**Instructions:**\n{value_to_text(recipe_context.get('instructions', ''))}")
             if st.button("🧠 Ask AI about this recipe"):
                 st.session_state.chat_history.append({
                     "sender": "user",
