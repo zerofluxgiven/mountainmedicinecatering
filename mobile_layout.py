@@ -1,4 +1,5 @@
 import streamlit as st
+from pathlib import Path
 from typing import List, Dict, Any, Optional
 
 # -----------------------------
@@ -99,7 +100,7 @@ class MobileLayout:
     
     def apply_mobile_theme(self):
         """Apply mobile-specific CSS and optimizations"""
-        css_file = "mobile_style.css"
+        css_file = Path(__file__).resolve().parent / "mobile_style.css"
         try:
             with open(css_file, "r") as f:
                 mobile_css = f.read()

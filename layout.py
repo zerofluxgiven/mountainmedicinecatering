@@ -1,6 +1,7 @@
 # layout.py - Complete redesign with all requested features
 
 import streamlit as st
+from pathlib import Path
 from utils import session_get, format_date, get_event_by_id, get_active_event
 from auth import get_user_role, get_user
 from datetime import datetime
@@ -12,8 +13,9 @@ from datetime import datetime
 def inject_custom_css():
     """Inject custom CSS styling for the application"""
     # Load the updated CSS file
+    css_path = Path(__file__).resolve().parent / "style.css"
     try:
-        with open("style.css", "r") as f:
+        with open(css_path, "r") as f:
             css_content = f.read()
         st.markdown(f"<style>{css_content}</style>", unsafe_allow_html=True)
     except FileNotFoundError:
