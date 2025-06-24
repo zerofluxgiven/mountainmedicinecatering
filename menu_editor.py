@@ -100,6 +100,8 @@ def full_menu_editor_ui(event_id=None, key_prefix: str = ""):
     updated_menu = []
     for i, item in enumerate(menu):
         bg_color = meal_colors.get(item.get("meal", "note").lower(), "#f0f0f0")
+        if item.get("recipe") and item.get("recipe") not in recipe_options:
+            recipe_options.append(item.get("recipe"))
         with st.expander(
             f"{item.get('day', 'Day')} - {item.get('meal', 'Meal').capitalize()}",
             expanded=False,
