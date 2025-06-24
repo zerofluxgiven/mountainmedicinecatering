@@ -3,6 +3,7 @@
 import streamlit as st
 from firebase_admin import firestore
 from auth import require_role, get_current_user, get_user_role as auth_get_user_role
+from utils import delete_button
 
 db = firestore.client()
 COLLECTION = "users"
@@ -209,21 +210,14 @@ def role_admin_ui() -> None:
                 if (current_role != "admin" and 
                     user.get('id') != current_admin_id):
                     
-                    if st.button("🗑️ Delete User", key=f"delete_{user['id']}", type="secondary"):
-                        confirm_key = f"confirm_delete_{user['id']}"
-                        if not st.session_state.get(confirm_key, False):
-                            st.session_state[confirm_key] = True
-                            st.warning("⚠️ Click again to confirm permanent deletion")
-                        else:
-                            try:
-                                from auth import delete_firebase_user
-                                if delete_firebase_user(user['id']):
-                                    st.success("✅ User deleted successfully")
-                                    st.rerun()
-                            except Exception as e:
-                                st.error(f"Failed to delete user: {e}")
-                            finally:
-                                st.session_state[confirm_key] = False
+                    if delete_button("🗑️ Delete User", key=f"delete_{user['id']}", type="secondary"):
+                        try:
+                            from auth import delete_firebase_user
+                            if delete_firebase_user(user['id']):
+                                st.success("✅ User deleted successfully")
+                                st.rerun()
+                        except Exception as e:
+                            st.error(f"Failed to delete user: {e}")
 
 def show_user_activity_summary(user: dict):
     """Show a brief activity summary for a user"""

@@ -1,7 +1,7 @@
 # events.py - Complete Fixed Version with Smart Context Buttons
 
 import streamlit as st
-from utils import get_active_event_id, format_date, generate_id
+from utils import get_active_event_id, format_date, generate_id, delete_button
 from ui_components import show_event_mode_banner
 from layout import render_status_indicator
 from datetime import datetime
@@ -308,7 +308,7 @@ def _render_event_details(event: dict, user: dict) -> None:
         st.rerun()
     can_delete = (user.get("id") == event.get("created_by") or st.session_state.get("user_role") == "admin")
     if can_delete:
-        if col3.button("Delete"):
+        if delete_button("Delete", key=f"del_detail_{event['id']}"):
             if delete_event(event["id"]):
                 st.success("Event deleted")
                 st.session_state.pop("selected_event_id", None)
@@ -371,7 +371,7 @@ def event_ui(user: dict | None, events: list[dict]) -> None:
         if can_delete:
             with col2:
                 st.markdown('<div class="event-delete-col">', unsafe_allow_html=True)
-                if st.button("🗑️", key=f"del_{event['id']}", use_container_width=True):
+                if delete_button("🗑️", key=f"del_{event['id']}", use_container_width=True):
                     if delete_event(event["id"]):
                         st.success("Event deleted")
                         st.rerun()
@@ -538,7 +538,7 @@ def enhanced_event_ui(user: dict | None) -> None:
             if can_delete:
                 with col2:
                     st.markdown('<div class="event-delete-col">', unsafe_allow_html=True)
-                    if st.button("🗑️", key=f"del_up_{ev['id']}", use_container_width=True):
+                    if delete_button("🗑️", key=f"del_up_{ev['id']}", use_container_width=True):
                         if delete_event(ev["id"]):
                             st.success("Event deleted")
                             st.rerun()

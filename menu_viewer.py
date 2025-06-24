@@ -2,6 +2,7 @@
 
 import streamlit as st
 from auth import require_role, get_user_id
+from utils import delete_button
 from firebase_init import db
 from utils import (
     get_active_event_id,
@@ -18,6 +19,16 @@ MEAL_COLORS = {
     "lunch": "#d4edda",
     "dinner": "#d1e7ff",
     "after ceremony": "#ffe6f0",
+}
+
+DAY_COLORS = {
+    "monday": "rgba(255,0,0,0.2)",
+    "tuesday": "rgba(255,165,0,0.2)",
+    "wednesday": "rgba(255,255,0,0.2)",
+    "thursday": "rgba(0,255,0,0.2)",
+    "friday": "rgba(0,255,255,0.2)",
+    "saturday": "rgba(0,0,255,0.2)",
+    "sunday": "rgba(255,0,255,0.2)",
 }
 
 # ----------------------------
@@ -62,63 +73,44 @@ def menu_viewer_ui(event_id=None, key_prefix: str = "", show_headers: bool = Tru
     if show_headers:
         st.markdown("### 🧾 Current Menu")
 
-    updated_menu = []
-    for i, item in enumerate(menu):
-        bg_color = MEAL_COLORS.get(item.get("meal", "").lower(), "#f0f0f0")
-        with st.expander(f"{item.get('name', 'Untitled Dish')}", expanded=False):
-            st.markdown(
-                f"<div style='background-color:{bg_color};padding:1em;border-radius:8px;'>",
-                unsafe_allow_html=True,
-            )
-            name = st.text_input(
-                f"Dish Name #{i+1}",
-                item.get("name", ""),
-                key=f"{key_prefix}name_{i}"
-            )
-            col_a, col_b = st.columns(2)
-            with col_a:
-                meal = st.selectbox(
-                    f"Meal #{i+1}",
-                    ["Breakfast", "Lunch", "Dinner", "After Ceremony"],
-                    index=_get_meal_index(item.get("meal")),
-                    key=f"{key_prefix}meal_{i}"
-                )
-            with col_b:
-                day = st.selectbox(
-                    f"Date #{i+1}",
-                    date_options or [""],
-                    format_func=format_day_label,
-                    index=date_options.index(item.get("day")) if item.get("day") in date_options else 0,
-                    key=f"{key_prefix}day_{i}"
-                )
-            description = st.text_area(
-                f"Description #{i+1}",
-                item.get("description", ""),
-                key=f"{key_prefix}desc_{i}"
-            )
-            tags = st.text_input(
-                f"Tags #{i+1} (comma-separated)",
-                ", ".join(item.get("tags", [])),
-                key=f"{key_prefix}tags_{i}"
-            )
-            delete_col, _ = st.columns([1, 6])
-            delete_clicked = False
-            with delete_col:
-                if st.button("\U0001F5D1", key=f"{key_prefix}del_{i}"):
-                    delete_clicked = True
-            if not delete_clicked:
-                updated_menu.append({
-                    "name": name.strip(),
-                    "meal": meal,
-                    "day": day,
-                    "description": description.strip(),
-                    "tags": [t.strip() for t in tags.split(",") if t.strip()]
-                })
-            st.markdown("</div>", unsafe_allow_html=True)
+    updated_menu = list(menu)
 
-    # Persist edits to existing items on each interaction
-    if updated_menu != menu:
-        update_event_file_field(event_id, "menu", updated_menu, user_id)
+    grouped = {}
+    for idx, item in enumerate(updated_menu):
+        day = item.get("day", "")
+        meal = item.get("meal", "")
+        grouped.setdefault(day, {}).setdefault(meal, []).append((idx, item))
+
+    for day, meal_map in sorted(grouped.items()):
+        day_name = "Unknown"
+        try:
+            day_name = datetime.fromisoformat(day).strftime("%A")
+        except Exception:
+            pass
+        day_color = DAY_COLORS.get(day_name.lower(), "rgba(0,0,0,0.1)")
+        with st.expander(format_day_label(day), expanded=True):
+            st.markdown(f"<div style='background-color:{day_color};padding:0.5em;border-radius:8px;'>", unsafe_allow_html=True)
+            if delete_button("\U0001F5D1", key=f"del_day_{day}"):
+                updated_menu = [m for m in updated_menu if m.get('day') != day]
+                update_event_file_field(event_id, 'menu', updated_menu, user_id)
+                st.rerun()
+            for meal, items in meal_map.items():
+                with st.expander(meal.capitalize(), expanded=False):
+                    if delete_button("\U0001F5D1", key=f"del_meal_{day}_{meal}"):
+                        updated_menu = [m for m in updated_menu if not (m.get('day') == day and m.get('meal') == meal)]
+                        update_event_file_field(event_id, 'menu', updated_menu, user_id)
+                        st.rerun()
+                    for idx, itm in items:
+                        color = MEAL_COLORS.get(meal.lower(), "#f0f0f0")
+                        with st.expander(itm.get('name', 'Untitled'), expanded=False):
+                            st.markdown(f"<div style='background-color:{color};padding:0.5em;border-radius:8px;'>", unsafe_allow_html=True)
+                            st.write(itm.get('description', ''))
+                            if delete_button("\U0001F5D1", key=f"del_dish_{idx}"):
+                                updated_menu.pop(idx)
+                                update_event_file_field(event_id, 'menu', updated_menu, user_id)
+                                st.rerun()
+                            st.markdown("</div>", unsafe_allow_html=True)
+            st.markdown("</div>", unsafe_allow_html=True)
 
     with st.expander("➕ Add New Menu Item", expanded=False):
         form_key = f"{key_prefix}new_menu_item_form"
@@ -177,40 +169,6 @@ def menu_viewer_ui(event_id=None, key_prefix: str = "", show_headers: bool = Tru
                 st.success(f"✅ Added: {new_name.strip()}")
                 st.rerun()
 
-    # ----- Collapsible view -----
-    st.markdown("### 👀 View Menu")
-
-    grouped = {}
-    for idx, item in enumerate(updated_menu):
-        day = item.get("day", "")
-        meal = item.get("meal", "")
-        grouped.setdefault(day, {}).setdefault(meal, []).append((idx, item))
-
-    for day, meal_map in sorted(grouped.items()):
-        with st.expander(format_day_label(day), expanded=False):
-            if st.button("\U0001F5D1", key=f"del_day_{day}"):
-                updated_menu = [m for m in updated_menu if m.get("day") != day]
-                update_event_file_field(event_id, "menu", updated_menu, user_id)
-                st.rerun()
-            for meal, items in meal_map.items():
-                with st.expander(meal.capitalize(), expanded=False):
-                    if st.button("\U0001F5D1", key=f"del_meal_{day}_{meal}"):
-                        updated_menu = [m for m in updated_menu if not (m.get("day") == day and m.get("meal") == meal)]
-                        update_event_file_field(event_id, "menu", updated_menu, user_id)
-                        st.rerun()
-                    for idx, itm in items:
-                        color = MEAL_COLORS.get(meal.lower(), "#f0f0f0")
-                        with st.expander(itm.get("name", "Untitled"), expanded=False):
-                            st.markdown(
-                                f"<div style='background-color:{color};padding:0.5em;border-radius:8px;'>",
-                                unsafe_allow_html=True,
-                            )
-                            st.write(itm.get("description", ""))
-                            if st.button("\U0001F5D1", key=f"del_dish_{idx}"):
-                                updated_menu.pop(idx)
-                                update_event_file_field(event_id, "menu", updated_menu, user_id)
-                                st.rerun()
-                            st.markdown("</div>", unsafe_allow_html=True)
 
 
 

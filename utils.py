@@ -130,6 +130,27 @@ def session_set(key, value):
     st.session_state[key] = value
 
 # ----------------------------
+# ❓ Delete Confirmation Button
+# ----------------------------
+
+def delete_button(label: str, key: str, **kwargs) -> bool:
+    """Button that asks for confirmation before returning True."""
+    confirm_key = f"{key}_confirm"
+    if st.session_state.get(confirm_key):
+        st.warning("Are you sure?")
+        col1, col2 = st.columns(2)
+        if col1.button("Yes", key=f"{confirm_key}_yes"):
+            st.session_state.pop(confirm_key, None)
+            return True
+        if col2.button("No", key=f"{confirm_key}_no"):
+            st.session_state.pop(confirm_key, None)
+        return False
+
+    if st.button(label, key=key, **kwargs):
+        st.session_state[confirm_key] = True
+    return False
+
+# ----------------------------
 # 🧂 Normalize Ingredient Name
 # ----------------------------
 

@@ -2,7 +2,7 @@ import streamlit as st
 from datetime import datetime
 from auth import get_user_role
 from firebase_init import db
-from utils import format_date, generate_id, get_active_event, get_active_event_id, value_to_text
+from utils import format_date, generate_id, get_active_event, get_active_event_id, value_to_text, delete_button
 import json
 from google.cloud.firestore_v1.base_query import FieldFilter
 from firebase_admin import firestore
@@ -155,7 +155,7 @@ def ai_chat_ui():
                 st.rerun()
 
     # Clear chat button
-    if st.button("🗑️ Clear Conversation"):
+    if delete_button("🗑️ Clear Conversation", key="clear_chat"):
         st.session_state.chat_history = []
         st.success("Conversation cleared")
         st.rerun()
