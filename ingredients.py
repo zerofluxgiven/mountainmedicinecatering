@@ -424,7 +424,13 @@ def _parse_recipes_tab(user: dict):
                 # Show current ingredients text
                 ingredients_text = selected_recipe.get('ingredients', '')
                 st.markdown("**Current ingredients text:**")
-                st.text_area("", value=ingredients_text, height=200, disabled=True)
+                st.text_area(
+                    "Ingredients",
+                    value=ingredients_text,
+                    height=200,
+                    disabled=True,
+                    label_visibility="collapsed",
+                )
                 
                 if st.button("🔍 Parse Ingredients", type="primary"):
                     with st.spinner("Parsing ingredients..."):

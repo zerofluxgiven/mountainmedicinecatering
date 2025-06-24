@@ -149,9 +149,10 @@ def add_recipe_via_link_ui():
         )
 
         url = st.text_input(
-            "",
+            "Recipe URL",
             placeholder="Just paste a link to an online recipe",
             key="recipe_link_input",
+            label_visibility="collapsed",
         )
         parse_clicked = st.button("Get Recipe", key="parse_link_btn")
 
