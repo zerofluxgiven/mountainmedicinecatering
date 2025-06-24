@@ -250,7 +250,8 @@ button:active, .stButton > button:active {
 
 /* Ensure select inputs and selected values use black text */
 .stSelectbox div[data-baseweb="select"] input,
-.stSelectbox div[data-baseweb="select"] span {
+.stSelectbox div[data-baseweb="select"] span,
+.stSelectbox div[data-baseweb="select"] div {
     color: #000 !important;
 }
 
