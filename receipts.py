@@ -1,7 +1,7 @@
 import streamlit as st
 from firebase_init import get_db, storage
 from auth import require_login
-from utils import generate_id, get_scoped_query, is_event_scoped, get_event_scope_message, get_active_event_id
+from utils import generate_id, get_scoped_query, is_event_scoped, get_event_scope_message, get_active_event_id, delete_button
 from datetime import datetime
 from PIL import Image
 import tempfile
@@ -256,7 +256,7 @@ def _display_receipts(receipts: list) -> None:
                 st.markdown("#### Notes")
                 st.write(receipt['notes'])
 
-            if st.button(f"🗑️ Delete Receipt", key=f"del_{receipt['id']}"):
+            if delete_button("🗑️ Delete Receipt", key=f"del_{receipt['id']}"):
                 try:
                     get_db().collection("receipts").document(receipt['id']).delete()
                     st.success("Receipt deleted")

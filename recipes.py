@@ -2,7 +2,7 @@ import streamlit as st
 from firebase_init import get_db, get_bucket
 from firebase_admin import firestore
 from datetime import datetime
-from utils import format_date, get_active_event_id, value_to_text, generate_id
+from utils import format_date, get_active_event_id, value_to_text, generate_id, delete_button
 from auth import get_user
 from ingredients import (
     parse_recipe_ingredients,
@@ -390,7 +390,7 @@ def _render_recipe_card(recipe: dict):
             st.rerun()
         if col_add.button("Add Version", key=f"addver_{recipe['id']}"):
             st.session_state[f"add_ver_{recipe['id']}"] = True
-        if col_del.button("Delete", key=f"del_{recipe['id']}"):
+        if delete_button("Delete", key=f"del_{recipe['id']}"):
             db.collection("recipes").document(recipe["id"]).delete()
             st.rerun()
 

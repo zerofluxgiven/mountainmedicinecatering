@@ -1,7 +1,7 @@
 # allergies.py
 
 import streamlit as st
-from utils import generate_id, format_date, get_active_event_id, get_event_by_id
+from utils import generate_id, format_date, get_active_event_id, get_event_by_id, delete_button
 from auth import require_login, get_user_role
 from datetime import datetime
 from typing import List, Dict, Optional
@@ -280,7 +280,7 @@ def _view_allergies_tab(event_id: str):
                     st.rerun()
             
             with col2:
-                if st.button("Delete", key=f"delete_{allergy['id']}"):
+                if delete_button("Delete", key=f"delete_{allergy['id']}"):
                     if delete_allergy(event_id, allergy['id']):
                         st.success("Allergy deleted")
                         st.rerun()

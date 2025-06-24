@@ -1,6 +1,6 @@
 import streamlit as st
 from datetime import datetime, timedelta
-from utils import format_timestamp
+from utils import format_timestamp, delete_button
 from auth import require_role
 from notifications import send_notification
 from firebase_init import db, firestore
@@ -273,7 +273,7 @@ def _cleanup_tools():
             
             confirm_text = st.text_input("Type 'DELETE PERMANENTLY' to confirm:")
             
-            if confirm_text == "DELETE PERMANENTLY" and st.button("🗑️ Delete Permanently"):
+            if confirm_text == "DELETE PERMANENTLY" and delete_button("🗑️ Delete Permanently", key="permadelete"):
                 count = 0
                 for file_doc in deleted_files:
                     try:

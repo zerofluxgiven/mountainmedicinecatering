@@ -1,6 +1,6 @@
 import streamlit as st
 from firebase_admin import firestore
-from utils import generate_id, get_scoped_query, is_event_scoped, get_event_scope_message, get_active_event_id
+from utils import generate_id, get_scoped_query, is_event_scoped, get_event_scope_message, get_active_event_id, delete_button
 from datetime import datetime
 
 db = firestore.client()
@@ -153,7 +153,7 @@ def _render_task_item(task, tasks_ref):
             tasks_ref.document(task["id"]).update({"done": checked})
     
     with col2:
-        if st.button("🗑️", key=f"del_task_{task['id']}"):
+        if delete_button("🗑️", key=f"del_task_{task['id']}"):
             tasks_ref.document(task["id"]).delete()
             st.rerun()
 
@@ -194,7 +194,7 @@ def _render_equipment_list(event_id):
                 if packed != eq.get('packed'):
                     items_ref.document(eq['id']).update({"packed": packed})
             with col4:
-                if st.button("🗑️", key=f"del_eq_{eq['id']}"):
+                if delete_button("🗑️", key=f"del_eq_{eq['id']}"):
                     items_ref.document(eq['id']).delete()
                     st.rerun()
     
@@ -263,7 +263,7 @@ def _render_grocery_list(event_id):
                 if checked != g.get('purchased'):
                     groc_ref.document(g['id']).update({"purchased": checked})
             with col4:
-                if st.button("🗑️", key=f"del_groc_{g['id']}"):
+                if delete_button("🗑️", key=f"del_groc_{g['id']}"):
                     groc_ref.document(g['id']).delete()
                     st.rerun()
     

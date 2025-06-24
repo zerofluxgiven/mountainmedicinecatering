@@ -1,6 +1,6 @@
 import streamlit as st
 from datetime import datetime, timedelta
-from utils import format_timestamp
+from utils import format_timestamp, delete_button
 from notifications import send_notification
 from auth import require_role, sync_firebase_users, delete_firebase_user
 from firebase_init import db  # ✅ Fixed: Use centralized database client
@@ -227,25 +227,10 @@ def user_admin_ui():
                 if (current_role != "admin" and 
                     user.get('id') != current_admin):
                     
-                    confirm_key = f"confirm_delete_{user['id']}"
-                    if not st.session_state.get(confirm_key, False):
-                        if st.button("🗑️ Delete User", key=f"delete_{user['id']}", type="secondary"):
-                            st.session_state[confirm_key] = True
+                    if delete_button("🗑️ Delete User", key=f"delete_{user['id']}", type="secondary"):
+                        if delete_firebase_user(user['id']):
+                            st.success("✅ User deleted from Firebase and Firestore")
                             st.rerun()
-                    else:
-                        st.warning("⚠️ This will permanently delete the user from Firebase!")
-                        col_yes, col_no = st.columns(2)
-                        
-                        with col_yes:
-                            if st.button("✅ Confirm Delete", key=f"confirm_yes_{user['id']}", type="primary"):
-                                if delete_firebase_user(user['id']):
-                                    st.success("✅ User deleted from Firebase and Firestore")
-                                    st.rerun()
-                        
-                        with col_no:
-                            if st.button("❌ Cancel", key=f"confirm_no_{user['id']}"):
-                                st.session_state[confirm_key] = False
-                                st.rerun()
 
 # ----------------------------
 # 📊 User Activity Details

@@ -1,6 +1,6 @@
 import streamlit as st
 from firebase_admin import storage
-from utils import format_date, get_active_event_id, session_get, session_set, get_event_by_id, generate_id
+from utils import format_date, get_active_event_id, session_get, session_set, get_event_by_id, generate_id, delete_button
 from recipe_viewer import render_recipe_preview
 from recipes import find_recipe_by_name
 from datetime import datetime
@@ -71,7 +71,7 @@ def file_manager_ui(user):
                     if st.button("Save As", key=f"saveas_{file['id']}"):
                         st.session_state["saveas_file"] = file["id"]
                 with col_d:
-                    if st.button("Delete", key=f"delete_{file['id']}"):
+                    if delete_button("Delete", key=f"delete_{file['id']}"):
                         db.collection("files").document(file["id"]).update({"deleted": True})
                         st.rerun()
 

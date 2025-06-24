@@ -1,7 +1,7 @@
 import streamlit as st
 from mobile_helpers import safe_columns, safe_file_uploader
 from firebase_init import db
-from utils import session_get, generate_id, format_date
+from utils import session_get, generate_id, format_date, delete_button
 from menu_viewer import menu_viewer_ui
 from file_storage import save_uploaded_file
 from datetime import datetime
@@ -328,7 +328,7 @@ def _render_shopping_list_editor(event_id):
                     except Exception as e:
                         st.error(f"Failed to update: {e}")
             with col4:
-                if st.button("🗑️", key=f"del_shop_{item['id']}_{event_id}"):
+                if delete_button("🗑️", key=f"del_shop_{item['id']}_{event_id}"):
                     try:
                         shopping_ref.document(item['id']).delete()
                         st.success("Item deleted")
@@ -406,7 +406,7 @@ def _render_equipment_list_editor(event_id):
                     except Exception as e:
                         st.error(f"Failed to update: {e}")
             with col4:
-                if st.button("🗑️", key=f"del_eq_{item['id']}_{event_id}"):
+                if delete_button("🗑️", key=f"del_eq_{item['id']}_{event_id}"):
                     try:
                         equipment_ref.document(item['id']).delete()
                         st.success("Equipment removed")
@@ -478,7 +478,7 @@ def _render_task_list_editor(event_id):
                         st.error(f"Failed to update task: {e}")
             
             with col2:
-                if st.button("🗑️", key=f"del_task_{task['id']}_{event_id}"):
+                if delete_button("🗑️", key=f"del_task_{task['id']}_{event_id}"):
                     try:
                         tasks_ref.document(task['id']).delete()
                         st.success("Task deleted")
@@ -548,7 +548,7 @@ def _render_allergies_section(event_id, user):
                         st.caption(f"Notes: {allergy.get('notes')}")
                 
                 with col3:
-                    if st.button("🗑️", key=f"del_allergy_{allergy['id']}_{event_id}"):
+                    if delete_button("🗑️", key=f"del_allergy_{allergy['id']}_{event_id}"):
                         try:
                             if delete_allergy(event_id, allergy['id']):
                                 st.success("Allergy removed")
