@@ -278,7 +278,8 @@ def _upload_receipt_section(user: dict) -> None:
         with col1:
             if uploaded.type.startswith('image'):
                 image = Image.open(uploaded)
-                st.image(image, caption="Receipt Preview", use_column_width=True)
+                # Preview the uploaded receipt image with a standard width
+                st.image(image, caption="Receipt Preview", width=400)
 
         with col2:
             st.info("📸 Receipt uploaded! Click below to analyze it.")
