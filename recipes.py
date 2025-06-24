@@ -158,6 +158,20 @@ def save_ingredient_to_firestore(ingredient_data, user_id=None, file_id=None):
 
 def add_recipe_via_link_ui():
     """Allow users to paste a link and create a recipe."""
+
+    # Clear form fields on rerun if requested
+    if st.session_state.get("clear_link_recipe_form"):
+        for key in [
+            "recipe_link_input",
+            "link_recipe_title",
+            "link_special_version",
+            "link_ingredients",
+            "link_instructions",
+            "link_image_upload",
+        ]:
+            st.session_state[key] = "" if key != "link_image_upload" else None
+        st.session_state.pop("parsed_link_recipe", None)
+        st.session_state["clear_link_recipe_form"] = False
     dup_state = st.session_state.get("dup_link_recipe")
     if dup_state:
         st.warning("A recipe with this name already exists.")
@@ -280,12 +294,7 @@ def add_recipe_via_link_ui():
                     db.collection("recipes").document().set(recipe_doc)
                     st.success("Recipe saved!")
                     st.session_state.pop("parsed_link_recipe", None)
-                    st.session_state["recipe_link_input"] = ""
-                    st.session_state["link_recipe_title"] = ""
-                    st.session_state["link_special_version"] = ""
-                    st.session_state["link_ingredients"] = ""
-                    st.session_state["link_instructions"] = ""
-                    st.session_state["link_image_upload"] = None
+                    st.session_state["clear_link_recipe_form"] = True
                     st.rerun()
 
         st.markdown("</div>", unsafe_allow_html=True)
