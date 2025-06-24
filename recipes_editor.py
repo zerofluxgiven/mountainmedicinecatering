@@ -47,7 +47,8 @@ def recipe_editor_ui(recipe_id=None, prefill_data=None):
         return
 
     if recipe.get("image_url"):
-        st.image(recipe["image_url"], use_column_width=True, caption="📷 Recipe Image")
+        # Display the recipe image with a consistent size
+        st.image(recipe["image_url"], width=400, caption="📷 Recipe Image")
 
     display_name = recipe.get("name") or recipe.get("title", "Unnamed Recipe")
     st.subheader(f"Editing: {display_name}")

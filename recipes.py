@@ -175,7 +175,8 @@ def add_recipe_via_link_ui():
         instructions = st.text_area("Instructions", value=instructions_value)
         image_file = st.file_uploader("Recipe Photo", type=["png", "jpg", "jpeg"])
         if image_file:
-            st.image(image_file, use_column_width=True)
+            # Display a preview of the uploaded image with a standard width
+            st.image(image_file, width=400)
 
         if st.button("Save Recipe", key="save_link_recipe"):
             user = get_user()
@@ -267,7 +268,10 @@ def _render_recipe_card(recipe: dict):
 
     with st.expander(recipe.get("name", "Unnamed")):
         if recipe.get("image_url"):
-            st.image(recipe["image_url"], use_column_width=True)
+            # Center the image and standardize its display size
+            col_center = st.columns([1, 6, 1])[1]
+            with col_center:
+                st.image(recipe["image_url"], width=400)
         st.markdown("#### Ingredients")
         st.markdown(recipe.get("ingredients", ""))
         st.markdown("#### Instructions")
