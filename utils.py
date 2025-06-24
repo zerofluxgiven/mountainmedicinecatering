@@ -137,12 +137,18 @@ def delete_button(label: str, key: str, **kwargs) -> bool:
     """Button that asks for confirmation before returning True."""
     confirm_key = f"{key}_confirm"
     if st.session_state.get(confirm_key):
-        st.warning("Are you sure?")
-        col1, col2 = st.columns(2)
-        if col1.button("Yes", key=f"{confirm_key}_yes"):
+        col_msg, col_yes, col_no = st.columns([2, 1, 1])
+        with col_msg:
+            st.markdown(
+                "<div style='background:white;color:black;padding:0.5rem;border-radius:4px;'>Are you sure?</div>",
+                unsafe_allow_html=True,
+            )
+        yes_clicked = col_yes.button("Yes", key=f"{confirm_key}_yes")
+        no_clicked = col_no.button("No", key=f"{confirm_key}_no")
+        if yes_clicked:
             st.session_state.pop(confirm_key, None)
             return True
-        if col2.button("No", key=f"{confirm_key}_no"):
+        if no_clicked:
             st.session_state.pop(confirm_key, None)
         return False
 
