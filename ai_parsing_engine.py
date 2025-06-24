@@ -52,6 +52,7 @@ def parse_file(uploaded_file, target_type="all", user_id=None, file_id=None):
 
     raw_text = extract_text(uploaded_file)
     st.session_state["extracted_text"] = raw_text
+    image_url = extract_image_from_file(uploaded_file)
 
     if raw_text and raw_text.strip():
         st.success("✅ Some text extracted.")
@@ -75,8 +76,13 @@ def parse_file(uploaded_file, target_type="all", user_id=None, file_id=None):
                 recipe_data = recipe_data["recipes"]
             if isinstance(recipe_data, list):
                 recipe_data = [normalize_keys(r) for r in recipe_data]
+                if image_url:
+                    for r in recipe_data:
+                        r.setdefault("image_url", image_url)
             else:
                 recipe_data = normalize_keys(recipe_data)
+                if image_url:
+                    recipe_data.setdefault("image_url", image_url)
             normalize_recipe_quantities(recipe_data)
             parsed[t] = recipe_data
 
@@ -166,6 +172,81 @@ def extract_text_from_docx(uploaded_file):
         return ""
 
 # --------------------------------------------
+# 🖼️ Image Extraction Helpers
+# --------------------------------------------
+
+import base64
+from urllib.parse import urljoin
+
+
+def extract_image_from_pdf(uploaded_file):
+    try:
+        with tempfile.NamedTemporaryFile(delete=False, suffix=".pdf") as tmp:
+            tmp.write(uploaded_file.read())
+            tmp_path = tmp.name
+        doc = fitz.open(tmp_path)
+        for page in doc:
+            images = page.get_images(full=True)
+            if images:
+                xref = images[0][0]
+                base_image = doc.extract_image(xref)
+                img_bytes = base_image.get("image")
+                ext = base_image.get("ext", "png")
+                b64 = base64.b64encode(img_bytes).decode("utf-8")
+                doc.close()
+                os.remove(tmp_path)
+                return f"data:image/{ext};base64,{b64}"
+        doc.close()
+        os.remove(tmp_path)
+    except Exception as e:
+        print(f"PDF image extraction error: {e}")
+    return None
+
+
+def extract_image_from_docx_file(uploaded_file):
+    try:
+        document = Document(uploaded_file)
+        for rel in document.part._rels.values():
+            target = rel.target_part
+            if "image" in target.content_type:
+                b64 = base64.b64encode(target.blob).decode("utf-8")
+                ext = target.content_type.split("/")[-1]
+                return f"data:image/{ext};base64,{b64}"
+    except Exception as e:
+        print(f"DOCX image extraction error: {e}")
+    return None
+
+
+def extract_image_from_file(uploaded_file):
+    try:
+        uploaded_file.seek(0)
+        if uploaded_file.type.startswith("image"):
+            b64 = base64.b64encode(uploaded_file.read()).decode("utf-8")
+            return f"data:{uploaded_file.type};base64,{b64}"
+        elif uploaded_file.type == "application/pdf":
+            return extract_image_from_pdf(uploaded_file)
+        elif uploaded_file.type in (
+            "application/vnd.openxmlformats-officedocument.wordprocessingml.document",
+            "application/msword",
+        ):
+            return extract_image_from_docx_file(uploaded_file)
+    except Exception as e:
+        print(f"Image extraction error: {e}")
+    return None
+
+
+def extract_image_from_soup(soup, base_url):
+    props = ["og:image", "og:image:url", "twitter:image"]
+    for prop in props:
+        tag = soup.find("meta", property=prop)
+        if tag and tag.get("content"):
+            return urljoin(base_url, tag["content"])
+    img_tag = soup.find("img")
+    if img_tag and img_tag.get("src"):
+        return urljoin(base_url, img_tag["src"])
+    return None
+
+# --------------------------------------------
 # 🤖 AI Prompt Routing (Patched)
 # --------------------------------------------
 
@@ -237,6 +318,7 @@ def parse_recipe_from_url(url: str) -> dict:
         resp.raise_for_status()
         soup = BeautifulSoup(resp.text, "html.parser")
         text = soup.get_text(separator="\n")
+        image_url = extract_image_from_soup(soup, url)
     except Exception as e:
         st.error(f"Failed to fetch page: {e}")
         return {}
@@ -254,6 +336,8 @@ def parse_recipe_from_url(url: str) -> dict:
     # Normalize key casing for downstream logic
     recipe = normalize_keys(recipe)
     normalize_recipe_quantities(recipe)
+    if image_url and not recipe.get("image_url"):
+        recipe["image_url"] = image_url
 
     if not is_meaningful_recipe(recipe):
         st.warning(

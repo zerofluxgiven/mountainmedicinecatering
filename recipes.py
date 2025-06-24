@@ -82,6 +82,7 @@ def save_recipe_to_firestore(recipe_data, user_id=None, file_id=None):
         "ingredients": recipe_data.get("ingredients", []),
         "instructions": recipe_data.get("instructions", []),
         "special_version": recipe_data.get("special_version", ""),
+        "image_url": recipe_data.get("image_url"),
         "tags": recipe_data.get("tags", []),
         "created_by": user_id,
         "source_file_id": file_id,
