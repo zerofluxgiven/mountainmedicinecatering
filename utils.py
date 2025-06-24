@@ -159,6 +159,17 @@ def format_date(ts):
     except (AttributeError, Exception):
         return str(ts)
 
+
+def format_day_label(date_str: str) -> str:
+    """Return a short label like 'Mon 01 Jan' for a YYYY-MM-DD date string."""
+    if not date_str:
+        return "Unknown"
+    try:
+        d = datetime.fromisoformat(date_str).date()
+        return d.strftime("%a %d %b")
+    except Exception:
+        return date_str
+
 def format_timestamp(ts):
     """Alias for format_date for backward compatibility"""
     return format_date(ts)
