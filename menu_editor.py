@@ -1,7 +1,6 @@
 import streamlit as st
 from firebase_init import db
 from utils import get_active_event_id, generate_id
-from event_file import generate_menu_template
 from auth import get_user_id
 from datetime import datetime
 import json
@@ -84,11 +83,7 @@ def full_menu_editor_ui(event_id=None, key_prefix: str = ""):
     data = doc.to_dict()
     menu = data.get("menu", [])
 
-    # Auto-generate blank menu for each event day if empty
-    if not menu:
-        event_doc = db.collection("events").document(event_id).get()
-        event_data = event_doc.to_dict() if event_doc.exists else {}
-        menu = generate_menu_template(event_data.get("start_date", ""), event_data.get("end_date", ""))
+    # Leave menu empty if none exists
 
     st.markdown("### 📋 Current Menu")
     meal_colors = {
@@ -132,13 +127,13 @@ def full_menu_editor_ui(event_id=None, key_prefix: str = ""):
                 "tags": []
             })
 
-    if st.button("💾 Save Menu"):
-        ref.update({
-            "menu": updated_menu,
-            "last_updated": datetime.utcnow(),
-            "updated_by": user_id
-        })
-        st.success("✅ Menu saved successfully!")
+    # Automatically persist changes without an explicit save button
+    ref.update({
+        "menu": updated_menu,
+        "last_updated": datetime.utcnow(),
+        "updated_by": user_id
+    })
+    st.success("✅ Menu updated!")
 
 # ----------------------------
 # 🔧 Helpers

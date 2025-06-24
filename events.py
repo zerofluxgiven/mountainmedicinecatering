@@ -4,7 +4,6 @@ import streamlit as st
 from utils import get_active_event_id, format_date, generate_id
 from ui_components import show_event_mode_banner
 from layout import render_status_indicator
-from event_file import generate_menu_template
 from datetime import datetime
 from firebase_init import db, firestore
 
@@ -162,10 +161,8 @@ def create_event(event_data: dict, user_id: str) -> str:
         db.collection("events").document(event_id).set(event_data)
 
          # ✅ Create canonical event_file under /events/{eventId}/meta/event_file
-        default_menu = generate_menu_template(event_data.get("start_date"), event_data.get("end_date"))
-
         db.collection("events").document(event_id).collection("meta").document("event_file").set({
-            "menu": default_menu,
+            "menu": [],
             "menu_html": "",
             "schedule": [],
             "equipment": [],
