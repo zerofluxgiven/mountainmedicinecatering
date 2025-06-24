@@ -480,3 +480,17 @@ button:active, .stButton > button:active {
 .stTabs [data-baseweb="tab-highlight"] {
     display: none !important;
 }
+
+/* Event list buttons */
+button[id^="upcoming_"], button[id^="view_"] {
+    font-size: 1.3rem !important;
+    color: #fff !important;
+    white-space: normal !important;
+    line-height: 1.2 !important;
+}
+
+/* Divider for delete column */
+.event-delete-col {
+    border-left: 1px solid rgba(255, 255, 255, 0.3);
+    padding-left: 0.5rem;
+}

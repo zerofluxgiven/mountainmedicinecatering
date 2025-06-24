@@ -355,14 +355,14 @@ def event_ui(user: dict | None, events: list[dict]) -> None:
         top_line = f"**{name}** {date_str}"
         bottom_line = f"{event.get('guest_count', '-') } guests - {event.get('location', 'Unknown')}"
 
-        col1, col2 = st.columns([8, 1])
+        col1, col2 = st.columns([0.85, 0.15])
         with col1:
-            if st.button(top_line, key=f"view_{event['id']}", use_container_width=True):
+            label = f"{top_line}\n{bottom_line}"
+            if st.button(label, key=f"view_{event['id']}", use_container_width=True):
                 st.session_state["editing_event_id"] = event["id"]
                 st.session_state["show_event_dashboard"] = True
                 st.session_state["next_nav"] = "Events"
                 st.rerun()
-            st.markdown(bottom_line)
 
         can_delete = (
             user.get("id") == event.get("created_by")
@@ -370,10 +370,12 @@ def event_ui(user: dict | None, events: list[dict]) -> None:
         )
         if can_delete:
             with col2:
-                if st.button("🗑️", key=f"del_{event['id']}"):
+                st.markdown('<div class="event-delete-col">', unsafe_allow_html=True)
+                if st.button("🗑️", key=f"del_{event['id']}", use_container_width=True):
                     if delete_event(event["id"]):
                         st.success("Event deleted")
                         st.rerun()
+                st.markdown('</div>', unsafe_allow_html=True)
 
     if st.session_state.get("show_event_dashboard"):
         from event_planning_dashboard import event_planning_dashboard_ui
@@ -518,14 +520,14 @@ def enhanced_event_ui(user: dict | None) -> None:
             top_line = f"**{name}** {date_str}"
             bottom_line = f"{ev.get('guest_count', '-') } guests - {ev.get('location', 'Unknown')}"
 
-            col1, col2 = st.columns([8, 1])
+            col1, col2 = st.columns([0.85, 0.15])
             with col1:
-                if st.button(top_line, key=f"upcoming_{ev['id']}", use_container_width=True):
+                label = f"{top_line}\n{bottom_line}"
+                if st.button(label, key=f"upcoming_{ev['id']}", use_container_width=True):
                     st.session_state["editing_event_id"] = ev["id"]
                     st.session_state["show_event_dashboard"] = True
                     st.session_state["next_nav"] = "Events"
                     st.rerun()
-                st.markdown(bottom_line)
 
             can_delete = (
                 user and (
@@ -535,10 +537,12 @@ def enhanced_event_ui(user: dict | None) -> None:
             )
             if can_delete:
                 with col2:
-                    if st.button("🗑️", key=f"del_up_{ev['id']}"):
+                    st.markdown('<div class="event-delete-col">', unsafe_allow_html=True)
+                    if st.button("🗑️", key=f"del_up_{ev['id']}", use_container_width=True):
                         if delete_event(ev["id"]):
                             st.success("Event deleted")
                             st.rerun()
+                    st.markdown('</div>', unsafe_allow_html=True)
     else:
         st.write("No upcoming events.")
 
