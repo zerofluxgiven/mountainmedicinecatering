@@ -102,6 +102,17 @@
     const auth = getAuth(app);
     const provider = new GoogleAuthProvider();
 
+    function showWait() {
+      document.getElementById('loginBtn').style.display = 'none';
+      const rememberLabel = document.getElementById('rememberMe')?.parentElement;
+      if (rememberLabel) rememberLabel.style.display = 'none';
+      document.getElementById('pleaseWait').style.display = 'block';
+    }
+
+    if (localStorage.getItem('mm_login_pending') === 'true') {
+      showWait();
+    }
+
     function detectDeviceType() {
       const ua = navigator.userAgent.toLowerCase();
       return /iphone|ipad|android/.test(ua) ? "mobile" : "desktop";
@@ -126,15 +137,18 @@
           localStorage.removeItem("mm_token_expiry");
         }
         localStorage.setItem("mm_token_handled", "true");
+        localStorage.removeItem('mm_login_pending');
         window.location.href = `https://mountainmedicine.streamlit.app/?token=${token}&device=${deviceType}`;
       })
       .catch(() => {
-        // Silent fail
+        localStorage.removeItem('mm_login_pending');
       });
 
     window.login = function () {
       const remember = document.getElementById('rememberMe').checked;
       localStorage.setItem('mm_remember', remember ? 'true' : 'false');
+      localStorage.setItem('mm_login_pending', 'true');
+      showWait();
       signInWithRedirect(auth, provider);
     }
   </script>
@@ -148,7 +162,8 @@
     <label style="margin-bottom:0.5rem;display:flex;align-items:center;gap:4px;">
       <input type="checkbox" id="rememberMe" /> Remember me for 30 days
     </label>
-    <button class="login-button" onclick="login()">🔐 Login with Google</button>
+    <button class="login-button" id="loginBtn" onclick="login()">🔐 Login with Google</button>
+    <div id="pleaseWait" style="display:none;margin-top:1rem;font-weight:600;">Please wait…</div>
     <footer>&copy; 2025 Mountain Medicine</footer>
   </div>
   <a href="/public-recipes.html" style="position: fixed; bottom: 8px; right: 8px; font-size: 0.75rem; color: #666; text-decoration: none;">View Recipes</a>
