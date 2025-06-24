@@ -3,7 +3,12 @@
 import streamlit as st
 from auth import require_role, get_user_id
 from firebase_init import db
-from utils import get_active_event_id, get_active_event, format_day_label
+from utils import (
+    get_active_event_id,
+    get_active_event,
+    get_event_by_id,
+    format_day_label,
+)
 from datetime import datetime, timedelta
 from event_file import get_event_file, update_event_file_field, initialize_event_file
 from recipes import save_menu_to_firestore
@@ -40,7 +45,7 @@ def menu_viewer_ui(event_id=None, key_prefix: str = "", show_headers: bool = Tru
     menu = event_file.get("menu", [])
 
     # Build list of selectable dates between event start and end
-    active_event = get_active_event()
+    active_event = get_event_by_id(event_id) or get_active_event()
     date_options = []
     if active_event and active_event.get("start_date") and active_event.get("end_date"):
         try:

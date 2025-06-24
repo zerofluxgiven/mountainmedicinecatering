@@ -47,6 +47,8 @@ def parse_and_store_recipe_from_file(file_text: str, uploaded_by: str) -> str | 
 
     ingredients = "\n".join(lines[ingredients_start:instructions_start]).strip()
     instructions = "\n".join(lines[instructions_start:]).strip()
+    ingredients = value_to_text(ingredients)
+    instructions = value_to_text(instructions)
 
     recipe_data = {
         "id": str(uuid.uuid4()),
@@ -79,8 +81,8 @@ def save_recipe_to_firestore(recipe_data, user_id=None, file_id=None):
     doc = {
         "id": recipe_id,
         "name": recipe_data.get("title") or recipe_data.get("name", "Untitled"),
-        "ingredients": recipe_data.get("ingredients", []),
-        "instructions": recipe_data.get("instructions", []),
+        "ingredients": value_to_text(recipe_data.get("ingredients", [])),
+        "instructions": value_to_text(recipe_data.get("instructions", [])),
         "special_version": recipe_data.get("special_version", ""),
         "image_url": recipe_data.get("image_url"),
         "tags": recipe_data.get("tags", []),
@@ -173,10 +175,15 @@ def add_recipe_via_link_ui():
         if data.get("ingredients"):
             render_ingredient_columns(data.get("ingredients"))
         instructions = st.text_area("Instructions", value=instructions_value)
+
+        parsed_image_url = data.get("image_url")
         image_file = st.file_uploader("Recipe Photo", type=["png", "jpg", "jpeg"])
         if image_file:
             # Display a preview of the uploaded image with a standard width
             st.image(image_file, width=400)
+        elif parsed_image_url:
+            # Show the image parsed from the URL if no file uploaded
+            st.image(parsed_image_url, width=400)
 
         if st.button("Save Recipe", key="save_link_recipe"):
             user = get_user()
@@ -188,6 +195,8 @@ def add_recipe_via_link_ui():
                 blob.upload_from_file(image_file)
                 blob.make_public()
                 image_url = blob.public_url
+            elif parsed_image_url:
+                image_url = parsed_image_url
 
             recipe_doc = {
                 "name": title,
@@ -273,9 +282,9 @@ def _render_recipe_card(recipe: dict):
             with col_center:
                 st.image(recipe["image_url"], width=400)
         st.markdown("#### Ingredients")
-        st.markdown(recipe.get("ingredients", ""))
+        st.markdown(value_to_text(recipe.get("ingredients", "")))
         st.markdown("#### Instructions")
-        st.markdown(recipe.get("instructions", ""))
+        st.markdown(value_to_text(recipe.get("instructions", "")))
         if recipe.get("notes"):
             st.markdown("#### Notes")
             st.markdown(recipe.get("notes"))
@@ -295,9 +304,21 @@ def _render_recipe_card(recipe: dict):
             with st.form(f"ver_form_{recipe['id']}"):
                 name = st.text_input("Title", value=recipe.get("name", ""), key=f"ver_name_{recipe['id']}")
                 special_version = st.text_input("Special Version", value=recipe.get("special_version", ""), key=f"ver_sp_{recipe['id']}")
-                ingredients = st.text_area("Ingredients", value=recipe.get("ingredients", ""), key=f"ver_ing_{recipe['id']}")
-                instructions = st.text_area("Instructions", value=recipe.get("instructions", ""), key=f"ver_inst_{recipe['id']}")
-                notes = st.text_area("Notes", value=recipe.get("notes", ""), key=f"ver_notes_{recipe['id']}")
+                ingredients = st.text_area(
+                    "Ingredients",
+                    value=value_to_text(recipe.get("ingredients")),
+                    key=f"ver_ing_{recipe['id']}"
+                )
+                instructions = st.text_area(
+                    "Instructions",
+                    value=value_to_text(recipe.get("instructions")),
+                    key=f"ver_inst_{recipe['id']}"
+                )
+                notes = st.text_area(
+                    "Notes",
+                    value=value_to_text(recipe.get("notes")),
+                    key=f"ver_notes_{recipe['id']}"
+                )
                 tags = st.text_input("Tags (comma-separated)", value=", ".join(recipe.get("tags", [])), key=f"ver_tags_{recipe['id']}")
                 col_c, col_s = st.columns(2)
                 save = col_s.form_submit_button("Save")
