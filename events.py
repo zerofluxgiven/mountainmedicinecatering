@@ -279,6 +279,7 @@ def render_create_event_section(user: dict) -> None:
                     event_id = create_event(event_data, user["id"])
                     if event_id:
                         st.success(f"✅ Event created: {name}")
+                        st.rerun()
 
 # ----------------------------
 # 🆕 Event Details Page
@@ -354,12 +355,25 @@ def event_ui(user: dict | None, events: list[dict]) -> None:
         top_line = f"**{name}** {date_str}"
         bottom_line = f"{event.get('guest_count', '-') } guests - {event.get('location', 'Unknown')}"
 
-        if st.button(top_line, key=f"view_{event['id']}", use_container_width=True):
-            st.session_state["editing_event_id"] = event["id"]
-            st.session_state["show_event_dashboard"] = True
-            st.session_state["next_nav"] = "Events"
-            st.rerun()
-        st.markdown(bottom_line)
+        col1, col2 = st.columns([8, 1])
+        with col1:
+            if st.button(top_line, key=f"view_{event['id']}", use_container_width=True):
+                st.session_state["editing_event_id"] = event["id"]
+                st.session_state["show_event_dashboard"] = True
+                st.session_state["next_nav"] = "Events"
+                st.rerun()
+            st.markdown(bottom_line)
+
+        can_delete = (
+            user.get("id") == event.get("created_by")
+            or st.session_state.get("user_role") == "admin"
+        )
+        if can_delete:
+            with col2:
+                if st.button("🗑️", key=f"del_{event['id']}"):
+                    if delete_event(event["id"]):
+                        st.success("Event deleted")
+                        st.rerun()
 
     if st.session_state.get("show_event_dashboard"):
         from event_planning_dashboard import event_planning_dashboard_ui
@@ -503,12 +517,28 @@ def enhanced_event_ui(user: dict | None) -> None:
             date_str = format_date(ev.get("start_date"))
             top_line = f"**{name}** {date_str}"
             bottom_line = f"{ev.get('guest_count', '-') } guests - {ev.get('location', 'Unknown')}"
-            if st.button(top_line, key=f"upcoming_{ev['id']}", use_container_width=True):
-                st.session_state["editing_event_id"] = ev["id"]
-                st.session_state["show_event_dashboard"] = True
-                st.session_state["next_nav"] = "Events"
-                st.rerun()
-            st.markdown(bottom_line)
+
+            col1, col2 = st.columns([8, 1])
+            with col1:
+                if st.button(top_line, key=f"upcoming_{ev['id']}", use_container_width=True):
+                    st.session_state["editing_event_id"] = ev["id"]
+                    st.session_state["show_event_dashboard"] = True
+                    st.session_state["next_nav"] = "Events"
+                    st.rerun()
+                st.markdown(bottom_line)
+
+            can_delete = (
+                user and (
+                    user.get("id") == ev.get("created_by")
+                    or st.session_state.get("user_role") == "admin"
+                )
+            )
+            if can_delete:
+                with col2:
+                    if st.button("🗑️", key=f"del_up_{ev['id']}"):
+                        if delete_event(ev["id"]):
+                            st.success("Event deleted")
+                            st.rerun()
     else:
         st.write("No upcoming events.")
 
