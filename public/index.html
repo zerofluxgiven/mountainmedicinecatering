@@ -133,7 +133,8 @@
           if (token) {
             const device = detectDevice();
             saveToken(token, device);
-            redirect(token, device);
+            // redirect to intermediate page
+            window.location.href = "/redirect.html";
           }
         });
     }
