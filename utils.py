@@ -134,9 +134,25 @@ def session_set(key, value):
 # ----------------------------
 
 def delete_button(label: str, key: str, **kwargs) -> bool:
-    """Button that asks for confirmation before returning True."""
+    """Button that asks for confirmation before returning True.
+
+    Previously the confirmation prompt would only appear on the next
+    interaction, forcing the user to click the delete button twice.
+    This implementation shows the prompt immediately after the first
+    click so the user can confirm or cancel in one flow.
+    """
+
     confirm_key = f"{key}_confirm"
-    if st.session_state.get(confirm_key):
+
+    # Check if the delete button itself was clicked
+    clicked = st.button(label, key=key, **kwargs)
+
+    # Show confirmation prompt if either the button was just clicked or a
+    # previous click requested confirmation.
+    if clicked or st.session_state.get(confirm_key):
+        # Remember that we are awaiting confirmation so it persists across reruns
+        st.session_state[confirm_key] = True
+
         col_msg, col_yes, col_no = st.columns([2, 1, 1])
         with col_msg:
             st.markdown(
@@ -145,6 +161,7 @@ def delete_button(label: str, key: str, **kwargs) -> bool:
             )
         yes_clicked = col_yes.button("Yes", key=f"{confirm_key}_yes")
         no_clicked = col_no.button("No", key=f"{confirm_key}_no")
+
         if yes_clicked:
             st.session_state.pop(confirm_key, None)
             return True
@@ -152,8 +169,6 @@ def delete_button(label: str, key: str, **kwargs) -> bool:
             st.session_state.pop(confirm_key, None)
         return False
 
-    if st.button(label, key=key, **kwargs):
-        st.session_state[confirm_key] = True
     return False
 
 # ----------------------------
