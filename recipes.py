@@ -142,76 +142,89 @@ def save_ingredient_to_firestore(ingredient_data, user_id=None, file_id=None):
 
 def add_recipe_via_link_ui():
     """Allow users to paste a link and create a recipe."""
-    st.markdown(
-        "<div class='card' style='max-width:600px;margin:0 auto'>",
-        unsafe_allow_html=True,
-    )
-    st.markdown("**Add Recipe via Link**")
-    url = st.text_input(
-        "",
-        placeholder="Just paste a link to an online recipe",
-        key="recipe_link_input",
-    )
-    parse_clicked = st.button("Parse", key="parse_link_btn")
-
-    if parse_clicked and url:
-        with st.spinner("Parsing recipe..."):
-            from ai_parsing_engine import parse_recipe_from_url
-
-            data = parse_recipe_from_url(url)
-            st.session_state["parsed_link_recipe"] = data
-
-    data = st.session_state.get("parsed_link_recipe")
-
-    if data:
-        title = st.text_input(
-            "Title",
-            value=data.get("name") or data.get("title", ""),
+    with st.expander("Add Recipe via Link", expanded=False):
+        st.markdown(
+            "<div class='card' style='max-width:600px;margin:0 auto'>",
+            unsafe_allow_html=True,
         )
-        special_version = st.text_input("Special Version")
-        ingredients_value = value_to_text(data.get("ingredients"))
-        instructions_value = value_to_text(data.get("instructions"))
-        ingredients = st.text_area("Ingredients", value=ingredients_value)
-        if data.get("ingredients"):
-            render_ingredient_columns(data.get("ingredients"))
-        instructions = st.text_area("Instructions", value=instructions_value)
 
-        parsed_image_url = data.get("image_url")
-        image_file = st.file_uploader("Recipe Photo", type=["png", "jpg", "jpeg"])
-        if image_file:
-            # Display a preview of the uploaded image with a standard width
-            st.image(image_file, width=400)
-        elif parsed_image_url:
-            # Show the image parsed from the URL if no file uploaded
-            st.image(parsed_image_url, width=400)
+        url = st.text_input(
+            "",
+            placeholder="Just paste a link to an online recipe",
+            key="recipe_link_input",
+        )
+        parse_clicked = st.button("Parse", key="parse_link_btn")
 
-        if st.button("Save Recipe", key="save_link_recipe"):
-            user = get_user()
-            image_url = None
+        if parse_clicked and url:
+            with st.spinner("Parsing recipe..."):
+                from ai_parsing_engine import parse_recipe_from_url
+
+                data = parse_recipe_from_url(url)
+                st.session_state["parsed_link_recipe"] = data
+
+        data = st.session_state.get("parsed_link_recipe")
+
+        if data:
+            title = st.text_input(
+                "Title",
+                value=data.get("name") or data.get("title", ""),
+                key="link_recipe_title",
+            )
+            special_version = st.text_input("Special Version", key="link_special_version")
+            ingredients_value = value_to_text(data.get("ingredients"))
+            instructions_value = value_to_text(data.get("instructions"))
+            ingredients = st.text_area("Ingredients", value=ingredients_value, key="link_ingredients")
+            if data.get("ingredients"):
+                render_ingredient_columns(data.get("ingredients"))
+            instructions = st.text_area("Instructions", value=instructions_value, key="link_instructions")
+
+            parsed_image_url = data.get("image_url")
+            image_file = st.file_uploader(
+                "Recipe Photo",
+                type=["png", "jpg", "jpeg"],
+                key="link_image_upload",
+            )
             if image_file:
-                import uuid
-
-                blob = bucket.blob(f"recipes/{uuid.uuid4()}_{image_file.name}")
-                blob.upload_from_file(image_file)
-                blob.make_public()
-                image_url = blob.public_url
+                # Display a preview of the uploaded image with a standard width
+                st.image(image_file, width=400)
             elif parsed_image_url:
-                image_url = parsed_image_url
+                # Show the image parsed from the URL if no file uploaded
+                st.image(parsed_image_url, width=400)
 
-            recipe_doc = {
-                "name": title,
-                "ingredients": ingredients,
-                "instructions": instructions,
-                "special_version": special_version,
-                "image_url": image_url,
-                "created_at": datetime.utcnow(),
-                "author_name": user.get("name") if user else "unknown",
-            }
-            db.collection("recipes").document().set(recipe_doc)
-            st.success("Recipe saved!")
-            st.session_state.pop("parsed_link_recipe", None)
+            if st.button("Save Recipe", key="save_link_recipe"):
+                user = get_user()
+                image_url = None
+                if image_file:
+                    import uuid
 
-    st.markdown("</div>", unsafe_allow_html=True)
+                    blob = bucket.blob(f"recipes/{uuid.uuid4()}_{image_file.name}")
+                    blob.upload_from_file(image_file)
+                    blob.make_public()
+                    image_url = blob.public_url
+                elif parsed_image_url:
+                    image_url = parsed_image_url
+
+                recipe_doc = {
+                    "name": title,
+                    "ingredients": ingredients,
+                    "instructions": instructions,
+                    "special_version": special_version,
+                    "image_url": image_url,
+                    "created_at": datetime.utcnow(),
+                    "author_name": user.get("name") if user else "unknown",
+                }
+                db.collection("recipes").document().set(recipe_doc)
+                st.success("Recipe saved!")
+                st.session_state.pop("parsed_link_recipe", None)
+                # reset form fields
+                st.session_state["recipe_link_input"] = ""
+                st.session_state["link_recipe_title"] = ""
+                st.session_state["link_special_version"] = ""
+                st.session_state["link_ingredients"] = ""
+                st.session_state["link_instructions"] = ""
+                st.session_state["link_image_upload"] = None
+
+        st.markdown("</div>", unsafe_allow_html=True)
 
 
 # ----------------------------
@@ -220,20 +233,22 @@ def add_recipe_via_link_ui():
 
 def add_recipe_manual_ui():
     """Create a recipe manually."""
-    st.markdown(
-        "<div class='card' style='max-width:600px;margin:0 auto'>",
-        unsafe_allow_html=True,
-    )
-    st.markdown("**Add Recipe Manually**")
+    with st.expander("Add Recipe Manually", expanded=False):
+        st.markdown(
+            "<div class='card' style='max-width:600px;margin:0 auto'>",
+            unsafe_allow_html=True,
+        )
 
-    with st.form("manual_recipe_form"):
-        name = st.text_input("Recipe Name")
-        special_version = st.text_input("Special Version")
-        ingredients = st.text_area("Ingredients")
-        instructions = st.text_area("Instructions")
-        notes = st.text_area("Notes")
-        tags = st.text_input("Tags (comma-separated)")
-        submitted = st.form_submit_button("Save Recipe")
+        with st.form("manual_recipe_form"):
+            name = st.text_input("Recipe Name", key="manual_recipe_name")
+            special_version = st.text_input("Special Version", key="manual_special_version")
+            ingredients = st.text_area("Ingredients", key="manual_ingredients")
+            instructions = st.text_area("Instructions", key="manual_instructions")
+            notes = st.text_area("Notes", key="manual_notes")
+            tags = st.text_input("Tags (comma-separated)", key="manual_tags")
+            submitted = st.form_submit_button("Save Recipe")
+
+        st.markdown("</div>", unsafe_allow_html=True)
 
     if submitted:
         import uuid
@@ -260,10 +275,15 @@ def add_recipe_manual_ui():
             if parsed:
                 update_recipe_with_parsed_ingredients(recipe_id, parsed)
             st.success("✅ Recipe saved!")
+            # reset form fields
+            st.session_state["manual_recipe_name"] = ""
+            st.session_state["manual_special_version"] = ""
+            st.session_state["manual_ingredients"] = ""
+            st.session_state["manual_instructions"] = ""
+            st.session_state["manual_notes"] = ""
+            st.session_state["manual_tags"] = ""
         except Exception as e:
             st.error(f"Failed to save recipe: {e}")
-
-    st.markdown("</div>", unsafe_allow_html=True)
 
 
 def _render_recipe_card(recipe: dict):
