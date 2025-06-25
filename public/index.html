@@ -120,6 +120,13 @@
       window.location.href = "/redirect.html";
     }
 
+    // Detect forced reauth from Streamlit app
+    const urlParams = new URLSearchParams(window.location.search);
+    if (urlParams.get("forceLogin") === "true") {
+      console.warn("Forced reauthentication triggered by app.");
+      signInWithRedirect(auth, provider);
+    }
+
     // Modern persistent login flow
     onAuthStateChanged(auth, async (user) => {
       if (user) {

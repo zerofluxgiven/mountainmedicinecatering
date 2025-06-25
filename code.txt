@@ -2612,6 +2612,17 @@ def handle_auth_routing():
             st.query_params.clear()
         else:
             st.error("Login failed. Invalid or expired token.")
+            import streamlit.components.v1 as components
+            components.html("""
+              <script>
+                localStorage.removeItem('mm_token');
+                localStorage.removeItem('mm_token_expiry');
+                localStorage.removeItem('mm_remember');
+                const fallback = localStorage.getItem('mm_device') || 'desktop';
+                window.location.href = '/?forceLogin=true&device=' + fallback;
+              </script>
+            """, height=0)
+            st.stop()
             return
 
     elif not get_user():
@@ -5586,6 +5597,17 @@ def handle_auth_routing():
             st.query_params.clear()
         else:
             st.error("Login failed. Invalid or expired token.")
+            import streamlit.components.v1 as components
+            components.html("""
+              <script>
+                localStorage.removeItem('mm_token');
+                localStorage.removeItem('mm_token_expiry');
+                localStorage.removeItem('mm_remember');
+                const fallback = localStorage.getItem('mm_device') || 'desktop';
+                window.location.href = '/?forceLogin=true&device=' + fallback;
+              </script>
+            """, height=0)
+            st.stop()
             return
 
     elif not get_user():
