@@ -897,6 +897,7 @@ def apply_theme():
         except Exception:
             pass
     render_event_mode_indicator()
+    render_login_status_button()
 
 # ----------------------------
 # 📱 Mobile Responsive Container
