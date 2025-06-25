@@ -199,6 +199,16 @@ def handle_auth_routing():
             st.query_params.clear()
         else:
             st.error("Login failed. Invalid or expired token.")
+            components.html("""
+              <script>
+                localStorage.removeItem("mm_token");
+                localStorage.removeItem("mm_token_expiry");
+                localStorage.removeItem("mm_remember");
+                const device = localStorage.getItem("mm_device") || "desktop";
+                window.location.href = `/login?forceLogin=true&device=${device}`;
+              </script>
+            """, height=0)
+            st.stop()
             return
 
     elif not get_user():

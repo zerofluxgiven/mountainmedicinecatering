@@ -123,6 +123,11 @@
     // Detect forced reauth from Streamlit app
     const urlParams = new URLSearchParams(window.location.search);
     if (urlParams.get("forceLogin") === "true") {
+      const device = /iphone|ipad|android/i.test(navigator.userAgent) ? "mobile" : "desktop";
+      localStorage.setItem("mm_device", device);
+      localStorage.removeItem("mm_token");
+      localStorage.removeItem("mm_token_expiry");
+      localStorage.removeItem("mm_token_handled");
       console.warn("Forced reauthentication triggered by app.");
       signInWithRedirect(auth, provider);
     }
