@@ -188,12 +188,14 @@ def handle_auth_routing():
         device = query_params.get("device", ["desktop"])[0]
         st.session_state["device_type"] = device
         st.session_state["mobile_mode"] = (device == "mobile")
+        st.session_state["__mobile_mode_initialized"] = True
 
         user = enrich_session_from_token(token)
         if user:
             st.session_state["user"] = user
             st.toast(f"Welcome {user.get('name', 'back')} 👋")
             log_user_action(user.get("id", "unknown"), user.get("role", "viewer"), "login")
+            # Only clear query params AFTER mobile_mode is saved
             st.query_params.clear()
         else:
             st.error("Login failed. Invalid or expired token.")
@@ -230,10 +232,21 @@ def main():
         "current_file_data": b"",
         "mobile_detected": st.session_state.get("mobile_mode", False),
     }
-
+    
     for key, default in default_state.items():
         if key not in st.session_state:
             st.session_state[key] = default
+
+    # Recover mobile_mode from query param if not yet initialized
+    if not st.session_state.get("__mobile_mode_initialized"):
+        device = st.query_params.get("device", ["desktop"])[0]
+        st.session_state["mobile_mode"] = (device == "mobile")
+        st.session_state["__mobile_mode_initialized"] = True
+
+    # Show mobile debug info for developers
+    st.info(
+        f"📱 Mobile mode: {st.session_state.get('mobile_mode')} | Device param: {st.query_params.get('device')}"
+    )
 
     apply_theme()
     inject_layout_fixes()
