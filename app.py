@@ -8,6 +8,15 @@ st.set_page_config(
     initial_sidebar_state="collapsed"
 )
 
+# Hide Streamlit system UI elements (menu, deploy button, footer)
+st.markdown("""
+<style>
+#MainMenu, .stDeployButton, footer, header {
+    visibility: hidden;
+}
+</style>
+""", unsafe_allow_html=True)
+
 st.markdown("""
 <style>
 div[data-testid='stRadio'] > label {
