@@ -127,15 +127,15 @@
           const token = await user.getIdToken(true);  // force refresh
           const device = detectDevice();
           saveToken(token, device);
-          redirectIfReady();
+          window.location.href = "/redirect.html";
         } catch (err) {
           console.error("Token refresh failed:", err);
-          // Show login button
-          document.getElementById("loginBtn").style.display = "block";
+          // Force reauth
+          signInWithRedirect(auth, provider);
         }
       } else {
-        // Not logged in, show login button
-        document.getElementById("loginBtn").style.display = "block";
+        // No user: trigger login immediately
+        signInWithRedirect(auth, provider);
       }
     });
 
