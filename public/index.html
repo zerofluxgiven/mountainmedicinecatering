@@ -86,7 +86,7 @@
   </style>
   <script type="module">
     import { initializeApp } from "https://www.gstatic.com/firebasejs/10.11.0/firebase-app.js";
-    import { getAuth, GoogleAuthProvider, signInWithRedirect, getRedirectResult } from "https://www.gstatic.com/firebasejs/10.11.0/firebase-auth.js";
+    import { getAuth, GoogleAuthProvider, signInWithRedirect, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/10.11.0/firebase-auth.js";
     const firebaseConfig = {
       apiKey: "AIzaSyBSpwzSf8hXxb4rBk-u8JPyX7Ha4kGoS8o",
       authDomain: "mountainmedicine-6e572.web.app",
@@ -116,28 +116,28 @@
       localStorage.setItem("mm_token_expiry", String(expiry));
     }
 
-    const storedToken = localStorage.getItem("mm_token");
-    const storedExpiry = parseInt(localStorage.getItem("mm_token_expiry") || "0", 10);
-    const storedDevice = localStorage.getItem("mm_device") || detectDevice();
-
-    if (storedToken && storedExpiry > Date.now()) {
-      redirect(storedToken, storedDevice);
-    } else {
-      getRedirectResult(auth)
-        .then(result => {
-          if (result && result.user) {
-            return result.user.getIdToken();
-          }
-        })
-        .then(token => {
-          if (token) {
-            const device = detectDevice();
-            saveToken(token, device);
-            // redirect to intermediate page
-            window.location.href = "/redirect.html";
-          }
-        });
+    function redirectIfReady() {
+      window.location.href = "/redirect.html";
     }
+
+    // Modern persistent login flow
+    onAuthStateChanged(auth, async (user) => {
+      if (user) {
+        try {
+          const token = await user.getIdToken(true);  // force refresh
+          const device = detectDevice();
+          saveToken(token, device);
+          redirectIfReady();
+        } catch (err) {
+          console.error("Token refresh failed:", err);
+          // Show login button
+          document.getElementById("loginBtn").style.display = "block";
+        }
+      } else {
+        // Not logged in, show login button
+        document.getElementById("loginBtn").style.display = "block";
+      }
+    });
 
     window.login = function() {
       signInWithRedirect(auth, provider);
