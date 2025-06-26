@@ -157,8 +157,6 @@ def handle_auth():
 
         user = enrich_session_from_token(token)
 
-        })
-
         if user:
             st.session_state["user"] = user
             st.toast(f"Welcome {user.get('name', 'back')} 👋")
