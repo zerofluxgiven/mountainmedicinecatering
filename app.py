@@ -198,7 +198,7 @@ def handle_auth():
         if (token) {
           window.location.href = window.location.pathname + `?token=${token}&device=${device}`;
         } else {
-          window.location.href = "/";
+          window.location.href = "https://mountainmedicine-6e572.web.app/?reason=unauthenticated";
         }
         </script>
         """, height=0)
