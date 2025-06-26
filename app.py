@@ -57,14 +57,18 @@ def enforce_session_expiry():
         st.session_state.pop("token_expiry", None)
         with st.empty():
             components.html("""
+            <div style="font-family:sans-serif; padding:2rem; text-align:center;">
+              <h2>Session expired</h2>
+              <p>Redirecting to login...</p>
+            </div>
             <script>
               localStorage.removeItem("mm_token");
               localStorage.removeItem("mm_token_expiry");
               localStorage.removeItem("mm_remember");
               localStorage.removeItem("mm_token_handled");
-              window.location.href='https://mountainmedicine-6e572.web.app/';
+              window.location.href='https://mountainmedicine-6e572.web.app/?reason=expired';
             </script>
-            """, height=0)
+            """, height=200)
         st.stop()
 
 def initialize_event_mode_state():
