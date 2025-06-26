@@ -153,12 +153,17 @@ def handle_auth():
               localStorage.removeItem('mm_token_expiry');
               localStorage.removeItem('mm_token_handled');
               localStorage.removeItem('mm_device');
-              window.location.href = "https://mountainmedicine-6e572.web.app/?reason=logout";
             </script>
             """,
             unsafe_allow_html=True,
         )
-
+        
+        components.html(
+            """
+            <meta http-equiv="refresh" content="0;url=https://mountainmedicine-6e572.web.app/?reason=logout">
+            """,
+            height=0
+        )
         st.stop()
 
     if "token" in query_params and "user" not in st.session_state:
@@ -184,12 +189,7 @@ def handle_auth():
             st.session_state["__redirect_fallback"] = True
             with st.empty():
                 components.html("""
-                <script>
-                  localStorage.removeItem('mm_token');
-                  localStorage.removeItem('mm_token_expiry');
-                  localStorage.removeItem('mm_token_handled');
-                  window.location.href = "https://mountainmedicine-6e572.web.app/?reason=expired";
-                </script>
+                <meta http-equiv="refresh" content="0;url=https://mountainmedicine-6e572.web.app/?reason=expired">
                 """, height=0)
             st.stop()
 
