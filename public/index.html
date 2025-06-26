@@ -144,12 +144,9 @@
           window.location.href = "/redirect.html";
         } catch (err) {
           console.error("Token refresh failed:", err);
-          // Force reauth
-          signInWithRedirect(auth, provider);
         }
       } else {
-        // No user: trigger login immediately
-        signInWithRedirect(auth, provider);
+        console.log("No user detected. Waiting for manual login.");
       }
     });
 
