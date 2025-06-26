@@ -54,7 +54,8 @@ components.html("""
     localStorage.removeItem('mm_token');
     localStorage.removeItem('mm_token_expiry');
     localStorage.removeItem('mm_remember');
-    window.location.href = '/login';
+    localStorage.removeItem('mm_token_handled');
+    window.location.href = '/';
   }
   const token = localStorage.getItem('mm_token') || "";
   let device = localStorage.getItem('mm_device');
@@ -69,6 +70,9 @@ components.html("""
     localStorage.setItem('mm_token_handled', 'true');
     window.location.href = window.location.pathname + query;
   }
+  setTimeout(() => {
+    localStorage.setItem('mm_token_handled', 'false');
+  }, 3000);
   window.addEventListener('pagehide', () => {
     localStorage.setItem('mm_token_handled', 'false');
   });
@@ -76,10 +80,15 @@ components.html("""
     if (document.visibilityState === 'hidden') {
       localStorage.setItem('mm_token_handled', 'false');
     } else if (document.visibilityState === 'visible') {
+      // Only reload if persisted from bfcache
       window.location.reload();
     }
   });
-  window.addEventListener('pageshow', () => window.location.reload());
+  window.addEventListener('pageshow', (event) => {
+    if (event.persisted) {
+      window.location.reload();
+    }
+  });
 </script>
 """, height=0)
 
@@ -95,7 +104,8 @@ def enforce_session_expiry():
         localStorage.removeItem('mm_token');
         localStorage.removeItem('mm_token_expiry');
         localStorage.removeItem('mm_remember');
-        window.location.href='/login';
+        localStorage.removeItem('mm_token_handled');
+        window.location.href='/';
         </script>
         """, height=0)
         st.stop()
@@ -146,14 +156,30 @@ def handle_auth():
         st.session_state["__mobile_mode_initialized"] = True
 
         user = enrich_session_from_token(token)
+
+        st.write("🧪 Auth State", {
+            "token": token,
+            "user": st.session_state.get("user"),
+            "token_expiry": st.session_state.get("token_expiry"),
+            "_auth_debug": st.session_state.get("_auth_debug")
+        })
+
         if user:
             st.session_state["user"] = user
             st.toast(f"Welcome {user.get('name', 'back')} 👋")
             log_user_action(user.get("id", "unknown"), user.get("role", "viewer"), "login")
             st.query_params.clear()
         else:
-            st.error("Login failed. Invalid or expired token.")
-            return
+            st.session_state.clear()
+            components.html("""
+            <script>
+            localStorage.removeItem('mm_token');
+            localStorage.removeItem('mm_token_expiry');
+            localStorage.removeItem('mm_token_handled');
+            window.location.href = "/";
+            </script>
+            """, height=0)
+            st.stop()
 
     elif "user" not in st.session_state:
         components.html("""
