@@ -47,50 +47,6 @@ div[data-testid='stRadio'] > label {
 </style>
 """, unsafe_allow_html=True)
 
-components.html("""
-<script>
-  const expiry = parseInt(localStorage.getItem('mm_token_expiry') || '0', 10);
-  if (expiry && Date.now() > expiry) {
-    localStorage.removeItem('mm_token');
-    localStorage.removeItem('mm_token_expiry');
-    localStorage.removeItem('mm_remember');
-    localStorage.removeItem('mm_token_handled');
-    window.location.href = '/';
-  }
-  const token = localStorage.getItem('mm_token') || "";
-  let device = localStorage.getItem('mm_device');
-  if (!device) {
-    const ua = navigator.userAgent.toLowerCase();
-    device = /iphone|ipad|android/.test(ua) ? "mobile" : "desktop";
-    localStorage.setItem('mm_device', device);
-  }
-  const handled = localStorage.getItem('mm_token_handled') === 'true';
-  const query = `?token=${token}&device=${device}`;
-  if (!window.location.search.includes('token=') && token && !handled) {
-    localStorage.setItem('mm_token_handled', 'true');
-    window.location.href = window.location.pathname + query;
-  }
-  setTimeout(() => {
-    localStorage.setItem('mm_token_handled', 'false');
-  }, 3000);
-  window.addEventListener('pagehide', () => {
-    localStorage.setItem('mm_token_handled', 'false');
-  });
-  document.addEventListener('visibilitychange', () => {
-    if (document.visibilityState === 'hidden') {
-      localStorage.setItem('mm_token_handled', 'false');
-    } else if (document.visibilityState === 'visible') {
-      // Only reload if persisted from bfcache
-      window.location.reload();
-    }
-  });
-  window.addEventListener('pageshow', (event) => {
-    if (event.persisted) {
-      window.location.reload();
-    }
-  });
-</script>
-""", height=0)
 
 PUBLIC_MODE = False
 
