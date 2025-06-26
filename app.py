@@ -1,31 +1,51 @@
-from upload import upload_ui_mobile, upload_ui_desktop
 import streamlit as st
+import streamlit.components.v1 as components
+from datetime import datetime
 
-# ✅ Correct Streamlit config placed immediately after import
+from auth import get_user, get_user_role
+from user_session_initializer import enrich_session_from_token
+from layout import apply_theme, render_top_navbar, render_enhanced_sidebar, render_leave_event_button, inject_layout_fixes
+from ui_components import show_event_mode_banner
+from utils import format_date, get_active_event, session_get, log_user_action
+from dashboard import render_dashboard
+from mobile_layout import mobile_layout
+from mobile_components import mobile_safe_columns
+from notifications import notifications_sidebar
+from landing import show as show_landing
+from events import enhanced_event_ui, get_all_events
+from post_event import post_event_ui
+from file_storage import file_manager_ui, show_file_analytics
+from receipts import receipt_upload_ui
+from pdf_export import pdf_export_ui
+from event_planning_dashboard import event_planning_dashboard_ui
+from event_modifications import event_modifications_ui
+from bulk_suggestions import bulk_suggestions_ui
+from audit import audit_log_ui
+from roles import role_admin_ui as admin_panel_ui
+from ingredients import ingredient_catalogue_ui
+from allergies import allergy_management_ui
+from packing import packing_ui
+from ai_chat import ai_chat_ui
+from recipes import recipes_page
+from admin_utilities import admin_utilities_ui
+from historical_menus import historical_menus_ui
+
 st.set_page_config(
     page_title="Mountain Medicine Catering",
     layout="wide",
     initial_sidebar_state="collapsed"
 )
 
-# Hide Streamlit system UI elements (menu, deploy button, footer)
 st.markdown("""
 <style>
 #MainMenu, .stDeployButton, footer, header {
     visibility: hidden;
 }
-</style>
-""", unsafe_allow_html=True)
-
-st.markdown("""
-<style>
 div[data-testid='stRadio'] > label {
     display: none;
 }
 </style>
 """, unsafe_allow_html=True)
-
-import streamlit.components.v1 as components
 
 components.html("""
 <script>
@@ -49,105 +69,52 @@ components.html("""
     localStorage.setItem('mm_token_handled', 'true');
     window.location.href = window.location.pathname + query;
   }
-  const refreshSession = () => {
-    const token = localStorage.getItem('mm_token') || "";
-    const device = localStorage.getItem('mm_device') || 'desktop';
-    const handled = localStorage.getItem('mm_token_handled') === 'true';
-    if (!window.location.search.includes('token=') && token && !handled) {
-      localStorage.setItem('mm_token_handled', 'true');
-      window.location.href = window.location.pathname + `?token=${token}&device=${device}`;
-    }
-  };
-
   window.addEventListener('pagehide', () => {
     localStorage.setItem('mm_token_handled', 'false');
   });
-
   document.addEventListener('visibilitychange', () => {
     if (document.visibilityState === 'hidden') {
       localStorage.setItem('mm_token_handled', 'false');
     } else if (document.visibilityState === 'visible') {
-      refreshSession();
+      window.location.reload();
     }
   });
-
-  window.addEventListener('pageshow', refreshSession);
-  window.addEventListener('focus', refreshSession);
+  window.addEventListener('pageshow', () => window.location.reload());
 </script>
 """, height=0)
 
-from auth import get_user, get_user_role
-from user_session_initializer import enrich_session_from_token
-from dashboard import render_dashboard
-from mobile_layout import mobile_layout
-from mobile_components import mobile_safe_columns
-from notifications import notifications_sidebar
-from datetime import datetime
-from utils import format_date, get_active_event, session_get, log_user_action
-from layout import apply_theme, render_top_navbar, render_enhanced_sidebar, render_leave_event_button
-from ui_components import show_event_mode_banner, inject_layout_fixes
-from landing import show as show_landing
-from events import enhanced_event_ui, get_all_events
-from post_event import post_event_ui
-from file_storage import file_manager_ui, show_file_analytics
-from receipts import receipt_upload_ui
-from pdf_export import pdf_export_ui
-from event_planning_dashboard import event_planning_dashboard_ui
-from event_modifications import event_modifications_ui
-from bulk_suggestions import bulk_suggestions_ui
-from audit import audit_log_ui
-from roles import role_admin_ui as admin_panel_ui
-from ingredients import ingredient_catalogue_ui
-from allergies import allergy_management_ui
-from packing import packing_ui
-from ai_chat import ai_chat_ui
-from recipes import recipes_page
-from admin_utilities import admin_utilities_ui
-from historical_menus import historical_menus_ui
+PUBLIC_MODE = False
 
 def enforce_session_expiry():
     expiry_ts = st.session_state.get("token_expiry")
     if expiry_ts and datetime.utcnow().timestamp() > expiry_ts:
         st.session_state.pop("user", None)
         st.session_state.pop("token_expiry", None)
-        import streamlit.components.v1 as components
-        components.html("<script>localStorage.removeItem('mm_token');localStorage.removeItem('mm_token_expiry');localStorage.removeItem('mm_remember');window.location.href='/login';</script>", height=0)
+        components.html("""
+        <script>
+        localStorage.removeItem('mm_token');
+        localStorage.removeItem('mm_token_expiry');
+        localStorage.removeItem('mm_remember');
+        window.location.href='/login';
+        </script>
+        """, height=0)
         st.stop()
-
-PUBLIC_MODE = False
-
-TABS = {
-    "Dashboard": "dashboard",
-    "Events": "events",
-    "Recipes": "recipes",
-    "Ingredients": "ingredients",
-    "Allergies": "allergies",
-    "Historical Menus": "historical_menus",
-    "Upload": "files",
-    "Receipts": "receipts",
-    "Admin Panel": "admin",
-    "Assistant": "assistant"
-}
 
 def initialize_event_mode_state():
     user = session_get("user")
     if not user:
         return
-
     user_id = user.get("id")
     if not user_id:
         return
-
     session_key = f"initialized_{user_id}"
     if session_key not in st.session_state:
         st.session_state[session_key] = True
-
         if "active_event_id" not in st.session_state:
             st.session_state["active_event_id"] = None
             st.session_state["active_event"] = None
-
         try:
-            from firebase_init import db, firestore
+            from firebase_init import db
             user_doc = db.collection("users").document(user_id).get()
             if user_doc.exists:
                 user_data = user_doc.to_dict()
@@ -157,26 +124,8 @@ def initialize_event_mode_state():
         except Exception:
             pass
 
-def handle_auth_routing():
-    import streamlit.components.v1 as components
+def handle_auth():
     query_params = st.query_params
-
-    user_logged_in = "user" in st.session_state
-
-    if "token" not in query_params and not user_logged_in:
-        components.html('''
-        <script>
-        const token = localStorage.getItem("mm_token") || "";
-        const device = localStorage.getItem("mm_device") || "desktop";
-        if (token) {
-            const query = `?token=${token}&device=${device}`;
-            window.location.href = window.location.pathname + query;
-        } else {
-            window.location.href = "/login";
-        }
-        </script>
-        ''', height=0)
-        st.stop()
 
     if query_params.get("logout") == ["true"]:
         log_user_action("logout")
@@ -187,13 +136,10 @@ def handle_auth_routing():
         st.toast("You have been logged out")
         st.switch_page("/login")
 
-    elif "token" in query_params and "user" not in st.session_state:
+    if "token" in query_params and "user" not in st.session_state:
         token = query_params.get("token")
         if isinstance(token, list):
             token = token[0]
-        if not isinstance(token, str) or "." not in token:
-            st.error("Malformed or missing token.")
-            return
         device = query_params.get("device", ["desktop"])[0]
         st.session_state["device_type"] = device
         st.session_state["mobile_mode"] = (device == "mobile")
@@ -204,26 +150,24 @@ def handle_auth_routing():
             st.session_state["user"] = user
             st.toast(f"Welcome {user.get('name', 'back')} 👋")
             log_user_action(user.get("id", "unknown"), user.get("role", "viewer"), "login")
-            # Only clear query params AFTER mobile_mode is saved
             st.query_params.clear()
         else:
             st.error("Login failed. Invalid or expired token.")
-            components.html("""
-              <script>
-                localStorage.removeItem("mm_token");
-                localStorage.removeItem("mm_token_expiry");
-                localStorage.removeItem("mm_remember");
-                const device = localStorage.getItem("mm_device") || "desktop";
-                window.location.href = `/login?forceLogin=true&device=${device}`;
-              </script>
-            """, height=0)
-            st.stop()
             return
 
-    elif not get_user():
-        st.title("🔐 Login Required")
-        st.warning("Please log in to continue.")
-        return
+    elif "user" not in st.session_state:
+        components.html("""
+        <script>
+        const token = localStorage.getItem("mm_token") || "";
+        const device = localStorage.getItem("mm_device") || "desktop";
+        if (token) {
+          window.location.href = window.location.pathname + `?token=${token}&device=${device}`;
+        } else {
+          window.location.href = "/login";
+        }
+        </script>
+        """, height=0)
+        st.stop()
 
 def validate_tab_state(visible_tabs):
     if "top_nav" not in st.session_state or st.session_state["top_nav"] not in visible_tabs:
@@ -231,15 +175,28 @@ def validate_tab_state(visible_tabs):
 
 def main():
     enforce_session_expiry()
-    handle_auth_routing()
-    if not get_user():
-        st.error("🚫 Login failed or not completed. Please refresh or reauthenticate.")
+    handle_auth()
+    user = get_user()
+
+    if PUBLIC_MODE and not user:
+        show_landing()
         return
 
-    from firebase_init import db, firestore
+    if st.session_state.get("active_event_id"):
+        show_event_mode_banner()
+
+
+    apply_theme()
+    inject_layout_fixes()
+
+    if not st.session_state.get("__mobile_mode_initialized"):
+        device = st.query_params.get("device", ["desktop"])[0]
+        st.session_state["mobile_mode"] = (device == "mobile")
+        st.session_state["__mobile_mode_initialized"] = True
 
     default_state = {
         "top_nav": "Dashboard",
+        "mobile_detected": st.session_state.get("mobile_mode", False),
         "next_nav": None,
         "active_event": None,
         "active_event_id": None,
@@ -249,90 +206,49 @@ def main():
         "viewing_menu_event_id": None,
         "show_menu_form": False,
         "current_file_data": b"",
-        "mobile_detected": st.session_state.get("mobile_mode", False),
     }
-    
-    for key, default in default_state.items():
-        if key not in st.session_state:
-            st.session_state[key] = default
-
-    # Recover mobile_mode from query param if not yet initialized
-    if not st.session_state.get("__mobile_mode_initialized"):
-        device = st.query_params.get("device", ["desktop"])[0]
-        st.session_state["mobile_mode"] = (device == "mobile")
-        st.session_state["__mobile_mode_initialized"] = True
-
-    # Show mobile debug info for developers
-    st.info(
-        f"📱 Mobile mode: {st.session_state.get('mobile_mode')} | Device param: {st.query_params.get('device')}"
-    )
-
-    apply_theme()
-    inject_layout_fixes()
-    user = get_user()
-
-    if PUBLIC_MODE and not user:
-        show_landing()
-        return
+    for k, v in default_state.items():
+        if k not in st.session_state:
+            st.session_state[k] = v
 
     initialize_event_mode_state()
+
+    from firebase_init import db, firestore
+
+    TABS = {
+        "Dashboard": render_dashboard,
+        "Events": enhanced_event_ui,
+        "Recipes": recipes_page,
+        "Ingredients": ingredient_catalogue_ui,
+        "Allergies": allergy_management_ui,
+        "Historical Menus": historical_menus_ui,
+        "Upload": file_manager_ui,
+        "Receipts": receipt_upload_ui,
+        "Admin Panel": render_admin_panel,
+        "Assistant": ai_chat_ui
+    }
 
     visible_tabs = list(TABS.keys())
     role = user.get("role", "viewer") if user else "viewer"
     if role != "admin":
-        for admin_tab in ["Admin Panel", "Suggestions", "Bulk Suggestions", "Audit Logs", "PDF Export"]:
+        for admin_tab in ["Admin Panel"]:
             if admin_tab in visible_tabs:
                 visible_tabs.remove(admin_tab)
 
-    next_nav = st.session_state.pop("next_nav", None)
-    if next_nav in visible_tabs:
-        st.session_state["top_nav"] = next_nav
-
     validate_tab_state(visible_tabs)
-
     selected_tab = render_top_navbar(visible_tabs)
 
-    if not selected_tab:
-        selected_tab = st.session_state.get("top_nav", "Dashboard")
-
-    if selected_tab not in visible_tabs:
-        st.warning(f"⚠️ Invalid tab: {selected_tab}. Resetting.")
-        st.session_state["top_nav"] = visible_tabs[0]
-        st.rerun()
-
-    try:
-        if selected_tab == "Dashboard":
-            render_dashboard(user)
-        elif selected_tab == "Events":
-            render_leave_event_button("main")
-            enhanced_event_ui(user)
-        elif selected_tab == "Recipes":
-            recipes_page()
-        elif selected_tab == "Ingredients":
-            ingredient_catalogue_ui(user)
-        elif selected_tab == "Allergies":
-            allergy_management_ui(user)
-        elif selected_tab == "Historical Menus":
-            historical_menus_ui()
-        elif selected_tab == "Upload":
-            upload_tab, analytics_tab = st.tabs(["📄 Upload Files", "📊 File Analytics"])
-            with upload_tab:
-                if st.session_state.get("mobile_mode"):
-                    upload_ui_mobile()
-                else:
-                    upload_ui_desktop()
-            with analytics_tab:
+    if selected_tab in TABS:
+        try:
+            if selected_tab == "Upload":
+                upload_ui_mobile() if st.session_state.get("mobile_mode") else upload_ui_desktop()
                 show_file_analytics()
-        elif selected_tab == "Receipts":
-            receipt_upload_ui(user)
-        elif selected_tab == "Admin Panel":
-            render_admin_panel(user)
-        elif selected_tab == "Assistant":
-            ai_chat_ui()
-        else:
-            st.warning("⚠️ Unknown tab selected.")
-    except Exception as e:
-        st.error(f"🚨 Failed to render '{selected_tab}' tab: {e}")
+            else:
+                TABS[selected_tab](user)
+        except Exception as e:
+            st.error(f"Failed to render '{selected_tab}': {e}")
+    else:
+        st.warning(f"⚠️ Unknown tab: {selected_tab}")
 
 def render_admin_panel(user):
     role = get_user_role()
@@ -341,5 +257,4 @@ def render_admin_panel(user):
         return
     admin_panel_ui()
 
-if __name__ == "__main__":
-    main()
+main()
