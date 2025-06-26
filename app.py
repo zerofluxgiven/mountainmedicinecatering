@@ -144,6 +144,7 @@ def handle_auth():
         st.session_state.clear()
         st.session_state.update(preserved)
         st.toast("You have been logged out")
+
         st.markdown(
             """
             <script>
@@ -156,6 +157,7 @@ def handle_auth():
             """,
             unsafe_allow_html=True,
         )
+
         st.stop()
 
     if "token" in query_params and "user" not in st.session_state:
@@ -196,7 +198,9 @@ def handle_auth():
         if (token) {
           window.location.href = window.location.pathname + `?token=${token}&device=${device}`;
         } else {
+
           window.location.href = "https://mountainmedicine-6e572.web.app/?forceLogin=true";
+
         }
         </script>
         """, height=0)

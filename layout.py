@@ -1111,6 +1111,8 @@ def render_login_status_button():
     else:
         st.markdown("""
         <div style='position: fixed; top: 1rem; right: 1rem; z-index: 999;'>
+
             <button onclick=\"window.location.href='https://mountainmedicine-6e572.web.app/?forceLogin=true'\">🔐 Login</button>
+
         </div>
         """, unsafe_allow_html=True)
