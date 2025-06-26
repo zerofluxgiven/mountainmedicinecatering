@@ -4,6 +4,7 @@ from firebase_admin import auth as admin_auth
 from firebase_init import db
 from utils import session_get, session_set
 from datetime import datetime
+import logging
 
 # ----------------------------
 # 🔐 Session Helpers
@@ -129,7 +130,7 @@ def enrich_session_from_token(token: str) -> dict | None:
             "error": str(e),
             "timestamp": str(datetime.utcnow())
         }
-        print(f"[Auth] Token enrichment failed: {e}")
+        logging.warning(f"[Auth] Token enrichment failed silently: {e}")
         return None
 
 # ----------------------------
