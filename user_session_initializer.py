@@ -2,6 +2,7 @@
 import streamlit as st
 from firebase_admin import auth as firebase_auth
 from firebase_init import db
+import logging
 
 
 def enrich_session_from_token(token: str) -> dict:
@@ -31,5 +32,5 @@ def enrich_session_from_token(token: str) -> dict:
         return user_data
 
     except Exception as e:
-        st.error(f"Authentication failed: {e}")
+        logging.warning(f"[Auth] Silent token failure: {e}")
         return None
