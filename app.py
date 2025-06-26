@@ -152,7 +152,7 @@ def handle_auth():
               localStorage.removeItem('mm_token_expiry');
               localStorage.removeItem('mm_token_handled');
               localStorage.removeItem('mm_device');
-              window.location.href = "/";
+              window.location.href = "https://mountainmedicine-6e572.web.app/?reason=logout";
             </script>
             """,
             unsafe_allow_html=True,
@@ -185,7 +185,7 @@ def handle_auth():
             localStorage.removeItem('mm_token');
             localStorage.removeItem('mm_token_expiry');
             localStorage.removeItem('mm_token_handled');
-            window.location.href = "https://mountainmedicine-6e572.web.app/?forceLogin=true";
+            window.location.href = "https://mountainmedicine-6e572.web.app/?reason=expired";
             </script>
             """, height=0)
             st.stop()
