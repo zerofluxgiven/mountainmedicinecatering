@@ -190,7 +190,7 @@ def handle_auth():
             """, height=0)
             st.stop()
 
-    elif "user" not in st.session_state:
+    elif "user" not in st.session_state and "token" not in query_params:
         components.html("""
         <script>
         const token = localStorage.getItem("mm_token") || "";
@@ -198,9 +198,7 @@ def handle_auth():
         if (token) {
           window.location.href = window.location.pathname + `?token=${token}&device=${device}`;
         } else {
-
-          window.location.href = "https://mountainmedicine-6e572.web.app/?forceLogin=true";
-
+          window.location.href = "/";
         }
         </script>
         """, height=0)
