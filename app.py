@@ -4,8 +4,8 @@ from datetime import datetime
 
 from auth import get_user, get_user_role
 from user_session_initializer import enrich_session_from_token
-from layout import apply_theme, render_top_navbar, render_enhanced_sidebar, render_leave_event_button, inject_layout_fixes
-from ui_components import show_event_mode_banner
+from layout import apply_theme, render_top_navbar, render_enhanced_sidebar, render_leave_event_button
+from ui_components import show_event_mode_banner, inject_layout_fixes
 from utils import format_date, get_active_event, session_get, log_user_action
 from dashboard import render_dashboard
 from mobile_layout import mobile_layout
