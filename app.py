@@ -144,15 +144,20 @@ def handle_auth():
         st.session_state.clear()
         st.session_state.update(preserved)
         st.toast("You have been logged out")
-        components.html("""
-        <script>
-          localStorage.removeItem('mm_token');
-          localStorage.removeItem('mm_token_expiry');
-          localStorage.removeItem('mm_token_handled');
-          localStorage.removeItem('mm_device');
-          window.location.href='/?forceLogin=true';
-        </script>
-        """, height=0)
+
+        st.markdown(
+            """
+            <script>
+              localStorage.removeItem('mm_token');
+              localStorage.removeItem('mm_token_expiry');
+              localStorage.removeItem('mm_token_handled');
+              localStorage.removeItem('mm_device');
+              window.location.href='https://mountainmedicine-6e572.web.app/?forceLogin=true';
+            </script>
+            """,
+            unsafe_allow_html=True,
+        )
+
         st.stop()
 
     if "token" in query_params and "user" not in st.session_state:
@@ -168,7 +173,9 @@ def handle_auth():
 
         if user:
             st.session_state["user"] = user
-            st.toast(f"Welcome {user.get('name', 'back')} 👋")
+            if not st.session_state.get("__welcome_shown"):
+                st.toast(f"Welcome {user.get('name', 'back')} 👋")
+                st.session_state["__welcome_shown"] = True
             log_user_action(user.get("id", "unknown"), user.get("role", "viewer"), "login")
             st.query_params.clear()
         else:
@@ -178,7 +185,7 @@ def handle_auth():
             localStorage.removeItem('mm_token');
             localStorage.removeItem('mm_token_expiry');
             localStorage.removeItem('mm_token_handled');
-            window.location.href = "/";
+            window.location.href = "https://mountainmedicine-6e572.web.app/?forceLogin=true";
             </script>
             """, height=0)
             st.stop()
@@ -191,7 +198,9 @@ def handle_auth():
         if (token) {
           window.location.href = window.location.pathname + `?token=${token}&device=${device}`;
         } else {
-          window.location.href = "/?forceLogin=true";
+
+          window.location.href = "https://mountainmedicine-6e572.web.app/?forceLogin=true";
+
         }
         </script>
         """, height=0)
