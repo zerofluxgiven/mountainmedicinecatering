@@ -99,15 +99,16 @@ def enforce_session_expiry():
     if expiry_ts and datetime.utcnow().timestamp() > expiry_ts:
         st.session_state.pop("user", None)
         st.session_state.pop("token_expiry", None)
-        st.empty().html("""
-        <script>
-        localStorage.removeItem('mm_token');
-        localStorage.removeItem('mm_token_expiry');
-        localStorage.removeItem('mm_remember');
-        localStorage.removeItem('mm_token_handled');
-        window.location.href='/';
-        </script>
-        """, height=0)
+        with st.empty():
+            components.html("""
+            <script>
+              localStorage.removeItem("mm_token");
+              localStorage.removeItem("mm_token_expiry");
+              localStorage.removeItem("mm_remember");
+              localStorage.removeItem("mm_token_handled");
+              window.location.href='/';
+            </script>
+            """, height=0)
         st.stop()
 
 def initialize_event_mode_state():
@@ -181,14 +182,15 @@ def handle_auth():
         else:
             st.session_state.clear()
             st.session_state["__redirect_fallback"] = True
-            st.empty().html("""
-            <script>
-            localStorage.removeItem('mm_token');
-            localStorage.removeItem('mm_token_expiry');
-            localStorage.removeItem('mm_token_handled');
-            window.location.href = "https://mountainmedicine-6e572.web.app/?reason=expired";
-            </script>
-            """, height=0)
+            with st.empty():
+                components.html("""
+                <script>
+                  localStorage.removeItem('mm_token');
+                  localStorage.removeItem('mm_token_expiry');
+                  localStorage.removeItem('mm_token_handled');
+                  window.location.href = "https://mountainmedicine-6e572.web.app/?reason=expired";
+                </script>
+                """, height=0)
             st.stop()
 
     elif "user" not in st.session_state and "token" not in query_params:
