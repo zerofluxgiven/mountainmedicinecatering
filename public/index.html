@@ -86,7 +86,7 @@
   </style>
   <script type="module">
     import { initializeApp } from "https://www.gstatic.com/firebasejs/10.11.0/firebase-app.js";
-    import { getAuth, GoogleAuthProvider, signInWithRedirect, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/10.11.0/firebase-auth.js";
+    import { getAuth, GoogleAuthProvider, signInWithRedirect, onAuthStateChanged, signOut } from "https://www.gstatic.com/firebasejs/10.11.0/firebase-auth.js";
     const firebaseConfig = {
       apiKey: "AIzaSyBSpwzSf8hXxb4rBk-u8JPyX7Ha4kGoS8o",
       authDomain: "mountainmedicine-6e572.web.app",
@@ -100,6 +100,7 @@
     const app = initializeApp(firebaseConfig);
     const auth = getAuth(app);
     const provider = new GoogleAuthProvider();
+    provider.setCustomParameters({ prompt: 'select_account' });
 
     function detectDevice() {
       return /iphone|ipad|android/i.test(navigator.userAgent) ? "mobile" : "desktop";
@@ -129,6 +130,7 @@
       localStorage.removeItem("mm_token_expiry");
       localStorage.removeItem("mm_token_handled");
       console.warn("Forced reauthentication triggered by app.");
+      await signOut(auth);
       signInWithRedirect(auth, provider);
     }
 
