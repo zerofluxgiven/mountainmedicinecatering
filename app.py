@@ -157,11 +157,6 @@ def handle_auth():
 
         user = enrich_session_from_token(token)
 
-        st.write("🧪 Auth State", {
-            "token": token,
-            "user": st.session_state.get("user"),
-            "token_expiry": st.session_state.get("token_expiry"),
-            "_auth_debug": st.session_state.get("_auth_debug")
         })
 
         if user:
@@ -256,6 +251,12 @@ def main():
 
     visible_tabs = list(TABS.keys())
     role = user.get("role", "viewer") if user else "viewer"
+    if user:
+        st.session_state["user"] = user
+        st.session_state["token_expiry"] = user.get("token_expiry")  # ✅ Add this line
+        st.toast(f"Welcome {user.get('name', 'back')} 👋")
+        log_user_action(user.get("id", "unknown"), user.get("role", "viewer"), "login")
+        st.query_params.clear()
     if role != "admin":
         for admin_tab in ["Admin Panel"]:
             if admin_tab in visible_tabs:
