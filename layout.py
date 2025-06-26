@@ -1105,14 +1105,12 @@ def render_login_status_button():
         name = user.get("name") or user.get("email")
         st.markdown(f"""
         <div style='position: fixed; top: 1rem; right: 1rem; z-index: 999;'>
-            <form action='/' method='post'>
-                <button onclick=\"window.location.href='/?logout=true'\">🔓 {name}</button>
-            </form>
+            <button onclick=\"window.location.href='/?logout=true'\">🔓 {name}</button>
         </div>
         """, unsafe_allow_html=True)
     else:
         st.markdown("""
         <div style='position: fixed; top: 1rem; right: 1rem; z-index: 999;'>
-            <button onclick=\"window.location.href='/login'\">🔐 Login</button>
+            <button onclick=\"window.location.href='/?forceLogin=true'\">🔐 Login</button>
         </div>
         """, unsafe_allow_html=True)
