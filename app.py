@@ -99,7 +99,7 @@ def enforce_session_expiry():
     if expiry_ts and datetime.utcnow().timestamp() > expiry_ts:
         st.session_state.pop("user", None)
         st.session_state.pop("token_expiry", None)
-        components.html("""
+        st.empty().html("""
         <script>
         localStorage.removeItem('mm_token');
         localStorage.removeItem('mm_token_expiry');
@@ -180,7 +180,8 @@ def handle_auth():
             st.query_params.clear()
         else:
             st.session_state.clear()
-            components.html("""
+            st.session_state["__redirect_fallback"] = True
+            st.empty().html("""
             <script>
             localStorage.removeItem('mm_token');
             localStorage.removeItem('mm_token_expiry');
