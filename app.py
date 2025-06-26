@@ -62,7 +62,7 @@ def enforce_session_expiry():
               localStorage.removeItem("mm_token_expiry");
               localStorage.removeItem("mm_remember");
               localStorage.removeItem("mm_token_handled");
-              window.location.href='/';
+              window.location.href='https://mountainmedicine-6e572.web.app/';
             </script>
             """, height=0)
         st.stop()
