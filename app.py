@@ -152,7 +152,7 @@ def handle_auth():
               localStorage.removeItem('mm_token_expiry');
               localStorage.removeItem('mm_token_handled');
               localStorage.removeItem('mm_device');
-              window.location.href='https://mountainmedicine-6e572.web.app/?forceLogin=true';
+              window.location.href = "/";
             </script>
             """,
             unsafe_allow_html=True,
