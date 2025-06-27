@@ -18,7 +18,6 @@ from file_storage import file_manager_ui, show_file_analytics
 from receipts import receipt_upload_ui
 from pdf_export import pdf_export_ui
 from event_planning_dashboard import event_planning_dashboard_ui
-from event_modifications import event_modifications_ui
 from bulk_suggestions import bulk_suggestions_ui
 from audit import audit_log_ui
 from roles import role_admin_ui as admin_panel_ui
