@@ -6,7 +6,7 @@ from utils import format_date
 # 📜 Historical Menus Viewer
 # ----------------------------
 
-def historical_menus_ui():
+def historical_menus_ui(user: dict | None = None) -> None:
     st.title("📜 Historical Menus")
 
     events_ref = db.collection("events")

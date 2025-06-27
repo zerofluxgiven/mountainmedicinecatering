@@ -473,7 +473,7 @@ def _render_recipe_card(recipe: dict, *, is_version: bool = False):
 # 📖 Recipes Tab (Public)
 # ----------------------------
 
-def recipes_page():
+def recipes_page(user: dict | None = None) -> None:
     """Simple recipe browsing page."""
     st.title("📚 Recipes")
 

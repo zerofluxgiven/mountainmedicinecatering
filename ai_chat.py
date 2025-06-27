@@ -27,7 +27,7 @@ except Exception as e:
 # ----------------------------
 # 💬 AI Chat Assistant UI
 # ----------------------------
-def ai_chat_ui():
+def ai_chat_ui(user: dict | None = None) -> None:
     st.title("💬 Assistant")
     st.caption("Your AI-powered catering assistant for event planning, menus, and coordination.")
 
