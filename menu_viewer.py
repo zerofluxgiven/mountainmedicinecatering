@@ -88,21 +88,22 @@ def menu_viewer_ui(event_id=None, key_prefix: str = "", show_headers: bool = Tru
         except Exception:
             pass
         day_color = DAY_COLORS.get(day_name.lower(), "rgba(0,0,0,0.1)")
-        with st.expander(format_day_label(day), expanded=True):
+        with st.expander(format_day_label(day), expanded=True, key=f"{key_prefix}day_{day}"):
             st.markdown(f"<div style='background-color:{day_color};padding:0.5em;border-radius:8px;'>", unsafe_allow_html=True)
             if delete_button("\U0001F5D1", key=f"del_day_{day}"):
                 updated_menu = [m for m in updated_menu if m.get('day') != day]
                 update_event_file_field(event_id, 'menu', updated_menu, user_id)
                 st.rerun()
             for meal, items in meal_map.items():
-                with st.expander(meal.capitalize(), expanded=False):
+                with st.expander(meal.capitalize(), expanded=False, key=f"{key_prefix}meal_{day}_{meal}"):
                     if delete_button("\U0001F5D1", key=f"del_meal_{day}_{meal}"):
                         updated_menu = [m for m in updated_menu if not (m.get('day') == day and m.get('meal') == meal)]
                         update_event_file_field(event_id, 'menu', updated_menu, user_id)
                         st.rerun()
                     for idx, itm in items:
                         color = MEAL_COLORS.get(meal.lower(), "#f0f0f0")
-                        with st.expander(itm.get('name', 'Untitled'), expanded=False):
+                        item_key = f"{key_prefix}item_{day}_{meal}_{idx}"
+                        with st.expander(itm.get('name', 'Untitled'), expanded=False, key=item_key):
                             st.markdown(f"<div style='background-color:{color};padding:0.5em;border-radius:8px;'>", unsafe_allow_html=True)
                             st.write(itm.get('description', ''))
                             if delete_button("\U0001F5D1", key=f"del_dish_{idx}"):
