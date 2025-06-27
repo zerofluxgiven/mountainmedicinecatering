@@ -102,9 +102,11 @@ def menu_viewer_ui(event_id=None, key_prefix: str = "", show_headers: bool = Tru
                         st.rerun()
                     for idx, itm in items:
                         color = MEAL_COLORS.get(meal.lower(), "#f0f0f0")
-                        with st.expander(itm.get('name', 'Untitled'), expanded=False):
+                        item_name = itm.get('name') or itm.get('recipe', 'Untitled')
+                        item_desc = itm.get('description') or itm.get('notes', '')
+                        with st.expander(item_name, expanded=False):
                             st.markdown(f"<div style='background-color:{color};padding:0.5em;border-radius:8px;'>", unsafe_allow_html=True)
-                            st.write(itm.get('description', ''))
+                            st.write(item_desc)
                             if delete_button("\U0001F5D1", key=f"del_dish_{idx}"):
                                 updated_menu.pop(idx)
                                 update_event_file_field(event_id, 'menu', updated_menu, user_id)
@@ -160,9 +162,11 @@ def menu_viewer_ui(event_id=None, key_prefix: str = "", show_headers: bool = Tru
             if submitted and new_name.strip():
                 updated_menu.append({
                     "name": new_name.strip(),
+                    "recipe": new_name.strip(),
                     "meal": new_meal,
                     "day": new_day,
                     "description": new_description.strip(),
+                    "notes": new_description.strip(),
                     "tags": []
                 })
                 update_event_file_field(event_id, "menu", updated_menu, user_id)
