@@ -2,11 +2,11 @@ import streamlit as st
 from firebase_admin import storage
 from utils import format_date, get_active_event_id, session_get, session_set, get_event_by_id, generate_id, delete_button
 from recipe_viewer import render_recipe_preview
-from recipes import find_recipe_by_name
+from recipes import find_recipe_by_name, save_recipe_to_firestore
 from datetime import datetime
 import uuid
 import mimetypes
-from ai_parsing_engine import parse_file, extract_text
+from ai_parsing_engine import parse_file, extract_text, parse_recipe_from_file
 from io import BytesIO
 
 
@@ -159,13 +159,16 @@ def save_uploaded_file(file, event_id: str, uploaded_by: str):
     blob.make_public()
 
     raw_text = None
-    parsed = {}
+    recipe = {}
     try:
         fcopy = BytesIO(content)
         fcopy.name = filename
         fcopy.type = mimetype
         raw_text = extract_text(fcopy)
-        parsed = parse_file(fcopy, target_type="all", user_id=uploaded_by, file_id=file_id)
+        fcopy.seek(0)
+        recipe = parse_recipe_from_file(fcopy)
+        if recipe:
+            save_recipe_to_firestore(recipe, user_id=uploaded_by, file_id=file_id)
     except Exception as e:
         print(f"AI parsing failed: {e}")
 
@@ -181,18 +184,18 @@ def save_uploaded_file(file, event_id: str, uploaded_by: str):
         "deleted": False,
         "raw_text": raw_text,
         "parsed_data": {
-            "parsed": parsed,
+            "parsed": recipe,
             "version": 1,
             "status": "pending_review",
             "last_updated": datetime.utcnow(),
             "user_id": uploaded_by
-        } if parsed else {},
+        } if recipe else {},
     }
 
     db.collection("files").document(file_id).set(metadata)
     return {
         "file_id": file_id,
-        "parsed": parsed,
+        "parsed": recipe,
         "raw_text": raw_text
     }
 
@@ -267,10 +270,11 @@ def _render_parsed_data_editor(file: dict, db):
 
     # Determine inline editor type based on parsed content
     if "recipes" in parsed and parsed["recipes"]:
+        recipe_data = parsed["recipes"]
+        if isinstance(recipe_data, list):
+            recipe_data = recipe_data[0] if recipe_data else {}
         st.session_state["inline_editor_type"] = "recipe"
-        st.session_state["inline_editor_data"] = (
-            parsed["recipes"][0] if isinstance(parsed["recipes"], list) else parsed["recipes"]
-        )
+        st.session_state["inline_editor_data"] = recipe_data
     elif "menus" in parsed and parsed["menus"]:
         st.session_state["inline_editor_type"] = "menu"
         st.session_state["inline_editor_data"] = (
