@@ -3,6 +3,7 @@ from auth import require_role, get_user, get_user_id
 from utils import session_get, format_date, get_active_event_id, value_to_text
 from file_storage import save_uploaded_file, file_manager_ui
 from upload_integration import save_parsed_menu_ui, show_save_file_actions
+from ai_parsing_engine import is_meaningful_recipe
 from ui_components import render_tag_group, edit_metadata_ui
 from firebase_init import get_db
 from events import get_all_events
@@ -42,58 +43,25 @@ def upload_ui_desktop(event_id: str = None):
 
         st.success(f"✅ File uploaded! File ID: {result['file_id']}")
 
-        recipes = result.get("parsed", {}).get("recipes")
-        if recipes:
-            recipe_draft = recipes if isinstance(recipes, dict) else recipes[0]
-
-            st.markdown("### 🧪 Auto-Detected Recipe Preview")
-            with st.form("confirm_recipe_from_upload"):
-                name = st.text_input(
-                    "Recipe Name",
-                    recipe_draft.get("name") or recipe_draft.get("title", ""),
-                )
-                
-                ingredients = st.text_area(
-                    "Ingredients",
-                    value=value_to_text(recipe_draft.get("ingredients")),
-                )
-                instructions = st.text_area(
-                    "Instructions",
-                    value=value_to_text(recipe_draft.get("instructions")),
-                )
-                notes = st.text_area(
-                    "Notes",
-                    value=value_to_text(recipe_draft.get("notes")),
-                )
-      
-                confirm = st.form_submit_button("Save Recipe")
-
-                if eid:
-                    st.markdown("### 🍽️ Save as Menu Item for Event")
-                    st.session_state["parsed_recipe_context"] = {
-                        "title": name,
-                        "instructions": instructions,
-                        "notes": notes,
-                        "tags": [],
-                        "allergens": [],
-                        "event_id": eid,
-                    }
-                    save_parsed_menu_ui(st.session_state["parsed_recipe_context"])
-
-                if confirm:
-                    recipe_draft.update({
-                        "name": name,
-                        "ingredients": ingredients,
-                        "instructions": instructions,
-                        "notes": notes,
-                        "tags": [],
-                        "author_name": user.get("name", uploaded_by),
-                    })
-                    recipe_id = save_recipe_to_firestore(recipe_draft)
+        parsed_recipe = result.get("parsed", {})
+        if is_meaningful_recipe(parsed_recipe):
+            col_a, col_b = st.columns([1, 1])
+            with col_a:
+                if st.button("💾 Save Recipe", key="save_recipe_upload"):
+                    parsed_recipe["author_name"] = user.get("name", uploaded_by)
+                    recipe_id = save_recipe_to_firestore(parsed_recipe)
                     if recipe_id:
                         st.success(f"✅ Recipe saved! ID: {recipe_id}")
                     else:
                         st.error("❌ Failed to save recipe.")
+            with col_b:
+                with st.expander("Parsed Data", expanded=False):
+                    st.json(parsed_recipe)
+            if eid:
+                st.session_state["parsed_recipe_context"] = parsed_recipe | {
+                    "event_id": eid
+                }
+                save_parsed_menu_ui(st.session_state["parsed_recipe_context"])
 
     st.markdown("---")
     st.markdown("## 📁 File Manager")
