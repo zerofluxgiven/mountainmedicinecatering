@@ -5,6 +5,7 @@ from auth import get_user_id
 from shopping_lists import create_shopping_list
 from datetime import datetime
 from recipes import save_menu_to_firestore
+from ai_parsing_engine import is_meaningful_recipe
 
 # ----------------------------
 # ⬆️ Upload Integration: Save as Menu
@@ -66,20 +67,27 @@ def show_save_file_actions(upload_info: dict):
     uploaded_name = parsed.get("title") or parsed.get("name") or "Unnamed File"
 
     st.markdown("### 💾 Save File As...")
-    col1, col2, col3 = st.columns(3)
+    has_recipe = is_meaningful_recipe(parsed)
 
-    with col1:
-        if st.button("🍲 Save as Recipe", key=f"save_as_recipe_{file_id}"):
-            recipe_doc = {
-                "title": uploaded_name,
-                "source_file": file_id,
-                "created_at": datetime.utcnow().isoformat(),
-                "parsed_data": parsed,
-            }
-            db.collection("recipes").document().set(recipe_doc)
-            st.success("✅ File saved as Recipe")
+    if has_recipe:
+        col_btn, col_data = st.columns([1, 1])
+        with col_btn:
+            if st.button("🍲 Save as Recipe", key=f"save_as_recipe_{file_id}"):
+                recipe_doc = {
+                    "title": uploaded_name,
+                    "source_file": file_id,
+                    "created_at": datetime.utcnow().isoformat(),
+                    "parsed_data": parsed,
+                }
+                db.collection("recipes").document().set(recipe_doc)
+                st.success("✅ File saved as Recipe")
+        with col_data:
+            with st.expander("Parsed Data", expanded=False):
+                st.json(parsed)
 
-    with col2:
+    col_event, col_menu, _ = st.columns(3)
+
+    with col_event:
         if st.button("📅 Save as Event", key=f"save_as_event_{file_id}"):
             event_doc = {
                 "name": uploaded_name,
@@ -90,7 +98,7 @@ def show_save_file_actions(upload_info: dict):
             db.collection("events").document().set(event_doc)
             st.success("✅ File saved as Event")
 
-    with col3:
+    with col_menu:
         if st.button("📖 Save as Menu", key=f"save_as_menu_{file_id}"):
             db.collection("menus").document().set({
                 "title": uploaded_name,
