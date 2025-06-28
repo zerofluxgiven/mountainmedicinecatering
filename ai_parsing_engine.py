@@ -75,15 +75,11 @@ def parse_file(uploaded_file, target_type="all", user_id=None, file_id=None):
             if isinstance(recipe_data, dict) and "recipes" in recipe_data:
                 recipe_data = recipe_data["recipes"]
             if isinstance(recipe_data, list):
-                recipe_data = [normalize_keys(r) for r in recipe_data]
-                if image_url:
-                    for r in recipe_data:
-                        r.setdefault("image_url", image_url)
-            else:
-                recipe_data = normalize_keys(recipe_data)
-                if image_url:
-                    recipe_data.setdefault("image_url", image_url)
+                recipe_data = recipe_data[0] if recipe_data else {}
+            recipe_data = normalize_keys(recipe_data)
             normalize_recipe_quantities(recipe_data)
+            if image_url:
+                recipe_data.setdefault("image_url", image_url)
             parsed[t] = recipe_data
 
     if file_id:
@@ -218,18 +214,40 @@ def extract_image_from_docx_file(uploaded_file):
 
 
 def extract_image_from_file(uploaded_file):
+    """Upload the first discovered image to Firebase Storage and return its URL."""
+    from firebase_init import get_bucket
+    import uuid
+
     try:
         uploaded_file.seek(0)
+        bucket = get_bucket()
+
+        img_bytes = None
+        ext = None
         if uploaded_file.type.startswith("image"):
-            b64 = base64.b64encode(uploaded_file.read()).decode("utf-8")
-            return f"data:{uploaded_file.type};base64,{b64}"
+            img_bytes = uploaded_file.read()
+            ext = uploaded_file.type.split("/")[-1]
         elif uploaded_file.type == "application/pdf":
-            return extract_image_from_pdf(uploaded_file)
+            data_url = extract_image_from_pdf(uploaded_file)
+            if data_url:
+                header, b64 = data_url.split(",", 1)
+                img_bytes = base64.b64decode(b64)
+                ext = header.split("/")[-1].split(";")[0]
         elif uploaded_file.type in (
             "application/vnd.openxmlformats-officedocument.wordprocessingml.document",
             "application/msword",
         ):
-            return extract_image_from_docx_file(uploaded_file)
+            data_url = extract_image_from_docx_file(uploaded_file)
+            if data_url:
+                header, b64 = data_url.split(",", 1)
+                img_bytes = base64.b64decode(b64)
+                ext = header.split("/")[-1].split(";")[0]
+
+        if img_bytes and ext:
+            blob = bucket.blob(f"parsed_images/{uuid.uuid4()}.{ext}")
+            blob.upload_from_string(img_bytes, content_type=f"image/{ext}")
+            blob.make_public()
+            return blob.public_url
     except Exception as e:
         print(f"Image extraction error: {e}")
     return None
@@ -344,6 +362,33 @@ def parse_recipe_from_url(url: str) -> dict:
             "⚠️ Recipe content extracted from URL appears to be incomplete or unusable."
         )
         return {}
+
+    return recipe
+
+# --------------------------------------------
+# 📄 Parse Recipe From File
+# --------------------------------------------
+
+def parse_recipe_from_file(uploaded_file) -> dict:
+    """Extract text from an uploaded file and parse the first recipe."""
+    raw_text = extract_text(uploaded_file)
+    if not raw_text or not raw_text.strip():
+        return {}
+
+    image_url = extract_image_from_file(uploaded_file)
+    cleaned_text = clean_raw_text(raw_text)
+    parsed = query_ai_parser(cleaned_text, "recipes")
+
+    recipe = parsed
+    if isinstance(parsed, dict) and "recipes" in parsed:
+        recipe = parsed["recipes"]
+        if isinstance(recipe, list):
+            recipe = recipe[0] if recipe else {}
+
+    recipe = normalize_keys(recipe)
+    normalize_recipe_quantities(recipe)
+    if image_url and not recipe.get("image_url"):
+        recipe["image_url"] = image_url
 
     return recipe
 
