@@ -72,11 +72,11 @@ def mobile_card(title: str, content: str = "", icon: Optional[str] = None):
 # -----------------------------
 # 📋 Navigation Renderer
 # -----------------------------
-def render_mobile_navigation():
-    nav_items = ["Dashboard", "Events", "Recipes", "Chat", "Profile"]
-    selected = st.selectbox("📱 Mobile Nav", nav_items, key="mobile_nav")
-    st.session_state.mobile_tab = selected
-    return selected
+def render_mobile_navigation(tabs=None):
+    """Mobile navigation wrapper using the desktop navbar"""
+    from layout import render_top_navbar
+    nav_tabs = tabs or ["Dashboard", "Events", "Recipes", "Chat", "Profile"]
+    return render_top_navbar(nav_tabs)
 
 
 # -----------------------------
@@ -100,7 +100,7 @@ class MobileLayout:
     
     def apply_mobile_theme(self):
         """Apply mobile-specific CSS and optimizations"""
-        css_file = Path(__file__).resolve().parent / "mobile_style.css"
+        css_file = Path(__file__).resolve().parent / "theme.css"
         try:
             with open(css_file, "r") as f:
                 mobile_css = f.read()
@@ -128,7 +128,7 @@ class MobileLayout:
             st.markdown(mobile_css, unsafe_allow_html=True)
     
     def render_mobile_navigation(self):
-        """Wrapper around the existing render_mobile_navigation function"""
+        """Use the unified top navigation for mobile"""
         return render_mobile_navigation()
     
     def render_mobile_dashboard(self, user, event):
