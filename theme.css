@@ -111,7 +111,7 @@ button:active, .stButton > button:active {
     border-radius: 0 !important;
     padding: 0.75rem 1.25rem !important;
     font-weight: 500 !important;
-    font-size: 0.9rem !important;
+    font-size: 1.1rem !important;
     cursor: pointer !important;
     transition: var(--transition) !important;
     min-height: var(--touch-target-size) !important;
@@ -120,6 +120,11 @@ button:active, .stButton > button:active {
     justify-content: center !important;
     white-space: nowrap !important;
     list-style: none !important;
+    outline: none !important;
+}
+.stRadio > div > label:focus {
+    outline: none !important;
+    box-shadow: none !important;
 }
 .stRadio > div > label:last-child {
     border-right: none !important;
@@ -481,15 +486,23 @@ button:active, .stButton > button:active {
 ----------------------------- */
 .stTabs [data-baseweb="tab"] button {
     background: var(--primary-purple) !important;
-    color: rgba(255, 255, 255, 0.7) !important;
+    color: #ffffff !important;
     border-radius: var(--border-radius) var(--border-radius) 0 0 !important;
     padding: 0.5rem 1rem !important;
     margin-right: 0.25rem !important;
+    font-size: 1.1rem !important;
+    outline: none !important;
+}
+.stTabs [data-baseweb="tab"] button:focus {
+    outline: none !important;
+    box-shadow: none !important;
 }
 
 .stTabs [data-baseweb="tab"][aria-selected="true"] button {
     background: var(--dark-purple) !important;
     color: #fff !important;
+    font-size: 1.1rem !important;
+    outline: none !important;
 }
 
 .stTabs [data-baseweb="tab-highlight"] {
