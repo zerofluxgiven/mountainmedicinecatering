@@ -27,48 +27,6 @@ def render_mobile_header(title: str = "Mountain Medicine", show_menu: bool = Tru
     """
     st.markdown(header_html, unsafe_allow_html=True)
 
-def render_bottom_navigation(active_tab: str = "dashboard") -> str:
-    """Render mobile bottom navigation bar"""
-    nav_items = [
-        {"id": "dashboard", "icon": "🏠", "label": "Home", "path": "dashboard"},
-        {"id": "events", "icon": "📅", "label": "Events", "path": "events"},
-        {"id": "recipes", "icon": "📖", "label": "Recipes", "path": "recipes"},
-        {"id": "chat", "icon": "💬", "label": "Chat", "path": "assistant"},
-        {"id": "more", "icon": "⋯", "label": "More", "path": "more"}
-    ]
-    
-    nav_html = '<div class="bottom-nav">'
-    for item in nav_items:
-        active_class = "active" if item["id"] == active_tab else ""
-        nav_html += f"""
-        <div class="bottom-nav-item {active_class}" data-path="{item['path']}" onclick="navigateToTab('{item['path']}')">
-            <span class="bottom-nav-icon">{item['icon']}</span>
-            <span class="bottom-nav-label">{item['label']}</span>
-        </div>
-        """
-    nav_html += '</div>'
-    
-    st.markdown(nav_html, unsafe_allow_html=True)
-    
-    # JavaScript for navigation
-    nav_js = """
-    <script>
-    function navigateToTab(path) {
-        // Update Streamlit session state
-        window.parent.postMessage({
-            type: 'streamlit:setComponentValue',
-            key: 'mobile_nav',
-            value: path
-        }, '*');
-    }
-    </script>
-    """
-    st.markdown(nav_js, unsafe_allow_html=True)
-    
-    # Handle navigation in Python
-    if "mobile_nav" in st.session_state:
-        return st.session_state.mobile_nav
-    return active_tab
 
 # -----------------------------
 # Mobile Card Components
@@ -538,28 +496,6 @@ def mobile_search_bar(
 # Mobile Tab Component
 # -----------------------------
 
-def mobile_tabs(
-    tabs: List[str],
-    active_tab: int = 0,
-    key: str = "tabs"
-) -> int:
-    """Render mobile-optimized tabs"""
-    tabs_html = f'<div class="mobile-tabs" id="{key}">'
-    
-    for i, tab in enumerate(tabs):
-        active_class = "active" if i == active_tab else ""
-        tabs_html += f"""
-        <button class="mobile-tab {active_class}" 
-                onclick="selectTab('{key}', {i})">
-            {tab}
-        </button>
-        """
-    
-    tabs_html += '</div>'
-    
-    st.markdown(tabs_html, unsafe_allow_html=True)
-    
-    return st.session_state.get(f"{key}_selected", active_tab)
 
 # -----------------------------
 # Mobile Floating Action Button
@@ -702,7 +638,7 @@ from pathlib import Path
 
 def inject_mobile_styles() -> None:
     """Inject all mobile-specific CSS"""
-    css_path = Path(__file__).resolve().parent / "mobile_style.css"
+    css_path = Path(__file__).resolve().parent / "theme.css"
     try:
         with open(css_path, "r") as f:
             mobile_css = f.read()

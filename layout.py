@@ -13,7 +13,7 @@ from datetime import datetime
 def inject_custom_css():
     """Inject custom CSS styling for the application"""
     # Load the updated CSS file
-    css_path = Path(__file__).resolve().parent / "style.css"
+    css_path = Path(__file__).resolve().parent / "theme.css"
     try:
         with open(css_path, "r") as f:
             css_content = f.read()
@@ -801,43 +801,7 @@ def render_top_navbar(tabs):
             label_visibility="collapsed"
         )
 
-    # Stylize the nav bar
-    st.markdown(
-        """
-    <style>
-    .stRadio > div {
-        display: flex !important;
-        gap: 0 !important;
-        overflow: hidden !important;
-        background: var(--primary-purple, #6C4AB6) !important;
-        border-radius: var(--border-radius) !important;
-    }
-    .stRadio > div > label {
-        flex: 1 1 auto !important;
-        background: transparent !important;
-        color: #ffffff !important;
-        opacity: 0.85 !important;
-        border: none !important;
-        border-right: 1px solid rgba(255,255,255,0.4) !important;
-        border-radius: 0 !important;
-        padding: 0.5rem 1rem !important;
-        font-weight: 500 !important;
-        font-size: 0.9rem !important;
-        cursor: pointer !important;
-    }
-    .stRadio > div > label:last-child {
-        border-right: none !important;
-    }
-    .stRadio > div > label[aria-checked="true"] {
-        background: var(--accent-purple, #563a9d) !important;
-        color: #fff !important;
-        opacity: 1 !important;
-    }
-    .stRadio input[type="radio"] { display: none !important; }
-    </style>
-    """,
-        unsafe_allow_html=True,
-    )
+
 
     return selected
 
@@ -891,11 +855,6 @@ def apply_theme():
     from mobile_layout import mobile_layout
     if st.session_state.get("mobile_mode"):
         mobile_layout.apply_mobile_theme()
-        try:
-            from mobile_components import inject_mobile_styles
-            inject_mobile_styles()
-        except Exception:
-            pass
     render_event_mode_indicator()
     render_login_status_button()
 

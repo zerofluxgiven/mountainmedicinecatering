@@ -92,6 +92,7 @@ button:active, .stButton > button:active {
     min-width: max-content !important;
 }
 
+
 .stRadio > div {
     display: flex !important;
     gap: 0 !important;
@@ -130,6 +131,15 @@ button:active, .stButton > button:active {
 }
 .stRadio > div > label[aria-checked="true"] * {
     color: #ffffff !important;
+}
+.stRadio input[type="radio"] {
+    display: none !important;
+}
+
+.stRadio ul {
+    list-style: none !important;
+    padding-left: 0 !important;
+    margin: 0 !important;
 }
 
 /* -----------------------------
@@ -228,6 +238,17 @@ button:active, .stButton > button:active {
     background: #edeafa !important;
 }
 
+/* Style for recipe version expanders */
+.version-expander {
+    margin-left: calc(var(--touch-target-size) / 2);
+    margin-bottom: 0;
+}
+
+.version-expander .streamlit-expanderHeader {
+    min-height: calc(var(--touch-target-size) / 2) !important;
+    font-size: 0.75rem;
+}
+
 /* -----------------------------
    MOBILE FORMS
 ----------------------------- */
@@ -258,6 +279,7 @@ button:active, .stButton > button:active {
 .stSelectbox div[data-baseweb="select"] input::placeholder {
     color: #6c757d !important;
 }
+
 
 /* Touch-friendly checkboxes */
 .stCheckbox label {
@@ -453,3 +475,44 @@ button:active, .stButton > button:active {
 .loading {
     animation: pulse 1.5s ease-in-out infinite !important;
 }
+
+/* -----------------------------
+   Tab Styling Overrides
+----------------------------- */
+.stTabs [data-baseweb="tab"] button {
+    background: var(--primary-purple) !important;
+    color: rgba(255, 255, 255, 0.7) !important;
+    border-radius: var(--border-radius) var(--border-radius) 0 0 !important;
+    padding: 0.5rem 1rem !important;
+    margin-right: 0.25rem !important;
+}
+
+.stTabs [data-baseweb="tab"][aria-selected="true"] button {
+    background: var(--dark-purple) !important;
+    color: #fff !important;
+}
+
+.stTabs [data-baseweb="tab-highlight"] {
+    display: none !important;
+}
+
+/* Event list buttons */
+button[id^="upcoming_"], button[id^="view_"] {
+    font-size: 1.3rem !important;
+    color: #fff !important;
+    white-space: normal !important;
+    line-height: 1.2 !important;
+}
+
+/* Divider for delete column */
+.event-delete-col {
+    border-left: 1px solid rgba(255, 255, 255, 0.3);
+    padding-left: 0.5rem;
+}
+
+/* Mobile-specific adjustments */
+@media (max-width: 768px) {
+    .nav-container { overflow-x: auto !important; }
+    .nav-tabs { flex-wrap: nowrap !important; }
+}
+
