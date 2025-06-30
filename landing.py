@@ -3,7 +3,11 @@
 import streamlit as st
 
 def show():
-    st.set_page_config(page_title="Mountain Medicine", layout="centered")
+    st.set_page_config(
+        page_title="Mountain Medicine",
+        page_icon="public/mountain_logo.png",
+        layout="centered",
+    )
 
 
     # 📊 Replace these with live Firestore queries if needed
