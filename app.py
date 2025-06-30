@@ -33,8 +33,9 @@ from historical_menus import historical_menus_ui
 
 st.set_page_config(
     page_title="Mountain Medicine Catering",
+    page_icon="public/mountain_logo.png",
     layout="wide",
-    initial_sidebar_state="collapsed"
+    initial_sidebar_state="collapsed",
 )
 
 st.markdown("""
