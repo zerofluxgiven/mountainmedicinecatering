@@ -122,6 +122,9 @@ button:active, .stButton > button:active {
     list-style: none !important;
     outline: none !important;
 }
+.stRadio > div > label::before {
+    display: none !important;
+}
 .stRadio > div > label:focus {
     outline: none !important;
     box-shadow: none !important;
