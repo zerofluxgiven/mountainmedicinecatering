@@ -122,7 +122,9 @@ button:active, .stButton > button:active {
     list-style: none !important;
     outline: none !important;
 }
-.stRadio > div > label::before {
+.stRadio > div > label::before,
+.stRadio > div > label::after,
+.stRadio > div > label > div:first-child {
     display: none !important;
 }
 .stRadio > div > label:focus {
