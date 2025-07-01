@@ -41,7 +41,7 @@
 - mobile_helpers.py
 - mobile_layout.py
 - mountain_logo.png
-- mountain_logo_banner.png
+- mountain_logo_long.png
 - notifications.py
 - packages.txt
 - packing.py
@@ -50,7 +50,7 @@
 - public/404.html
 - public/index.html
 - public/mountain_logo.png
-- public/mountain_logo_banner.png
+- public/mountain_logo_long.png
 - public/redirect.html
 - receipts.py
 - recipe_viewer.py
