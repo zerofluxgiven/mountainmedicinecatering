@@ -133,7 +133,6 @@ button:active, .stButton > button:active {
     justify-content: center !important;
     width: 100% !important;
 }
-
 .stRadio label::before,
 .stRadio label::after,
 .stRadio label > div:first-child {
