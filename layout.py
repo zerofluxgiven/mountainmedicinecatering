@@ -759,7 +759,7 @@ def render_top_navbar(tabs):
             "<div style='text-align:center; padding: 1rem 0;'>",
             unsafe_allow_html=True,
         )
-        st.image("https://mountainmedicine-6e572.web.app/mountain_logo_long.png", width=600)
+        st.image("https://mountainmedicine-6e572.web.app/mountain_logo_longer.png", width=600)
         st.markdown("</div>", unsafe_allow_html=True)
 
     default_tab = "Dashboard" if "Dashboard" in tabs else tabs[0]
