@@ -12,7 +12,8 @@ from utils import (
 )
 from datetime import datetime, timedelta
 from event_file import get_event_file, update_event_file_field, initialize_event_file
-from recipes import save_menu_to_firestore
+from recipes import save_menu_to_firestore, find_recipe_by_name
+from smart_recipe_scaler import scale_menu
 
 MEAL_COLORS = {
     "breakfast": "#fff9c4",
@@ -54,6 +55,28 @@ def menu_viewer_ui(event_id=None, key_prefix: str = "", show_headers: bool = Tru
 
     event_file = get_event_file(event_id)
     menu = event_file.get("menu", [])
+
+    all_recipes = []
+    recipe_map = {}
+    for idx, itm in enumerate(menu):
+        recipe_data = None
+        if isinstance(itm.get("recipe"), dict):
+            recipe_data = itm["recipe"]
+        elif itm.get("recipe_id"):
+            doc = db.collection("recipes").document(itm["recipe_id"]).get()
+            if doc.exists:
+                recipe_data = doc.to_dict() | {"id": doc.id}
+        elif itm.get("name"):
+            recipe_data = find_recipe_by_name(itm["name"])
+        if recipe_data and recipe_data.get("id"):
+            all_recipes.append(recipe_data)
+            recipe_map[idx] = recipe_data["id"]
+
+    try:
+        scaled_recipes = scale_menu(event_file, all_recipes)
+    except Exception as e:
+        st.error(f"Auto-scaling failed: {e}")
+        scaled_recipes = {}
 
     # Build list of selectable dates between event start and end
     active_event = get_event_by_id(event_id) or get_active_event()
@@ -106,6 +129,13 @@ def menu_viewer_ui(event_id=None, key_prefix: str = "", show_headers: bool = Tru
                         with st.expander(itm.get('name', 'Untitled'), expanded=False, key=item_key):
                             st.markdown(f"<div style='background-color:{color};padding:0.5em;border-radius:8px;'>", unsafe_allow_html=True)
                             st.write(itm.get('description', ''))
+                            rec_id = recipe_map.get(idx)
+                            scaled = scaled_recipes.get(rec_id)
+                            if scaled:
+                                st.write(f"Servings: {scaled.get('scaled_servings', scaled.get('serves'))}")
+                                st.write(scaled.get('scaling_notes', ''))
+                                if scaled.get('scaling_warning'):
+                                    st.error(scaled['scaling_warning'])
                             if delete_button("\U0001F5D1", key=f"del_dish_{idx}"):
                                 updated_menu.pop(idx)
                                 update_event_file_field(event_id, 'menu', updated_menu, user_id)
