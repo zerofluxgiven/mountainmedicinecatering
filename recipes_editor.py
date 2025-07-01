@@ -7,6 +7,7 @@ from auth import get_user_id
 from ingredients import parse_recipe_ingredients, update_recipe_with_parsed_ingredients
 from allergies import render_allergy_warning
 from recipes import save_recipe_to_firestore
+from smart_recipe_scaler import scale_recipe
 from tag_utils import suggest_recipe_tags
 
 
@@ -53,6 +54,10 @@ def recipe_editor_ui(recipe_id=None, prefill_data=None):
     display_name = recipe.get("name") or recipe.get("title", "Unnamed Recipe")
     st.subheader(f"Editing: {display_name}")
 
+    if "serves" not in recipe or not isinstance(recipe["serves"], (int, float)):
+        st.warning("This recipe is missing a valid 'Serves' value. Please enter it below:")
+        recipe["serves"] = st.number_input("Serves", min_value=0.5, step=0.5)
+
     with st.form("edit_recipe_form"):
         name = st.text_input(
             "Recipe Name",
@@ -65,7 +70,7 @@ def recipe_editor_ui(recipe_id=None, prefill_data=None):
             render_ingredient_columns(recipe.get("ingredients"))
         instructions = st.text_area("Instructions", value=value_to_text(recipe.get("instructions")))
         notes = st.text_area("Notes", value=value_to_text(recipe.get("notes")))
-      
+
         tags = st.text_input("Tags (comma-separated)", value=", ".join(recipe.get("tags", [])))
         edit_note = st.text_input("📝 Edit Note (for version history)", value="", key="edit_note")
 
@@ -129,6 +134,22 @@ def recipe_editor_ui(recipe_id=None, prefill_data=None):
             }
             st.session_state["confirm_tags"] = ", ".join(tag_list)
             st.rerun()
+
+    # Scaling controls outside the main form
+    target_servings = st.number_input(
+        "Scale to how many servings?",
+        value=recipe.get("serves", 0),
+        step=0.5,
+    )
+    if st.button("Scale Recipe"):
+        try:
+            scaled = scale_recipe(recipe, target_servings)
+            st.session_state["inline_editor_data"] = scaled
+            st.session_state["inline_editor_type"] = "recipe"
+            st.success("Recipe scaled successfully.")
+            st.info(scaled.get("scaling_notes", ""))
+        except Exception as e:
+            st.error(f"Scaling failed: {e}")
 
     if doc_ref:
         st.markdown("---")

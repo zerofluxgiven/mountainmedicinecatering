@@ -40,12 +40,18 @@ def scale_menu(event_file: dict, recipes: List[dict]) -> Dict[str, dict]:
     guest_count = event_file.get("guest_count", 0)
     staff_count = event_file.get("staff_count", 0)
     excluded_allergens = event_file.get("allergens", [])
+    event_id = event_file.get("event_id")
 
     total_people = guest_count + staff_count
     scaled_recipes = {}
 
     for recipe in recipes:
-        allergy_conflict = check_recipe_for_allergies(recipe, excluded_allergens)
+        allergy_conflict = 0
+        if event_id and recipe.get("id"):
+            conflicts = check_recipe_for_allergies(recipe["id"], event_id)
+            allergy_conflict = len(conflicts)
+        elif isinstance(excluded_allergens, list):
+            allergy_conflict = len(excluded_allergens)
         if allergy_conflict:
             adjusted_people = total_people - allergy_conflict
             allergy_warning = f"{allergy_conflict} people excluded due to allergen conflict"

@@ -12,8 +12,12 @@ def get_default_event_file():
     return {
         "menu": [],
         "notes": "",
+        "guest_count": 0,
+        "staff_count": 0,
+        "allergens": [],
+        "event_id": None,
         "last_updated": datetime.utcnow(),
-        "updated_by": None
+        "updated_by": None,
     }
 
 # ----------------------------
@@ -52,9 +56,15 @@ def initialize_event_file(event_id: str, user_id: str):
     """Create a new event_file doc if it doesn't exist."""
     ref = db.collection("events").document(event_id).collection("meta").document("event_file")
     if not ref.get().exists:
-        ref.set(get_default_event_file() | {
-            "updated_by": user_id
+        event_doc = db.collection("events").document(event_id).get()
+        event_data = event_doc.to_dict() if event_doc.exists else {}
+        base = get_default_event_file()
+        base.update({
+            "guest_count": event_data.get("guest_count", 0),
+            "staff_count": event_data.get("staff_count", 0),
+            "event_id": event_id,
         })
+        ref.set(base | {"updated_by": user_id})
 
 # ----------------------------
 # 🔄 Update Specific Section
@@ -88,4 +98,7 @@ def get_event_file(event_id: str) -> dict:
     """Returns full event_file dict, or default if not found."""
     ref = db.collection("events").document(event_id).collection("meta").document("event_file")
     doc = ref.get()
-    return doc.to_dict() if doc.exists else get_default_event_file()
+    data = doc.to_dict() if doc.exists else get_default_event_file()
+    if "event_id" not in data:
+        data["event_id"] = event_id
+    return data

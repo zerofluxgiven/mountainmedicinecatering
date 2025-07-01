@@ -161,13 +161,14 @@ def create_event(event_data: dict, user_id: str) -> str:
         db.collection("events").document(event_id).set(event_data)
 
          # ✅ Create canonical event_file under /events/{eventId}/meta/event_file
-        db.collection("events").document(event_id).collection("meta").document("event_file").set({
-            "menu": [],
-            "menu_html": "",
-            "schedule": [],
-            "equipment": [],
-            "notes": ""
+        from event_file import get_default_event_file
+        base_file = get_default_event_file()
+        base_file.update({
+            "guest_count": event_data.get("guest_count", 0),
+            "staff_count": event_data.get("staff_count", 0),
+            "event_id": event_id,
         })
+        db.collection("events").document(event_id).collection("meta").document("event_file").set(base_file)
 
         return event_id
         

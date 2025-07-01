@@ -3,6 +3,7 @@ from mobile_helpers import safe_columns, safe_file_uploader
 from firebase_init import db
 from utils import session_get, generate_id, format_date, delete_button
 from menu_viewer import menu_viewer_ui
+from event_file import update_event_file_field
 from file_storage import save_uploaded_file
 from datetime import datetime
 from layout import render_event_toolbar
@@ -198,6 +199,8 @@ def event_planning_dashboard_ui(event_id):
                 
                 if save_event_data(event_id, data):
                     st.success("✅ Event details updated successfully!")
+                    update_event_file_field(event_id, "guest_count", headcount, get_user_id(user))
+                    update_event_file_field(event_id, "staff_count", staff_count, get_user_id(user))
                     # Reset form state to show updated values
                     st.session_state[f"{form_key}_initialized"] = False
 
