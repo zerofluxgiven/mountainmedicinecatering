@@ -123,6 +123,10 @@ button:active, .stButton > button:active {
     list-style: none !important;
     outline: none !important;
 }
+.stRadio label * {
+    color: inherit !important;
+    text-align: inherit !important;
+}
 .stRadio label::before,
 .stRadio label::after,
 .stRadio label > div:first-child {
