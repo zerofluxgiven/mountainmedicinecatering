@@ -754,14 +754,13 @@ def render_top_navbar(tabs):
         return
 
     # Inject logo banner above tabs
-    st.markdown(
-        """
-        <div style="text-align:center; padding: 1rem 0;">
-            <img src="/mountain_logo_banner.png" style="max-width: 600px; height: auto;" alt="Mountain Medicine">
-        </div>
-        """,
-        unsafe_allow_html=True,
-    )
+    with st.container():
+        st.markdown(
+            "<div style='text-align:center; padding: 1rem 0;'>",
+            unsafe_allow_html=True,
+        )
+        st.image("public/mountain_logo_banner.png", width=600)
+        st.markdown("</div>", unsafe_allow_html=True)
 
     default_tab = "Dashboard" if "Dashboard" in tabs else tabs[0]
     current_tab = st.session_state.get("top_nav", default_tab)
