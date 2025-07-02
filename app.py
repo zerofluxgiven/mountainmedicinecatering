@@ -31,6 +31,39 @@ from recipes import recipes_page
 from admin_utilities import admin_utilities_ui
 from historical_menus import historical_menus_ui
 
+components.html("""
+<script>
+function shouldRedirect() {
+  const token = localStorage.getItem("mm_token");
+  const device = localStorage.getItem("mm_device") || "desktop";
+  const expiry = parseInt(localStorage.getItem("mm_token_expiry") || "0", 10);
+  const now = Date.now();
+
+  if (!token || now >= expiry) return;
+
+  const url = new URL(window.location.href);
+  const hasTokenParam = url.searchParams.has("token");
+
+  if (!hasTokenParam) {
+    const newUrl = url.pathname + `?token=${token}&device=${device}`;
+    window.location.replace(newUrl);
+  }
+}
+
+// 🔁 Try every 5 seconds if no token param
+setInterval(() => {
+  shouldRedirect();
+}, 5000);
+
+// 📅 Also run when user returns to the tab
+document.addEventListener("visibilitychange", () => {
+  if (document.visibilityState === "visible") {
+    shouldRedirect();
+  }
+});
+</script>
+""", height=0)
+
 st.set_page_config(
     page_title="Mountain Medicine Catering",
     page_icon="public/mountain_logo.png",
