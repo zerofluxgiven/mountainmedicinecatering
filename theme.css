@@ -424,10 +424,26 @@ button:active, .stButton > button:active {
         max-width: 1200px !important;
         margin: 0 auto !important;
     }
-    
+
     button, .stButton > button {
         padding: 0.5rem 1rem !important;
         font-size: 0.9rem !important;
+    }
+
+    /* Desktop navigation layout */
+    .nav-tabs {
+        display: flex !important;
+        flex-wrap: wrap !important;
+        justify-content: center !important;
+        gap: 0.5rem !important;
+    }
+
+    .nav-tabs > div {
+        flex: 1 1 auto !important;
+        min-width: 140px !important;
+        max-width: 240px !important;
+        text-align: center !important;
+        padding: 0.5rem 1rem !important;
     }
 }
 
