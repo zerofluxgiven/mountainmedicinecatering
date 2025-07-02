@@ -1,6 +1,7 @@
 # allergies.py
 
 import streamlit as st
+from firebase_init import db
 from utils import generate_id, format_date, get_active_event_id, get_event_by_id, delete_button
 from auth import require_login, get_user_role
 from datetime import datetime

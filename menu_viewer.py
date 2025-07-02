@@ -77,6 +77,35 @@ def menu_viewer_ui(event_id=None, key_prefix: str = "", show_headers: bool = Tru
     except Exception as e:
         st.error(f"Auto-scaling failed: {e}")
         scaled_recipes = {}
+        if "missing valid 'serves'" in str(e):
+            import re
+            missing_name = None
+            m = re.search(r"Recipe '(.+?)'", str(e))
+            if m:
+                missing_name = m.group(1)
+            st.info("Please review the recipe and provide a 'Serves' value.")
+            if missing_name:
+                rec = find_recipe_by_name(missing_name)
+                if rec:
+                    from recipes_editor import recipe_editor_ui
+                    st.markdown("### ✏️ Fix Missing Servings")
+                    recipe_editor_ui(prefill_data=rec)
+                    st.components.v1.html(
+                        """
+                        <script>
+                        const labels = window.parent.document.querySelectorAll('label');
+                        for (const lbl of labels) {
+                          if (lbl.textContent.trim() === 'Serves') {
+                            const inp = lbl.parentElement.querySelector('input');
+                            if (inp) { inp.focus(); break; }
+                          }
+                        }
+                        </script>
+                        """,
+                        height=0,
+                    )
+                    if st.button("Cancel", key="cancel_fix_serves"):
+                        st.experimental_rerun()
 
     # Build list of selectable dates between event start and end
     active_event = get_event_by_id(event_id) or get_active_event()
@@ -111,14 +140,14 @@ def menu_viewer_ui(event_id=None, key_prefix: str = "", show_headers: bool = Tru
         except Exception:
             pass
         day_color = DAY_COLORS.get(day_name.lower(), "rgba(0,0,0,0.1)")
-        with st.expander(format_day_label(day), expanded=True, key=f"{key_prefix}day_{day}"):
+        with st.expander(format_day_label(day), expanded=True):
             st.markdown(f"<div style='background-color:{day_color};padding:0.5em;border-radius:8px;'>", unsafe_allow_html=True)
             if delete_button("\U0001F5D1", key=f"del_day_{day}"):
                 updated_menu = [m for m in updated_menu if m.get('day') != day]
                 update_event_file_field(event_id, 'menu', updated_menu, user_id)
                 st.rerun()
             for meal, items in meal_map.items():
-                with st.expander(meal.capitalize(), expanded=False, key=f"{key_prefix}meal_{day}_{meal}"):
+                with st.expander(meal.capitalize(), expanded=False):
                     if delete_button("\U0001F5D1", key=f"del_meal_{day}_{meal}"):
                         updated_menu = [m for m in updated_menu if not (m.get('day') == day and m.get('meal') == meal)]
                         update_event_file_field(event_id, 'menu', updated_menu, user_id)
@@ -126,7 +155,7 @@ def menu_viewer_ui(event_id=None, key_prefix: str = "", show_headers: bool = Tru
                     for idx, itm in items:
                         color = MEAL_COLORS.get(meal.lower(), "#f0f0f0")
                         item_key = f"{key_prefix}item_{day}_{meal}_{idx}"
-                        with st.expander(itm.get('name', 'Untitled'), expanded=False, key=item_key):
+                        with st.expander(itm.get('name', 'Untitled'), expanded=False):
                             st.markdown(f"<div style='background-color:{color};padding:0.5em;border-radius:8px;'>", unsafe_allow_html=True)
                             st.write(itm.get('description', ''))
                             rec_id = recipe_map.get(idx)
