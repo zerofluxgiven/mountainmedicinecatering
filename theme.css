@@ -424,10 +424,21 @@ button:active, .stButton > button:active {
         max-width: 1200px !important;
         margin: 0 auto !important;
     }
-    
+
     button, .stButton > button {
         padding: 0.5rem 1rem !important;
         font-size: 0.9rem !important;
+    }
+
+    /* Ensure nav tabs wrap cleanly on desktop */
+    .nav-tabs {
+        flex-wrap: wrap !important;
+    }
+
+    /* Display exactly five evenly spaced radio tabs per row */
+    .stRadio label {
+        flex: 0 0 calc(100% / 5) !important;
+        max-width: calc(100% / 5) !important;
     }
 }
 
