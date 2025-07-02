@@ -226,53 +226,16 @@ def mobile_input(
 def mobile_select(
     label: str,
     options: List[str],
-    value: str = None,
-    required: bool = False,
-    key: str = None
+    value: str | None = None,
+    key: str | None = None,
 ) -> str:
-    """Render a mobile-optimized select dropdown"""
-    select_id = key or f"select_{hash(label)}"
-    
-    select_html = f"""
-    <div class="mobile-select-group">
-        <label for="{select_id}" class="mobile-label">{label}</label>
-        <div class="mobile-select">
-            <select 
-                id="{select_id}"
-                name="{select_id}"
-                class="mobile-select-input"
-                {'required' if required else ''}
-            >
-    """
-    
-    for option in options:
-        selected = 'selected' if option == value else ''
-        select_html += f'<option value="{option}" {selected}>{option}</option>'
-
-    select_html += """
-            </select>
-        </div>
-    </div>
-    """
-
-    select_js = f"""
-    <script>
-    const sel_{select_id} = document.getElementById('{select_id}');
-    if (sel_{select_id}) {{
-        sel_{select_id}.addEventListener('change', (e) => {{
-            window.parent.postMessage({{
-                type: 'streamlit:setComponentValue',
-                key: '{select_id}',
-                value: e.target.value
-            }}, '*');
-        }});
-    }}
-    </script>
-    """
-
-    st.markdown(select_html + select_js, unsafe_allow_html=True)
-
-    return st.session_state.get(select_id, value or options[0] if options else "")
+    """Render a select box optimized for mobile."""
+    return st.selectbox(
+        label,
+        options,
+        index=options.index(value) if value in options else 0,
+        key=key,
+    )
 
 def mobile_button(
     label: str,

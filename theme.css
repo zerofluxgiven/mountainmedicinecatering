@@ -301,6 +301,12 @@ button:active, .stButton > button:active {
     color: #6c757d !important;
 }
 
+/* Ensure select labels remain visible on mobile */
+.stSelectbox label {
+    color: #000 !important;
+    font-weight: 500 !important;
+}
+
 
 /* Touch-friendly checkboxes */
 .stCheckbox label {
