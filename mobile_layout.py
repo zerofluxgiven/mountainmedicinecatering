@@ -73,9 +73,17 @@ def mobile_card(title: str, content: str = "", icon: Optional[str] = None):
 # 📋 Navigation Renderer
 # -----------------------------
 def render_mobile_navigation(tabs=None):
-    """Mobile navigation wrapper using the desktop navbar"""
-    from layout import render_top_navbar
+    """Render navigation; use dropdown menu on mobile"""
     nav_tabs = tabs or ["Dashboard", "Events", "Recipes", "Chat", "Profile"]
+
+    if st.session_state.get("mobile_mode"):
+        from mobile_components import render_mobile_header, inject_mobile_scripts
+
+        inject_mobile_scripts()
+        render_mobile_header(nav_items=nav_tabs)
+        return st.session_state.get("top_nav", nav_tabs[0])
+
+    from layout import render_top_navbar
     return render_top_navbar(nav_tabs)
 
 

@@ -7,8 +7,22 @@ from datetime import datetime
 # Mobile Navigation Components
 # -----------------------------
 
-def render_mobile_header(title: str = "Mountain Medicine", show_menu: bool = True) -> None:
-    """Render mobile-optimized header with hamburger menu"""
+def render_mobile_header(
+    title: str = "Mountain Medicine",
+    show_menu: bool = True,
+    nav_items: Optional[List[str]] = None,
+) -> None:
+    """Render mobile header and hidden navigation menu"""
+    nav_items = nav_items or ["Dashboard", "Events", "Recipes", "Chat", "Profile"]
+
+    menu_html = "<div id=\"mobile-nav-menu\" class=\"mobile-nav-menu\">"
+    for item in nav_items:
+        menu_html += (
+            f"<a href=\"#\" class=\"mobile-nav-link\" "
+            f"onclick=\"selectMobileNav('{item}')\">{item}</a>"
+        )
+    menu_html += "</div>"
+
     header_html = f"""
     <div class="mobile-header">
         <div class="mobile-header-content">
@@ -24,6 +38,7 @@ def render_mobile_header(title: str = "Mountain Medicine", show_menu: bool = Tru
             </div>
         </div>
     </div>
+    {menu_html}
     """
     st.markdown(header_html, unsafe_allow_html=True)
 
@@ -660,9 +675,28 @@ def inject_mobile_scripts() -> None:
     try:
         with open("mobile_interactions.js", "r") as f:
             mobile_js = f.read()
-        st.markdown(f"<script>{mobile_js}</script>", unsafe_allow_html=True)
     except FileNotFoundError:
-        st.warning("Mobile JavaScript file not found.")
+        mobile_js = ""
+
+    mobile_js += """
+    function toggleMobileMenu() {
+        const menu = document.getElementById('mobile-nav-menu');
+        if (menu) {
+            menu.classList.toggle('show');
+        }
+    }
+
+    function selectMobileNav(tab) {
+        window.parent.postMessage({
+            type: 'streamlit:setComponentValue',
+            key: 'top_nav',
+            value: tab
+        }, '*');
+        toggleMobileMenu();
+    }
+    """
+
+    st.markdown(f"<script>{mobile_js}</script>", unsafe_allow_html=True)
 
 def detect_mobile() -> bool:
     """Detect if user is on mobile device"""

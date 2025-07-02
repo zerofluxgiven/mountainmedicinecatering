@@ -444,6 +444,7 @@ button:active, .stButton > button:active {
         max-width: 240px !important;
         text-align: center !important;
         padding: 0.5rem 1rem !important;
+
     }
 }
 
@@ -559,5 +560,29 @@ button[id^="upcoming_"], button[id^="view_"] {
 @media (max-width: 768px) {
     .nav-container { overflow-x: auto !important; }
     .nav-tabs { flex-wrap: nowrap !important; }
+}
+
+/* Mobile slide-down navigation menu */
+.mobile-nav-menu {
+    display: none;
+    position: absolute;
+    top: 56px;
+    left: 0;
+    right: 0;
+    background: var(--primary-purple);
+    padding: 1rem;
+    flex-direction: column;
+    gap: 0.75rem;
+    z-index: 1000;
+}
+
+.mobile-nav-menu a {
+    color: #fff;
+    text-decoration: none;
+    font-size: 1.2rem;
+}
+
+.mobile-nav-menu.show {
+    display: flex;
 }
 
