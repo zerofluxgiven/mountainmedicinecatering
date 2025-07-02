@@ -17,7 +17,7 @@ media queries like `@media (max-width: 768px)` so a single stylesheet serves
 both desktop and mobile users. The theme is injected once on startup via
 `apply_theme()`.
 
-Navigation is unified through the `render_top_navbar` component which is used on
-all devices. When running in mobile mode (`st.session_state["mobile_mode"]`
-set to `True`), `render_mobile_navigation` simply calls this same component so
-the experience remains consistent.
+Navigation is unified through the `render_top_navbar` component on desktop.
+When mobile mode is enabled (`st.session_state["mobile_mode"]` set to `True`),
+`render_mobile_navigation` renders a slide-out menu triggered by the hamburger
+button in the mobile header.
