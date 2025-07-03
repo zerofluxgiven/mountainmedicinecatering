@@ -380,6 +380,141 @@ def add_recipe_manual_ui():
             st.error(f"Failed to save recipe: {e}")
 
 
+# ----------------------------
+# 📤 Add Recipe via Upload UI
+# ----------------------------
+
+def add_recipe_via_upload_ui():
+    """Upload a file to extract and save a recipe."""
+    
+    with st.expander("Add Recipe via Upload", expanded=False):
+        st.markdown(
+            "<div class='card' style='max-width:600px;margin:0 auto'>",
+            unsafe_allow_html=True,
+        )
+        
+        from mobile_helpers import safe_file_uploader
+        uploaded_file = safe_file_uploader(
+            "Upload a recipe file (PDF, image, or document)",
+            type=["pdf", "jpg", "jpeg", "png", "txt", "docx"],
+            key="recipe_upload_file"
+        )
+        
+        if uploaded_file:
+            with st.spinner("Parsing recipe from file..."):
+                from ai_parsing_engine import parse_file
+                from file_storage import save_uploaded_file
+                
+                # Parse the file
+                parsed_data = parse_file(uploaded_file, target_type="recipes")
+                recipe_data = parsed_data.get("recipes", {})
+                
+                if recipe_data and recipe_data.get("name"):
+                    st.success("✅ Recipe extracted successfully!")
+                    
+                    # Preview the recipe
+                    col1, col2 = st.columns([2, 1])
+                    
+                    with col1:
+                        st.text_input("Recipe Name", value=recipe_data.get("name", ""), disabled=True)
+                        serves = recipe_data.get("serves") or recipe_data.get("servings", 4)
+                        st.number_input("Serves", value=float(serves), disabled=True)
+                    
+                    with col2:
+                        if recipe_data.get("image_url"):
+                            st.image(recipe_data["image_url"], width=150)
+                    
+                    # Show ingredients and instructions preview
+                    st.text_area("Ingredients", value=value_to_text(recipe_data.get("ingredients", [])), height=150, disabled=True)
+                    st.text_area("Instructions", value=value_to_text(recipe_data.get("instructions", [])), height=150, disabled=True)
+                    
+                    # Save or edit options
+                    col1, col2, col3 = st.columns(3)
+                    
+                    with col1:
+                        if st.button("💾 Save Recipe", use_container_width=True):
+                            user = get_user()
+                            user_id = user.get("id") if user else None
+                            
+                            # Check for duplicate
+                            existing = find_recipe_by_name(recipe_data.get("name", ""))
+                            if existing:
+                                st.session_state["dup_upload_recipe"] = {
+                                    "data": recipe_data,
+                                    "existing_id": existing["id"],
+                                    "existing_name": existing["name"]
+                                }
+                                st.rerun()
+                            else:
+                                recipe_id = save_recipe_to_firestore(recipe_data, user_id=user_id)
+                                st.success(f"✅ Recipe saved successfully!")
+                                st.balloons()
+                                # Clear the upload
+                                if "recipe_upload_file" in st.session_state:
+                                    del st.session_state["recipe_upload_file"]
+                                st.rerun()
+                    
+                    with col2:
+                        if st.button("✏️ Edit First", use_container_width=True):
+                            st.session_state["inline_editor_data"] = recipe_data
+                            st.session_state["inline_editor_type"] = "recipe"
+                            st.rerun()
+                    
+                    with col3:
+                        if st.button("❌ Cancel", use_container_width=True):
+                            if "recipe_upload_file" in st.session_state:
+                                del st.session_state["recipe_upload_file"]
+                            st.rerun()
+                else:
+                    st.error("❌ Could not extract a valid recipe from this file.")
+                    st.info("💡 Tip: Make sure the file contains a recipe with ingredients and instructions.")
+        
+        st.markdown("</div>", unsafe_allow_html=True)
+    
+    # Handle duplicate recipe scenario
+    if "dup_upload_recipe" in st.session_state:
+        dup_state = st.session_state["dup_upload_recipe"]
+        st.warning(f"A recipe named '{dup_state['existing_name']}' already exists.")
+        
+        col1, col2 = st.columns(2)
+        with col1:
+            option = st.radio(
+                "What would you like to do?",
+                ["Add Version", "Save under Different Name"],
+                key="dup_upload_option"
+            )
+        with col2:
+            if option == "Save under Different Name":
+                new_name = st.text_input("New Name", value=dup_state['data'].get('name', '') + " (Copy)")
+        
+        if st.button("Confirm", key="dup_upload_confirm"):
+            user = get_user()
+            user_id = user.get("id") if user else None
+            
+            if option == "Add Version":
+                doc_ref = db.collection("recipes").document(dup_state["existing_id"])
+                doc_ref.collection("versions").document(generate_id("ver")).set(
+                    dup_state["data"] | {
+                        "timestamp": datetime.utcnow(),
+                        "edited_by": user_id,
+                    }
+                )
+                st.success("✅ Added as new version")
+            elif option == "Save under Different Name":
+                dup_state["data"]["name"] = new_name or dup_state["data"].get("name")
+                save_recipe_to_firestore(dup_state["data"], user_id=user_id)
+                st.success("✅ Recipe saved")
+            
+            st.session_state.pop("dup_upload_recipe")
+            if "recipe_upload_file" in st.session_state:
+                del st.session_state["recipe_upload_file"]
+            st.rerun()
+        
+        if st.button("Cancel", key="dup_upload_cancel"):
+            st.session_state.pop("dup_upload_recipe")
+            st.rerun()
+
+
 def _render_recipe_card(recipe: dict, *, is_version: bool = False):
     """Render a collapsible recipe card showing only the name by default.
 
@@ -489,6 +624,7 @@ def recipes_page(user: dict | None = None) -> None:
     st.title("📚 Recipes")
 
     add_recipe_via_link_ui()
+    add_recipe_via_upload_ui()
     add_recipe_manual_ui()
 
     # If a recipe has been selected for editing, open editor directly
