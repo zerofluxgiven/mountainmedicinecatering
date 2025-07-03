@@ -638,7 +638,9 @@ def _render_recipe_card(recipe: dict, *, is_version: bool = False):
 
             col_edit, col_add, col_del = st.columns(3)
             if col_edit.button("Edit", key=f"edit_{recipe['id']}"):
-                st.session_state["editing_recipe_id"] = recipe["id"]
+                # For versions, we need to edit the parent recipe
+                edit_id = parent_id if is_version else recipe["id"]
+                st.session_state["editing_recipe_id"] = edit_id
                 st.rerun()
             if col_add.button("Add Version", key=f"addver_{recipe['id']}"):
                 st.session_state[f"add_ver_{recipe['id']}"] = True
@@ -670,8 +672,8 @@ def _render_recipe_card(recipe: dict, *, is_version: bool = False):
                 )
                 tags = st.text_input("Tags (comma-separated)", value=", ".join(recipe.get("tags", [])), key=f"ver_tags_{recipe['id']}")
                 col_c, col_s = st.columns(2)
-                save = col_s.form_submit_button("Save")
                 cancel = col_c.form_submit_button("Cancel")
+                save = col_s.form_submit_button("Save")
 
                 if save:
                     user = get_user()

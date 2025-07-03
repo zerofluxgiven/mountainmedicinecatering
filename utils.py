@@ -153,14 +153,16 @@ def delete_button(label: str, key: str, **kwargs) -> bool:
         # Remember that we are awaiting confirmation so it persists across reruns
         st.session_state[confirm_key] = True
 
-        col_msg, col_yes, col_no = st.columns([2, 1, 1])
-        with col_msg:
-            st.markdown(
-                "<div style='background:white;color:black;padding:0.5rem;border-radius:4px;'>Are you sure?</div>",
-                unsafe_allow_html=True,
-            )
-        yes_clicked = col_yes.button("Yes", key=f"{confirm_key}_yes")
-        no_clicked = col_no.button("No", key=f"{confirm_key}_no")
+        # Create a container for the confirmation
+        st.markdown(
+            "<div style='background:white;color:black;padding:0.5rem;border-radius:4px;margin-bottom:0.5rem;'>Are you sure?</div>",
+            unsafe_allow_html=True,
+        )
+        
+        # Stack buttons horizontally, aligned to the left
+        col1, col2, col3 = st.columns([0.8, 0.8, 3])
+        yes_clicked = col1.button("Yes", key=f"{confirm_key}_yes", use_container_width=True)
+        no_clicked = col2.button("No", key=f"{confirm_key}_no", use_container_width=True)
 
         if yes_clicked:
             st.session_state.pop(confirm_key, None)
