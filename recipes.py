@@ -1,4 +1,5 @@
 import streamlit as st
+import uuid
 from firebase_init import get_db, get_bucket
 from firebase_admin import firestore
 from datetime import datetime
@@ -314,9 +315,35 @@ def add_recipe_via_link_ui():
 
 def add_recipe_manual_ui():
     """Create a recipe manually."""
+    
+    # Handle special version prompt
+    if "show_special_version_prompt" in st.session_state:
+        recipe_id = st.session_state["show_special_version_prompt"]
+        recipe_data = st.session_state.get("saved_recipe_data", {})
+        
+        st.success("Recipe saved successfully!")
+        col1, col2 = st.columns(2)
+        
+        with col1:
+            if st.button("Add Special Version", type="primary", use_container_width=True):
+                # Keep form populated and focus on special version field
+                st.session_state["keep_form_populated"] = True
+                st.session_state["parent_recipe_id"] = recipe_id
+                st.session_state["focus_special_version"] = True
+                del st.session_state["show_special_version_prompt"]
+                st.rerun()
+        
+        with col2:
+            if st.button("Clear Form", use_container_width=True):
+                st.session_state["clear_manual_recipe_form"] = True
+                del st.session_state["show_special_version_prompt"]
+                if "saved_recipe_data" in st.session_state:
+                    del st.session_state["saved_recipe_data"]
+                st.rerun()
+        return
 
     # Clear form fields on rerun if requested
-    if st.session_state.get("clear_manual_recipe_form"):
+    if st.session_state.get("clear_manual_recipe_form") and not st.session_state.get("keep_form_populated"):
         for key in [
             "manual_recipe_name",
             "manual_special_version",
@@ -351,12 +378,10 @@ def add_recipe_manual_ui():
         st.markdown("</div>", unsafe_allow_html=True)
 
     if submitted:
-        import uuid
-
         user = get_user()
-        recipe_id = str(uuid.uuid4())
+        parent_recipe_id = st.session_state.get("parent_recipe_id")
+        
         data = {
-            "id": recipe_id,
             "name": name,
             "ingredients": ingredients,
             "instructions": instructions,
@@ -371,13 +396,34 @@ def add_recipe_manual_ui():
         }
 
         try:
-            db.collection("recipes").document(recipe_id).set(data)
-            parsed = parse_recipe_ingredients(ingredients)
-            if parsed:
-                update_recipe_with_parsed_ingredients(recipe_id, parsed)
-            st.success("✅ Recipe saved!")
-            # flag to clear form fields on the next run
-            st.session_state["clear_manual_recipe_form"] = True
+            if parent_recipe_id and special_version:
+                # Save as a version of the parent recipe
+                version_id = generate_id("ver")
+                data["id"] = version_id
+                data["parent_id"] = parent_recipe_id
+                db.collection("recipes").document(parent_recipe_id).collection("versions").document(version_id).set(data)
+                st.success(f"✅ Special version '{special_version}' saved!")
+                # Clear the form
+                st.session_state["clear_manual_recipe_form"] = True
+                if "parent_recipe_id" in st.session_state:
+                    del st.session_state["parent_recipe_id"]
+                if "focus_special_version" in st.session_state:
+                    del st.session_state["focus_special_version"]
+            else:
+                # Save as a new recipe
+                recipe_id = str(uuid.uuid4())
+                data["id"] = recipe_id
+                db.collection("recipes").document(recipe_id).set(data)
+                parsed = parse_recipe_ingredients(ingredients)
+                if parsed:
+                    update_recipe_with_parsed_ingredients(recipe_id, parsed)
+                st.success("✅ Recipe saved!")
+                # Ask about special version only if no special version was provided
+                if not special_version:
+                    st.session_state["show_special_version_prompt"] = recipe_id
+                    st.session_state["saved_recipe_data"] = data
+                else:
+                    st.session_state["clear_manual_recipe_form"] = True
             st.rerun()
         except Exception as e:
             st.error(f"Failed to save recipe: {e}")
@@ -544,6 +590,26 @@ def _render_recipe_card(recipe: dict, *, is_version: bool = False):
         container.markdown('<div class="version-expander">', unsafe_allow_html=True)
     with container:
         with st.expander(header):
+            # Show special versions dropdown if this is a parent recipe
+            if not is_version:
+                try:
+                    versions = list(doc_ref.collection("versions").stream())
+                    if versions:
+                        version_names = [v.to_dict().get("special_version", "Unnamed Version") for v in versions]
+                        selected_version = st.selectbox(
+                            "Special Versions",
+                            options=["Original"] + version_names,
+                            key=f"version_select_{recipe['id']}"
+                        )
+                        
+                        if selected_version != "Original":
+                            # Show the selected version
+                            version_idx = version_names.index(selected_version)
+                            version_data = versions[version_idx].to_dict()
+                            recipe = version_data  # Use version data for display
+                except Exception as e:
+                    print(f"Error loading versions: {e}")
+            
             if recipe.get("image_url"):
                 # Center the image and standardize its display size
                 col_center = st.columns([1, 6, 1])[1]

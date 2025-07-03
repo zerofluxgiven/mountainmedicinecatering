@@ -59,7 +59,13 @@ def is_meaningful_recipe(recipe: dict) -> bool:
         return False
     if not (recipe.get("name") or recipe.get("title")):
         return False
-    return bool(recipe.get("ingredients") or recipe.get("instructions"))
+    # Check if ingredients and instructions are not empty
+    ingredients = recipe.get("ingredients", [])
+    instructions = recipe.get("instructions", [])
+    # Ensure we have actual content, not just empty lists
+    has_ingredients = ingredients and len(ingredients) > 0
+    has_instructions = instructions and len(instructions) > 0
+    return has_ingredients and has_instructions
 
 # --------------------------------------------
 # 🧠 Main Entry Point (Patched)
@@ -340,8 +346,7 @@ Only return a JSON object.
         )
 
         raw_output = response.choices[0].message.content
-        print("🔍 AI raw output:", raw_output)
-        st.warning("🔍 AI raw output:\n" + raw_output)
+        # print("🔍 AI raw output:", raw_output)  # Debug only
 
         try:
             return json.loads(raw_output)

@@ -91,6 +91,47 @@ Required secrets in `.streamlit/secrets.toml`:
 
 The application runs on port 8501 (Streamlit default) with custom theming defined in `.streamlit/config.toml`.
 
+## Recent Updates & Data Models
+
+### Recipe Data Structure
+Recipes are stored in Firestore with the following fields:
+- `id`: Unique identifier
+- `name`: Recipe title
+- `ingredients`: Text or array of ingredients
+- `instructions`: Text or array of steps
+- `serves`: Number of servings (critical for scaling)
+- `special_version`: Name of dietary variant (e.g., "Gluten-Free")
+- `tags`: Array of categorization tags
+- `allergens`: Array of allergens present
+- `image_url`: Firebase Storage URL for recipe image
+- `created_at`: Timestamp
+- `created_by`: User ID who created it
+- `ingredients_parsed`: Boolean indicating if ingredients were parsed
+
+### Special Versions System
+- Special versions (dietary variants) are stored as subcollections under parent recipes
+- Path: `/recipes/{recipeId}/versions/{versionId}`
+- Recipe viewer shows dropdown to switch between original and special versions
+- After saving a recipe, users are prompted to add special versions
+
+### Event Allergen Management
+- Individual allergies stored in: `/events/{eventId}/allergies/{allergyId}`
+- Event file contains aggregated `allergens` array that auto-updates
+- Allergen aggregation happens via `_update_event_file_allergens()` function
+
+### AI Parsing Updates
+- URL parsing includes browser headers to avoid 403 errors
+- Better error handling for invalid/missing OpenAI API keys
+- Recipe validation checks for non-empty ingredients AND instructions
+- Handles field name variations (serves vs servings)
+
+### File Upload Flow
+1. File uploaded to Firebase Storage
+2. Text extracted based on file type (PDF, image, DOCX, etc.)
+3. AI parser extracts structured data
+4. User can preview before saving
+5. Duplicate detection with version/rename options
+
 ## Important Considerations
 
 1. **No Test Suite**: Currently no automated tests. Be extra careful with changes.
@@ -101,8 +142,28 @@ The application runs on port 8501 (Streamlit default) with custom theming define
 
 4. **Mobile Experience**: Test changes on mobile viewport (responsive design critical).
 
-5. **AI Features**: Require valid OpenAI API key and handle rate limits gracefully.
+5. **AI Features**: 
+   - Require valid OpenAI API key in `.streamlit/secrets.toml`
+   - Handle rate limits gracefully
+   - Check for environment variable conflicts (OPENAI_API_KEY)
 
 6. **File Processing**: Supports PDF, images, CSV, DOCX - test file uploads thoroughly.
 
-7. **Session Management**: Handle session expiry and re-authentication flows properly.
+7. **Session Management**: 
+   - Handle session expiry and re-authentication flows properly
+   - Be careful with session state when using forms and number inputs
+   - Clear session state keys properly (del vs setting to empty)
+
+8. **Data Consistency**:
+   - Always include `serves` field when saving recipes
+   - Convert `servings` to `serves` for consistency
+   - Ensure `created_at` timestamps are added
+   - Aggregate allergens to event file when allergies change
+
+## Common Pitfalls
+
+1. **Import Errors**: Always import `uuid` at module level, not inside functions
+2. **Session State**: Don't set number input fields to empty strings
+3. **Firestore Queries**: Not all recipes have `created_at` field - handle legacy data
+4. **AI Parsing**: Empty arrays are not the same as missing fields - validate properly
+5. **Special Versions**: These are subcollection documents, not separate recipes

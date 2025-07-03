@@ -31,8 +31,39 @@ from recipes import recipes_page
 from admin_utilities import admin_utilities_ui
 from historical_menus import historical_menus_ui
 
+# Add custom JavaScript for better session handling
 components.html("""
 <script>
+// Keep session alive
+let lastActivity = Date.now();
+let sessionCheckInterval;
+
+// Update activity timestamp on any interaction
+document.addEventListener('click', () => { lastActivity = Date.now(); });
+document.addEventListener('keypress', () => { lastActivity = Date.now(); });
+document.addEventListener('scroll', () => { lastActivity = Date.now(); });
+
+// Check session periodically
+function checkSession() {
+  const token = localStorage.getItem("mm_token");
+  const expiry = parseInt(localStorage.getItem("mm_token_expiry") || "0", 10);
+  const now = Date.now();
+  
+  // If token is valid and user is active, keep session alive
+  if (token && now < expiry && (now - lastActivity) < 300000) { // 5 minutes
+    return;
+  }
+  
+  // If token expired, redirect to login
+  if (!token || now >= expiry) {
+    clearInterval(sessionCheckInterval);
+    window.location.href = 'https://mountainmedicine-6e572.web.app/?reason=expired';
+  }
+}
+
+// Check session every 30 seconds
+sessionCheckInterval = setInterval(checkSession, 30000);
+
 function shouldRedirect() {
   const token = localStorage.getItem("mm_token");
   const device = localStorage.getItem("mm_device") || "desktop";
@@ -189,15 +220,24 @@ def handle_auth():
             st.stop()
 
     elif "user" not in st.session_state and "token" not in query_params:
+        # Try to recover session from localStorage
         components.html("""
         <script>
-        const token = localStorage.getItem("mm_token") || "";
-        const device = localStorage.getItem("mm_device") || "desktop";
-        if (token) {
-          window.location.href = window.location.pathname + `?token=${token}&device=${device}`;
-        } else {
-          window.location.href = "https://mountainmedicine-6e572.web.app/?reason=unauthenticated";
-        }
+        // Add small delay to prevent race conditions
+        setTimeout(() => {
+            const token = localStorage.getItem("mm_token") || "";
+            const device = localStorage.getItem("mm_device") || "desktop";
+            const expiry = parseInt(localStorage.getItem("mm_token_expiry") || "0", 10);
+            const now = Date.now();
+            
+            if (token && now < expiry) {
+              // Valid token, redirect with it
+              window.location.href = window.location.pathname + `?token=${token}&device=${device}`;
+            } else {
+              // No valid token, go to login
+              window.location.href = "https://mountainmedicine-6e572.web.app/?reason=unauthenticated";
+            }
+        }, 100);
         </script>
         """, height=0)
         st.stop()
