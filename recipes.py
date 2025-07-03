@@ -248,7 +248,7 @@ def add_recipe_via_link_ui():
             instructions = st.text_area("Instructions", value=instructions_value, key="link_instructions")
 
             parsed_image_url = data.get("image_url")
-            image_file = st.file_uploader(
+            image_file = safe_file_uploader(
                 "Recipe Photo",
                 type=["png", "jpg", "jpeg"],
                 key="link_image_upload",

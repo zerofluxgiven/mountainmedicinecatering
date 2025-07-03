@@ -79,7 +79,10 @@ def upload_ui_mobile():
     db = get_db()
 
     st.markdown("### Upload a new file")
-    uploaded_file = st.file_uploader("Drop or select a file", type=["pdf", "txt", "jpg", "png", "jpeg", "csv", "docx"])
+    uploaded_file = safe_file_uploader(
+        "Drop or select a file",
+        type=["pdf", "txt", "jpg", "png", "jpeg", "csv", "docx"],
+    )
 
     if uploaded_file:
         with st.spinner("Parsing and uploading..."):
