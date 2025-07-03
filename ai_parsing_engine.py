@@ -47,18 +47,20 @@ def is_meaningful_recipe(recipe: dict) -> bool:
 # --------------------------------------------
 
 def parse_file(uploaded_file, target_type="all", user_id=None, file_id=None):
-    st.warning("🧪 Running parse_file()...")
-    print("📄 STARTING parse_file()")
+    try:
+        st.info("📄 Processing file...")
+        print(f"📄 STARTING parse_file() - File: {getattr(uploaded_file, 'name', 'Unknown')}, Type: {getattr(uploaded_file, 'type', 'Unknown')}")
 
     raw_text = extract_text(uploaded_file)
     st.session_state["extracted_text"] = raw_text
     image_url = extract_image_from_file(uploaded_file)
 
     if raw_text and raw_text.strip():
-        st.success("✅ Some text extracted.")
-        print("📄 Extracted text:", raw_text[:300])
+        st.success(f"✅ Extracted {len(raw_text)} characters of text.")
+        print(f"📄 Extracted text preview: {raw_text[:300]}...")
     else:
-        st.warning("❌ No text extracted from file.")
+        st.error("❌ No text could be extracted from this file.")
+        st.info("💡 Tip: Make sure the file contains readable text. For images, ensure they have clear text.")
         return {}
 
     parsed = {}
@@ -273,7 +275,7 @@ def query_ai_parser(raw_text, target_type):
         "You are an expert data parser. Extract only structured data from unstructured text.\n"
         "Return only a JSON object using proper capitalization.\n"
         "When parsing recipes, include a concise list of relevant tags such as cuisine, meal type, diets or allergens.\n"
-        "- recipes → include name, ingredients, instructions, servings, tags\n"
+        "- recipes → include name, ingredients, instructions, serves (number of servings), tags\n"
         "- menus → day, meal, items\n"
         "- tags → list of relevant tags\n"
         "- ingredients → list of items with quantity + unit if available\n"
@@ -287,6 +289,14 @@ Use common section headers like:
 - Instructions:
 - Steps:
 - Servings:
+
+For recipes, ensure the JSON includes:
+- "name": recipe title
+- "ingredients": list of ingredients  
+- "instructions": cooking steps
+- "serves": number of servings (as a number, not string)
+- "tags": relevant tags
+- "allergens": any allergens mentioned
 
 Only return a JSON object.
 
@@ -332,13 +342,26 @@ Only return a JSON object.
 
 def parse_recipe_from_url(url: str) -> dict:
     try:
-        resp = requests.get(url, timeout=10)
+        headers = {
+            'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/91.0.4472.124 Safari/537.36',
+            'Accept': 'text/html,application/xhtml+xml,application/xml;q=0.9,image/webp,*/*;q=0.8',
+            'Accept-Language': 'en-US,en;q=0.5',
+            'Accept-Encoding': 'gzip, deflate',
+            'Connection': 'keep-alive',
+            'Upgrade-Insecure-Requests': '1'
+        }
+        resp = requests.get(url, headers=headers, timeout=15)
         resp.raise_for_status()
         soup = BeautifulSoup(resp.text, "html.parser")
         text = soup.get_text(separator="\n")
         image_url = extract_image_from_soup(soup, url)
-    except Exception as e:
+    except requests.exceptions.RequestException as e:
         st.error(f"Failed to fetch page: {e}")
+        if "403" in str(e) or "forbidden" in str(e).lower():
+            st.info("💡 Tip: Some websites block automated requests. Try saving the recipe as a PDF and uploading it instead.")
+        return {}
+    except Exception as e:
+        st.error(f"Error parsing URL: {e}")
         return {}
 
     cleaned_text = clean_raw_text(text)

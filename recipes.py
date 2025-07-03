@@ -94,6 +94,10 @@ def parse_and_store_recipe_from_file(file_text: str, uploaded_by: str) -> str | 
 
 def save_recipe_to_firestore(recipe_data, user_id=None, file_id=None):
     recipe_id = str(uuid.uuid4())
+    
+    # Handle serves/servings field naming
+    serves = recipe_data.get("serves") or recipe_data.get("servings", 4)
+    
     doc = {
         "id": recipe_id,
         "name": recipe_data.get("title") or recipe_data.get("name", "Untitled"),
@@ -102,7 +106,11 @@ def save_recipe_to_firestore(recipe_data, user_id=None, file_id=None):
         "special_version": recipe_data.get("special_version", ""),
         "image_url": recipe_data.get("image_url"),
         "tags": recipe_data.get("tags", []),
+        "serves": serves,  # Add serves field
+        "allergens": recipe_data.get("allergens", []),  # Add allergens field
+        "ingredients_parsed": bool(recipe_data.get("ingredients")),  # Track if ingredients exist
         "created_by": user_id,
+        "created_at": datetime.utcnow(),  # Add timestamp
         "source_file_id": file_id,
     }
     db.collection("recipes").document(recipe_id).set(doc)
@@ -316,6 +324,7 @@ def add_recipe_manual_ui():
             "manual_instructions",
             "manual_notes",
             "manual_tags",
+            "manual_serves",
         ]:
             st.session_state[key] = ""
         st.session_state["clear_manual_recipe_form"] = False
@@ -329,6 +338,7 @@ def add_recipe_manual_ui():
         with st.form("manual_recipe_form"):
             name = st.text_input("Recipe Name", key="manual_recipe_name")
             special_version = st.text_input("Special Version", key="manual_special_version")
+            serves = st.number_input("Serves", min_value=1, value=4, key="manual_serves")
             ingredients = st.text_area("Ingredients", key="manual_ingredients")
             instructions = st.text_area("Instructions", key="manual_instructions")
             notes = st.text_area("Notes", key="manual_notes")
@@ -349,6 +359,7 @@ def add_recipe_manual_ui():
             "instructions": instructions,
             "special_version": special_version,
             "notes": notes,
+            "serves": serves,
             "tags": [t.strip() for t in tags.split(",") if t.strip()],
             "created_at": datetime.utcnow(),
             "author_id": user.get("id") if user else None,

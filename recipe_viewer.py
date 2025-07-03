@@ -25,6 +25,10 @@ def render_recipe_preview(parsed_data):
     st.subheader("🧪 Auto-Detected Recipe Preview")
 
     st.text_input("Recipe Name", value=recipe.get("name") or recipe.get("title", ""))
+    
+    serves = recipe.get("serves") or recipe.get("servings", "")
+    if serves:
+        st.text_input("Serves", value=str(serves))
 
     st.text_area("Ingredients", value=value_to_text(recipe.get("ingredients")))
 

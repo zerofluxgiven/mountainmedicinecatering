@@ -27,6 +27,9 @@ def add_allergy_to_event(event_id: str, allergy_data: Dict) -> bool:
         for ingredient_id in allergy_data.get('ingredient_ids', []):
             _update_ingredient_allergen_info(ingredient_id, allergy_data['person_name'], allergy_data['allergies'])
         
+        # Update event file allergens array
+        _update_event_file_allergens(event_id)
+        
         return True
         
     except Exception as e:
@@ -66,6 +69,10 @@ def delete_allergy(event_id: str, allergy_id: str) -> bool:
         
         # Delete the allergy
         db.collection("events").document(event_id).collection("allergies").document(allergy_id).delete()
+        
+        # Update event file allergens array
+        _update_event_file_allergens(event_id)
+        
         return True
         
     except Exception as e:
@@ -521,3 +528,26 @@ def _get_severity_breakdown(allergies: List[Dict]) -> Dict[str, int]:
             severity_counts[severity] += 1
     
     return severity_counts
+
+
+def _update_event_file_allergens(event_id: str):
+    """Update the event file's allergens array with all unique allergens from the event"""
+    try:
+        # Get all allergies for the event
+        allergies = get_event_allergies(event_id)
+        
+        # Extract unique allergens
+        unique_allergens = set()
+        for allergy in allergies:
+            for allergen in allergy.get('allergies', []):
+                unique_allergens.add(allergen)
+        
+        # Update event file
+        from event_file import update_event_file_field
+        from auth import get_user_id
+        
+        user_id = get_user_id()
+        update_event_file_field(event_id, 'allergens', list(unique_allergens), user_id)
+        
+    except Exception as e:
+        print(f"Failed to update event file allergens: {e}")
