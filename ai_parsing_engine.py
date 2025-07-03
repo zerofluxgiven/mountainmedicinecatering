@@ -25,9 +25,23 @@ from recipes import (
 
 # Initialize OpenAI client
 try:
-    client = openai.OpenAI(api_key=st.secrets["openai"]["api_key"])
+    # Check for environment variable first (which might be overriding)
+    env_key = os.getenv("OPENAI_API_KEY")
+    if env_key:
+        print(f"WARNING: OPENAI_API_KEY environment variable is set and starts with: {env_key[:10]}...")
+    
+    # Use secrets
+    api_key = st.secrets["openai"]["api_key"]
+    
+    # The OpenAI library might be picking up an env var instead of our provided key
+    # Force it to use our key by clearing any env var
+    if "OPENAI_API_KEY" in os.environ:
+        del os.environ["OPENAI_API_KEY"]
+    
+    client = openai.OpenAI(api_key=api_key)
 except Exception as e:
     print(f"Failed to initialize OpenAI client: {e}")
+    st.error(f"Failed to initialize OpenAI: {str(e)}")
     client = None
 
 # --------------------------------------------
@@ -344,8 +358,16 @@ Only return a JSON object.
     except Exception as e:
         error_msg = str(e)
         if "invalid_api_key" in error_msg or "401" in error_msg:
-            st.error("❌ Invalid OpenAI API key. Please check your configuration.")
-            st.info("💡 Update your API key in .streamlit/secrets.toml or set OPENAI_API_KEY environment variable.")
+            # Extract the key that's being used from the error message
+            import re
+            key_match = re.search(r'provided: (\S+)\.', error_msg)
+            if key_match:
+                bad_key = key_match.group(1)
+                st.error(f"❌ Invalid OpenAI API key being used: {bad_key[:20]}...")
+                st.info(f"Expected key from secrets starts with: {st.secrets['openai']['api_key'][:20]}...")
+            else:
+                st.error("❌ Invalid OpenAI API key. Please check your configuration.")
+            st.info("💡 Check .streamlit/secrets.toml and ensure no OPENAI_API_KEY environment variable is set.")
         else:
             st.error(f"OpenAI error: {e}")
         return {}
