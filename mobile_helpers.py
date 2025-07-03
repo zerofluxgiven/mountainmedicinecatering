@@ -22,6 +22,6 @@ def safe_dataframe(data, use_container_width=True, **kwargs):
 def safe_file_uploader(label, **kwargs):
     """Wrapper that handles mobile file upload with camera"""
     if st.session_state.get("mobile_mode", False):
-        return mobile_layout.handle_mobile_file_upload()
+        return mobile_layout.handle_mobile_file_upload(label, **kwargs)
     else:
         return st.file_uploader(label, **kwargs)  # ✅ FIXED: Direct st.file_uploader call
