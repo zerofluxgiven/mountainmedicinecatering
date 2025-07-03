@@ -64,7 +64,7 @@ def recipe_editor_ui(recipe_id=None, prefill_data=None):
             value=recipe.get("name") or recipe.get("title", ""),
         )
         special_version = st.text_input("Special Version", value=recipe.get("special_version", ""))
-        serves = st.number_input("Serves", min_value=0.5, step=0.5, value=float(recipe.get("serves", 4)))
+        serves = st.number_input("Serves", min_value=0.5, step=None, value=float(recipe.get("serves", 4)))
         
         ingredients = st.text_area("Ingredients", value=value_to_text(recipe.get("ingredients")))
         if prefill_data and recipe.get("ingredients"):
@@ -140,8 +140,8 @@ def recipe_editor_ui(recipe_id=None, prefill_data=None):
     # Scaling controls outside the main form
     target_servings = st.number_input(
         "Scale to how many servings?",
-        value=recipe.get("serves", 0),
-        step=0.5,
+        value=float(recipe.get("serves", 4)),
+        step=None,
     )
     if st.button("Scale Recipe"):
         try:

@@ -259,7 +259,7 @@ def render_create_event_section(user: dict) -> None:
                     end_date = st.date_input("End Date *", format="MM/DD/YYYY")
             with col2:
                 description = st.text_area("Description", placeholder="Brief description of the event...")
-                guest_count = st.number_input("Expected Guests", min_value=0, value=20)
+                guest_count = st.number_input("Expected Guests", min_value=0, value=20, step=None)
 
             submitted = st.form_submit_button("Create Event", type="primary")
 

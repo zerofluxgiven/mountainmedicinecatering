@@ -369,7 +369,7 @@ def add_recipe_manual_ui():
         with st.form("manual_recipe_form"):
             name = st.text_input("Recipe Name", key="manual_recipe_name")
             special_version = st.text_input("Special Version", key="manual_special_version")
-            serves = st.number_input("Serves", min_value=1, value=4, key="manual_serves")
+            serves = st.number_input("Serves", min_value=1, value=4, key="manual_serves", step=None)
             ingredients = st.text_area("Ingredients", key="manual_ingredients")
             instructions = st.text_area("Instructions", key="manual_instructions")
             notes = st.text_area("Notes", key="manual_notes")
@@ -467,7 +467,7 @@ def add_recipe_via_upload_ui():
                     with col1:
                         st.text_input("Recipe Name", value=recipe_data.get("name", ""), disabled=True)
                         serves = recipe_data.get("serves") or recipe_data.get("servings", 4)
-                        st.number_input("Serves", value=float(serves), disabled=True)
+                        st.number_input("Serves", value=float(serves), disabled=True, step=None)
                     
                     with col2:
                         if recipe_data.get("image_url"):

@@ -206,7 +206,7 @@ def _render_equipment_list(event_id):
             with col1:
                 new_eq = st.text_input("Equipment Name")
             with col2:
-                quantity = st.number_input("Quantity", min_value=1, value=1)
+                quantity = st.number_input("Quantity", min_value=1, value=1, step=None)
             with col3:
                 category = st.selectbox("Category", ["Cooking", "Serving", "Storage", "Transport", "Safety", "Other"])
             

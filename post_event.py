@@ -174,7 +174,7 @@ def _render_post_event_form(event_id: str, event_data: dict, user: dict) -> None
                 "Total Event Cost ($)",
                 min_value=0.0,
                 value=float(existing_summary.get("total_cost", 0.0)),
-                step=10.0
+                step=None
             )
         with col2:
             cost_per_person = total_cost / event_data.get("guest_count", 1) if event_data.get("guest_count", 0) > 0 else 0

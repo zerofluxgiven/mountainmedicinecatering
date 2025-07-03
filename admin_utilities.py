@@ -175,7 +175,7 @@ def _cleanup_tools():
     
     col1, col2 = st.columns(2)
     with col1:
-        days_old = st.number_input("Mark suggestions as stale after (days):", min_value=1, value=14)
+        days_old = st.number_input("Mark suggestions as stale after (days):", min_value=1, value=14, step=None)
     with col2:
         if st.button("🧹 Clean Stale Suggestions"):
             try:
@@ -364,7 +364,7 @@ def _archive_event_tool():
         
         with col2:
             # Option to archive events older than X days
-            days_old = st.number_input("Or archive events completed more than X days ago:", min_value=1, value=30)
+            days_old = st.number_input("Or archive events completed more than X days ago:", min_value=1, value=30, step=None)
             
             if st.button(f"📦 Archive Events Older Than {days_old} Days"):
                 cutoff_date = datetime.utcnow() - timedelta(days=days_old)
