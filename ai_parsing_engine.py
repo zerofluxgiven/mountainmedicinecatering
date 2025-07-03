@@ -47,9 +47,8 @@ def is_meaningful_recipe(recipe: dict) -> bool:
 # --------------------------------------------
 
 def parse_file(uploaded_file, target_type="all", user_id=None, file_id=None):
-    try:
-        st.info("📄 Processing file...")
-        print(f"📄 STARTING parse_file() - File: {getattr(uploaded_file, 'name', 'Unknown')}, Type: {getattr(uploaded_file, 'type', 'Unknown')}")
+    st.info("📄 Processing file...")
+    print(f"📄 STARTING parse_file() - File: {getattr(uploaded_file, 'name', 'Unknown')}, Type: {getattr(uploaded_file, 'type', 'Unknown')}")
 
     raw_text = extract_text(uploaded_file)
     st.session_state["extracted_text"] = raw_text
