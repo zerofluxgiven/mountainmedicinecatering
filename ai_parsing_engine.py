@@ -23,7 +23,17 @@ from recipes import (
     save_ingredient_to_firestore,
 )
 
-client = openai.OpenAI(api_key=st.secrets["openai"]["api_key"])
+# Initialize OpenAI client with error handling
+try:
+    api_key = st.secrets.get("openai", {}).get("api_key")
+    if not api_key or api_key.startswith("your-api-key"):
+        st.warning("⚠️ OpenAI API key not configured. AI parsing features will be disabled.")
+        client = None
+    else:
+        client = openai.OpenAI(api_key=api_key)
+except Exception as e:
+    st.error(f"Failed to initialize OpenAI client: {e}")
+    client = None
 
 # --------------------------------------------
 # 🧹 Central Cleaning & Validation Utils
@@ -270,6 +280,11 @@ def extract_image_from_soup(soup, base_url):
 # --------------------------------------------
 
 def query_ai_parser(raw_text, target_type):
+    if not client:
+        st.error("❌ OpenAI client not initialized. Please check your API key in .streamlit/secrets.toml")
+        st.info("💡 Add your OpenAI API key to .streamlit/secrets.toml:\n[openai]\napi_key = \"sk-...\"")
+        return {}
+    
     system_prompt = (
         "You are an expert data parser. Extract only structured data from unstructured text.\n"
         "Return only a JSON object using proper capitalization.\n"
@@ -332,7 +347,12 @@ Only return a JSON object.
         return {}
 
     except Exception as e:
-        st.error(f"OpenAI error: {e}")
+        error_msg = str(e)
+        if "invalid_api_key" in error_msg or "401" in error_msg:
+            st.error("❌ Invalid OpenAI API key. Please check your configuration.")
+            st.info("💡 Update your API key in .streamlit/secrets.toml or set OPENAI_API_KEY environment variable.")
+        else:
+            st.error(f"OpenAI error: {e}")
         return {}
 
 # --------------------------------------------
@@ -364,6 +384,12 @@ def parse_recipe_from_url(url: str) -> dict:
         return {}
 
     cleaned_text = clean_raw_text(text)
+    
+    # If OpenAI is not available, provide manual entry option
+    if not client:
+        st.warning("⚠️ AI parsing is not available. Please use manual entry or upload a file.")
+        return {}
+    
     parsed = query_ai_parser(cleaned_text, "recipes")
 
     # API may return the recipe nested under a "recipes" key
