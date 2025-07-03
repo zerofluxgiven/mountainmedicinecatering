@@ -8,6 +8,13 @@ import openai
 import fitz  # PyMuPDF
 from PIL import Image
 import pytesseract
+
+# Check if Tesseract is available
+try:
+    tesseract_version = pytesseract.get_tesseract_version()
+    print(f"Tesseract version: {tesseract_version}")
+except Exception as e:
+    print(f"WARNING: Tesseract not found or not configured: {e}")
 from docx import Document
 import requests
 from bs4 import BeautifulSoup
@@ -131,14 +138,24 @@ def parse_file(uploaded_file, target_type="all", user_id=None, file_id=None):
 
 def extract_text(uploaded_file):
     mime_type, _ = mimetypes.guess_type(uploaded_file.name)
+    
+    # Debug info
+    print(f"Extracting text from: {uploaded_file.name} (type: {uploaded_file.type}, mime: {mime_type})")
+    
     try:
         uploaded_file.seek(0)
-        if uploaded_file.type.startswith("text"):
-            return uploaded_file.read().decode("utf-8")
+        
+        # Check both file.type and mime_type for images
+        if uploaded_file.type.startswith("image") or (mime_type and mime_type.startswith("image")):
+            st.info(f"Processing image: {uploaded_file.name}")
+            text = extract_text_from_image(uploaded_file)
+            if text:
+                st.success(f"Extracted {len(text)} characters from image")
+            return text
         elif uploaded_file.type == "application/pdf":
             return extract_text_from_pdf(uploaded_file)
-        elif uploaded_file.type.startswith("image"):
-            return extract_text_from_image(uploaded_file)
+        elif uploaded_file.type.startswith("text"):
+            return uploaded_file.read().decode("utf-8")
         elif uploaded_file.type in ("text/csv", "application/vnd.ms-excel", "application/csv"):
             return extract_text_from_csv(uploaded_file)
         elif uploaded_file.type in (
@@ -147,8 +164,13 @@ def extract_text(uploaded_file):
         ):
             return extract_text_from_docx(uploaded_file)
         else:
+            # Fallback - check if it might be an image based on extension
+            if uploaded_file.name.lower().endswith(('.jpg', '.jpeg', '.png', '.gif', '.bmp')):
+                st.info("Detected image by extension, attempting OCR...")
+                return extract_text_from_image(uploaded_file)
             return uploaded_file.read().decode("utf-8", errors="ignore")
     except Exception as e:
+        st.error(f"Text extraction failed: {str(e)}")
         print(f"Text extraction error: {e}")
         return ""
 
@@ -167,11 +189,54 @@ def extract_text_from_pdf(uploaded_file):
         print(f"PDF parse error: {e}")
     return text
 
-def extract_text_from_image(uploaded_file):
+def extract_text_with_vision(uploaded_file):\n    \"\"\"Use OpenAI Vision API to extract text from image\"\"\"\n    try:\n        import base64\n        uploaded_file.seek(0)\n        \n        # Encode image to base64\n        image_data = base64.b64encode(uploaded_file.read()).decode('utf-8')\n        \n        # Create vision request\n        response = client.chat.completions.create(\n            model=\"gpt-4-vision-preview\",\n            messages=[\n                {\n                    \"role\": \"user\",\n                    \"content\": [\n                        {\n                            \"type\": \"text\",\n                            \"text\": \"Please extract ALL text from this image, including any recipes, ingredients, instructions, or other text. Return the text exactly as it appears.\"\n                        },\n                        {\n                            \"type\": \"image_url\",\n                            \"image_url\": {\n                                \"url\": f\"data:image/jpeg;base64,{image_data}\"\n                            }\n                        }\n                    ]\n                }\n            ],\n            max_tokens=2000\n        )\n        \n        extracted_text = response.choices[0].message.content\n        st.success(f\"AI Vision extracted {len(extracted_text)} characters\")\n        return extracted_text\n        \n    except Exception as e:\n        print(f\"Vision API error: {e}\")\n        return \"\"\n\ndef extract_text_from_image(uploaded_file):
     try:
+        # Reset file pointer
+        uploaded_file.seek(0)
+        
+        # Open and prepare image
         image = Image.open(uploaded_file)
-        return pytesseract.image_to_string(image)
+        
+        # Convert to RGB if necessary (handles RGBA, LA, etc.)
+        if image.mode not in ('RGB', 'L'):
+            image = image.convert('RGB')
+        
+        # Apply image preprocessing for better OCR
+        # Resize if image is too small
+        width, height = image.size
+        if width < 1000:
+            scale = 1000 / width
+            new_width = int(width * scale)
+            new_height = int(height * scale)
+            image = image.resize((new_width, new_height), Image.Resampling.LANCZOS)
+        
+        # Try OCR with different configurations
+        try:
+            # First try with default settings
+            text = pytesseract.image_to_string(image)
+            if text.strip():
+                st.success(f"OCR extracted {len(text)} characters")
+                return text
+        except Exception as e:
+            st.warning(f"Default OCR failed: {str(e)}")
+            pass
+        
+        # Try with different PSM modes for better detection
+        for psm in [6, 3, 11]:  # Different page segmentation modes
+            try:
+                custom_config = f'--oem 3 --psm {psm}'
+                text = pytesseract.image_to_string(image, config=custom_config)
+                if text.strip():
+                    print(f"OCR succeeded with PSM mode {psm}")
+                    return text
+            except:
+                continue
+        
+        st.warning("OCR failed to extract text. Trying alternative method...")
+        return ""
+        
     except Exception as e:
+        st.error(f"Image processing error: {str(e)}")
         print(f"Image OCR error: {e}")
         return ""
 
