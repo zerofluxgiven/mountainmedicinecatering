@@ -1,4 +1,5 @@
 import streamlit as st
+import uuid
 from firebase_init import get_db, get_bucket
 from firebase_admin import firestore
 from datetime import datetime
@@ -314,9 +315,35 @@ def add_recipe_via_link_ui():
 
 def add_recipe_manual_ui():
     """Create a recipe manually."""
+    
+    # Handle special version prompt
+    if "show_special_version_prompt" in st.session_state:
+        recipe_id = st.session_state["show_special_version_prompt"]
+        recipe_data = st.session_state.get("saved_recipe_data", {})
+        
+        st.success("Recipe saved successfully!")
+        col1, col2 = st.columns(2)
+        
+        with col1:
+            if st.button("Add Special Version", type="primary", use_container_width=True):
+                # Keep form populated and focus on special version field
+                st.session_state["keep_form_populated"] = True
+                st.session_state["parent_recipe_id"] = recipe_id
+                st.session_state["focus_special_version"] = True
+                del st.session_state["show_special_version_prompt"]
+                st.rerun()
+        
+        with col2:
+            if st.button("Clear Form", use_container_width=True):
+                st.session_state["clear_manual_recipe_form"] = True
+                del st.session_state["show_special_version_prompt"]
+                if "saved_recipe_data" in st.session_state:
+                    del st.session_state["saved_recipe_data"]
+                st.rerun()
+        return
 
     # Clear form fields on rerun if requested
-    if st.session_state.get("clear_manual_recipe_form"):
+    if st.session_state.get("clear_manual_recipe_form") and not st.session_state.get("keep_form_populated"):
         for key in [
             "manual_recipe_name",
             "manual_special_version",
@@ -376,8 +403,9 @@ def add_recipe_manual_ui():
             if parsed:
                 update_recipe_with_parsed_ingredients(recipe_id, parsed)
             st.success("✅ Recipe saved!")
-            # flag to clear form fields on the next run
-            st.session_state["clear_manual_recipe_form"] = True
+            # Ask about special version
+            st.session_state["show_special_version_prompt"] = recipe_id
+            st.session_state["saved_recipe_data"] = data
             st.rerun()
         except Exception as e:
             st.error(f"Failed to save recipe: {e}")
