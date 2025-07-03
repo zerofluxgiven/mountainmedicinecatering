@@ -160,17 +160,35 @@ def save_uploaded_file(file, event_id: str, uploaded_by: str):
 
     raw_text = None
     recipe = {}
+    parsed_data = {}
+    
     try:
         fcopy = BytesIO(content)
         fcopy.name = filename
         fcopy.type = mimetype
-        raw_text = extract_text(fcopy)
-        fcopy.seek(0)
-        recipe = parse_recipe_from_file(fcopy)
-        if recipe:
-            save_recipe_to_firestore(recipe, user_id=uploaded_by, file_id=file_id)
+        
+        # Try to extract text first
+        try:
+            raw_text = extract_text(fcopy)
+            fcopy.seek(0)
+        except Exception as e:
+            st.warning(f"Text extraction failed: {e}")
+            print(f"Text extraction error: {e}")
+        
+        # Try full parsing if we have text
+        if raw_text:
+            try:
+                parsed_data = parse_file(fcopy, target_type="all", user_id=uploaded_by, file_id=file_id)
+                recipe = parsed_data.get("recipes", {})
+                if recipe and isinstance(recipe, dict) and recipe.get("name"):
+                    save_recipe_to_firestore(recipe, user_id=uploaded_by, file_id=file_id)
+                    st.success(f"✅ Recipe '{recipe.get('name')}' saved successfully")
+            except Exception as e:
+                st.error(f"Recipe parsing failed: {e}")
+                print(f"Recipe parsing error: {e}")
     except Exception as e:
-        print(f"AI parsing failed: {e}")
+        st.error(f"File processing failed: {e}")
+        print(f"File processing error: {e}")
 
     metadata = {
         "name": filename,
@@ -184,9 +202,9 @@ def save_uploaded_file(file, event_id: str, uploaded_by: str):
         "deleted": False,
         "raw_text": raw_text,
         "parsed_data": {
-            "parsed": recipe,
+            "parsed": parsed_data if parsed_data else {"recipes": recipe},
             "version": 1,
-            "status": "pending_review",
+            "status": "pending_review" if (recipe or parsed_data) else "no_content",
             "last_updated": datetime.utcnow(),
             "user_id": uploaded_by
         } if recipe else {},
@@ -195,7 +213,7 @@ def save_uploaded_file(file, event_id: str, uploaded_by: str):
     db.collection("files").document(file_id).set(metadata)
     return {
         "file_id": file_id,
-        "parsed": recipe,
+        "parsed": parsed_data if parsed_data else {"recipes": recipe},
         "raw_text": raw_text
     }
 

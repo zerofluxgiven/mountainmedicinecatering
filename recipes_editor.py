@@ -54,9 +54,9 @@ def recipe_editor_ui(recipe_id=None, prefill_data=None):
     display_name = recipe.get("name") or recipe.get("title", "Unnamed Recipe")
     st.subheader(f"Editing: {display_name}")
 
-    if "serves" not in recipe or not isinstance(recipe["serves"], (int, float)):
-        st.warning("This recipe is missing a valid 'Serves' value. Please enter it below:")
-        recipe["serves"] = st.number_input("Serves", min_value=0.5, step=0.5)
+    # Check if serves is missing and set a default
+    if "serves" not in recipe or not isinstance(recipe.get("serves"), (int, float)):
+        recipe["serves"] = 4  # Default serving size
 
     with st.form("edit_recipe_form"):
         name = st.text_input(
@@ -64,6 +64,7 @@ def recipe_editor_ui(recipe_id=None, prefill_data=None):
             value=recipe.get("name") or recipe.get("title", ""),
         )
         special_version = st.text_input("Special Version", value=recipe.get("special_version", ""))
+        serves = st.number_input("Serves", min_value=0.5, step=0.5, value=float(recipe.get("serves", 4)))
         
         ingredients = st.text_area("Ingredients", value=value_to_text(recipe.get("ingredients")))
         if prefill_data and recipe.get("ingredients"):
@@ -129,6 +130,7 @@ def recipe_editor_ui(recipe_id=None, prefill_data=None):
                     "special_version": special_version,
                     "notes": notes,
                     "tags": tag_list,
+                    "serves": serves,
                     "edit_note": edit_note,
                 },
             }
