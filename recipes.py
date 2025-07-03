@@ -324,9 +324,12 @@ def add_recipe_manual_ui():
             "manual_instructions",
             "manual_notes",
             "manual_tags",
-            "manual_serves",
         ]:
-            st.session_state[key] = ""
+            if key in st.session_state:
+                del st.session_state[key]
+        # Handle serves separately since it's a number
+        if "manual_serves" in st.session_state:
+            del st.session_state["manual_serves"]
         st.session_state["clear_manual_recipe_form"] = False
 
     with st.expander("Add Recipe Manually", expanded=False):
@@ -637,12 +640,22 @@ def recipes_page(user: dict | None = None) -> None:
     search_term = st.text_input("Search recipes", key="recipe_search")
 
     try:
-        recipes = [
-            doc.to_dict() | {"id": doc.id}
-            for doc in db.collection("recipes")
-            .order_by("created_at", direction=firestore.Query.DESCENDING)
-            .stream()
-        ]
+        # Try to order by created_at, fall back to unordered if field doesn't exist
+        try:
+            recipes = [
+                doc.to_dict() | {"id": doc.id}
+                for doc in db.collection("recipes")
+                .order_by("created_at", direction=firestore.Query.DESCENDING)
+                .stream()
+            ]
+        except:
+            # Fallback: get all recipes without ordering
+            recipes = [
+                doc.to_dict() | {"id": doc.id}
+                for doc in db.collection("recipes").stream()
+            ]
+            # Sort in Python by created_at if it exists, otherwise put at end
+            recipes.sort(key=lambda r: r.get("created_at", datetime.min), reverse=True)
     except Exception as e:
         st.error(f"Failed to load recipes: {e}")
         return

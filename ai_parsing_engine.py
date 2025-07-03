@@ -23,7 +23,26 @@ from recipes import (
     save_ingredient_to_firestore,
 )
 
-client = openai.OpenAI(api_key=st.secrets["openai"]["api_key"])
+# Initialize OpenAI client
+try:
+    # Check for environment variable first (which might be overriding)
+    env_key = os.getenv("OPENAI_API_KEY")
+    if env_key:
+        print(f"WARNING: OPENAI_API_KEY environment variable is set and starts with: {env_key[:10]}...")
+    
+    # Use secrets
+    api_key = st.secrets["openai"]["api_key"]
+    
+    # The OpenAI library might be picking up an env var instead of our provided key
+    # Force it to use our key by clearing any env var
+    if "OPENAI_API_KEY" in os.environ:
+        del os.environ["OPENAI_API_KEY"]
+    
+    client = openai.OpenAI(api_key=api_key)
+except Exception as e:
+    print(f"Failed to initialize OpenAI client: {e}")
+    st.error(f"Failed to initialize OpenAI: {str(e)}")
+    client = None
 
 # --------------------------------------------
 # 🧹 Central Cleaning & Validation Utils
@@ -270,6 +289,11 @@ def extract_image_from_soup(soup, base_url):
 # --------------------------------------------
 
 def query_ai_parser(raw_text, target_type):
+    if not client:
+        st.error("❌ OpenAI client not initialized. Please check your API key in .streamlit/secrets.toml")
+        st.info("💡 Add your OpenAI API key to .streamlit/secrets.toml:\n[openai]\napi_key = \"sk-...\"")
+        return {}
+    
     system_prompt = (
         "You are an expert data parser. Extract only structured data from unstructured text.\n"
         "Return only a JSON object using proper capitalization.\n"
@@ -332,7 +356,20 @@ Only return a JSON object.
         return {}
 
     except Exception as e:
-        st.error(f"OpenAI error: {e}")
+        error_msg = str(e)
+        if "invalid_api_key" in error_msg or "401" in error_msg:
+            # Extract the key that's being used from the error message
+            import re
+            key_match = re.search(r'provided: (\S+)\.', error_msg)
+            if key_match:
+                bad_key = key_match.group(1)
+                st.error(f"❌ Invalid OpenAI API key being used: {bad_key[:20]}...")
+                st.info(f"Expected key from secrets starts with: {st.secrets['openai']['api_key'][:20]}...")
+            else:
+                st.error("❌ Invalid OpenAI API key. Please check your configuration.")
+            st.info("💡 Check .streamlit/secrets.toml and ensure no OPENAI_API_KEY environment variable is set.")
+        else:
+            st.error(f"OpenAI error: {e}")
         return {}
 
 # --------------------------------------------
@@ -364,6 +401,12 @@ def parse_recipe_from_url(url: str) -> dict:
         return {}
 
     cleaned_text = clean_raw_text(text)
+    
+    # If OpenAI is not available, provide manual entry option
+    if not client:
+        st.warning("⚠️ AI parsing is not available. Please use manual entry or upload a file.")
+        return {}
+    
     parsed = query_ai_parser(cleaned_text, "recipes")
 
     # API may return the recipe nested under a "recipes" key
