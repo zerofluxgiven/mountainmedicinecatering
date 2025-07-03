@@ -74,9 +74,9 @@ def recipe_editor_ui(recipe_id=None, prefill_data=None):
 
         tags = st.text_input("Tags (comma-separated)", value=", ".join(recipe.get("tags", [])))
         edit_note = st.text_input("📝 Edit Note (for version history)", value="", key="edit_note")
-
-        if st.button("🧠 Suggest Tags with AI"):
-            st.info("🧠 AI tag suggestion coming soon...")
+        
+        # Note: AI tag suggestion feature coming soon
+        st.info("💡 Tip: Add tags like 'Vegetarian', 'Gluten-Free', 'Quick', etc.")
 
         if recipe.get("ingredients_parsed"):
             render_allergy_warning(recipe)
