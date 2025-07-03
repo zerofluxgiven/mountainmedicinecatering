@@ -23,16 +23,11 @@ from recipes import (
     save_ingredient_to_firestore,
 )
 
-# Initialize OpenAI client with error handling
+# Initialize OpenAI client
 try:
-    api_key = st.secrets.get("openai", {}).get("api_key")
-    if not api_key or api_key.startswith("your-api-key"):
-        st.warning("⚠️ OpenAI API key not configured. AI parsing features will be disabled.")
-        client = None
-    else:
-        client = openai.OpenAI(api_key=api_key)
+    client = openai.OpenAI(api_key=st.secrets["openai"]["api_key"])
 except Exception as e:
-    st.error(f"Failed to initialize OpenAI client: {e}")
+    print(f"Failed to initialize OpenAI client: {e}")
     client = None
 
 # --------------------------------------------
