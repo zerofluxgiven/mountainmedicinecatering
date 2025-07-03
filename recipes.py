@@ -5,6 +5,7 @@ from firebase_admin import firestore
 from datetime import datetime
 from utils import format_date, get_active_event_id, value_to_text, generate_id, delete_button
 from auth import get_user
+from mobile_helpers import safe_file_uploader
 from ingredients import (
     parse_recipe_ingredients,
     update_recipe_with_parsed_ingredients,
@@ -442,7 +443,6 @@ def add_recipe_via_upload_ui():
             unsafe_allow_html=True,
         )
         
-        from mobile_helpers import safe_file_uploader
         uploaded_file = safe_file_uploader(
             "Upload a recipe file (PDF, image, or document)",
             type=["pdf", "jpg", "jpeg", "png", "txt", "docx"],
@@ -505,8 +505,14 @@ def add_recipe_via_upload_ui():
                     
                     with col2:
                         if st.button("✏️ Edit First", use_container_width=True):
-                            st.session_state["inline_editor_data"] = recipe_data
-                            st.session_state["inline_editor_type"] = "recipe"
+                            # Save the recipe first, then open editor
+                            user = get_user()
+                            user_id = user.get("id") if user else None
+                            recipe_id = save_recipe_to_firestore(recipe_data, user_id=user_id)
+                            st.session_state["editing_recipe_id"] = recipe_id
+                            # Clear the upload
+                            if "recipe_upload_file" in st.session_state:
+                                del st.session_state["recipe_upload_file"]
                             st.rerun()
                     
                     with col3:
@@ -615,6 +621,11 @@ def _render_recipe_card(recipe: dict, *, is_version: bool = False):
                 col_center = st.columns([1, 6, 1])[1]
                 with col_center:
                     st.image(recipe["image_url"], width=400)
+            # Show serves/servings
+            serves = recipe.get("serves") or recipe.get("servings", "")
+            if serves:
+                st.markdown(f"**Serves:** {serves}")
+            
             st.markdown("#### Ingredients")
             render_ingredient_columns(recipe.get("ingredients"))
             st.markdown("#### Instructions")
@@ -662,23 +673,24 @@ def _render_recipe_card(recipe: dict, *, is_version: bool = False):
                 save = col_s.form_submit_button("Save")
                 cancel = col_c.form_submit_button("Cancel")
 
-            if save:
-                user = get_user()
-                version_entry = {
-                    "name": name,
-                    "ingredients": ingredients,
-                    "instructions": instructions,
-                    "notes": notes,
-                    "special_version": special_version,
-                    "tags": [t.strip() for t in tags.split(',') if t.strip()],
-                    "timestamp": datetime.utcnow(),
-                    "edited_by": user.get("id") if user else None,
-                }
-                doc_ref.collection("versions").document(generate_id("ver")).set(version_entry)
-                st.session_state.pop(f"add_ver_{recipe['id']}", None)
-                st.rerun()
-            elif cancel:
-                st.session_state.pop(f"add_ver_{recipe['id']}", None)
+                if save:
+                    user = get_user()
+                    version_entry = {
+                        "name": name,
+                        "ingredients": ingredients,
+                        "instructions": instructions,
+                        "notes": notes,
+                        "special_version": special_version,
+                        "tags": [t.strip() for t in tags.split(',') if t.strip()],
+                        "timestamp": datetime.utcnow(),
+                        "edited_by": user.get("id") if user else None,
+                    }
+                    doc_ref.collection("versions").document(generate_id("ver")).set(version_entry)
+                    st.session_state.pop(f"add_ver_{recipe['id']}", None)
+                    st.rerun()
+                elif cancel:
+                    st.session_state.pop(f"add_ver_{recipe['id']}", None)
+                    st.rerun()
 
     if is_version:
         container.markdown('</div>', unsafe_allow_html=True)
@@ -696,6 +708,15 @@ def recipes_page(user: dict | None = None) -> None:
     add_recipe_via_upload_ui()
     add_recipe_manual_ui()
 
+    # Check for inline editor data first
+    if "inline_editor_data" in st.session_state and st.session_state.get("inline_editor_type") == "recipe":
+        from recipes_editor import recipe_editor_ui
+        # Create a temporary recipe for editing
+        recipe_data = st.session_state.pop("inline_editor_data")
+        st.session_state.pop("inline_editor_type", None)
+        recipe_editor_ui(prefill_data=recipe_data)
+        return
+    
     # If a recipe has been selected for editing, open editor directly
     editing_id = st.session_state.pop("editing_recipe_id", None)
     if editing_id:
