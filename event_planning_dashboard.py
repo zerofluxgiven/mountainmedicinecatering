@@ -135,8 +135,8 @@ def event_planning_dashboard_ui(event_id):
             if start > end:
                 st.error("⚠️ Start date must be before end date")
                 
-            headcount = st.number_input("👥 Expected Guests", min_value=0, value=event.get("guest_count", 0))
-            staff_count = st.number_input("🧑‍🍳 Staff Count", min_value=0, value=event.get("staff_count", 0))
+            headcount = st.number_input("👥 Expected Guests", min_value=0, value=event.get("guest_count", 0), step=None)
+            staff_count = st.number_input("🧑‍🍳 Staff Count", min_value=0, value=event.get("staff_count", 0), step=None)
 
         # Additional details - FIXED
         st.markdown("## 📝 Additional Information")
@@ -424,7 +424,7 @@ def _render_equipment_list_editor(event_id):
         with col1:
             equipment_name = st.text_input("Equipment Name *")
         with col2:
-            quantity = st.number_input("Quantity", min_value=1, value=1)
+            quantity = st.number_input("Quantity", min_value=1, value=1, step=None)
         
         category = st.selectbox("Category", ["Cooking", "Serving", "Storage", "Transport", "Safety", "Other"])
         
