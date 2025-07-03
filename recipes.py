@@ -378,12 +378,10 @@ def add_recipe_manual_ui():
         st.markdown("</div>", unsafe_allow_html=True)
 
     if submitted:
-        import uuid
-
         user = get_user()
-        recipe_id = str(uuid.uuid4())
+        parent_recipe_id = st.session_state.get("parent_recipe_id")
+        
         data = {
-            "id": recipe_id,
             "name": name,
             "ingredients": ingredients,
             "instructions": instructions,
@@ -398,14 +396,34 @@ def add_recipe_manual_ui():
         }
 
         try:
-            db.collection("recipes").document(recipe_id).set(data)
-            parsed = parse_recipe_ingredients(ingredients)
-            if parsed:
-                update_recipe_with_parsed_ingredients(recipe_id, parsed)
-            st.success("✅ Recipe saved!")
-            # Ask about special version
-            st.session_state["show_special_version_prompt"] = recipe_id
-            st.session_state["saved_recipe_data"] = data
+            if parent_recipe_id and special_version:
+                # Save as a version of the parent recipe
+                version_id = generate_id("ver")
+                data["id"] = version_id
+                data["parent_id"] = parent_recipe_id
+                db.collection("recipes").document(parent_recipe_id).collection("versions").document(version_id).set(data)
+                st.success(f"✅ Special version '{special_version}' saved!")
+                # Clear the form
+                st.session_state["clear_manual_recipe_form"] = True
+                if "parent_recipe_id" in st.session_state:
+                    del st.session_state["parent_recipe_id"]
+                if "focus_special_version" in st.session_state:
+                    del st.session_state["focus_special_version"]
+            else:
+                # Save as a new recipe
+                recipe_id = str(uuid.uuid4())
+                data["id"] = recipe_id
+                db.collection("recipes").document(recipe_id).set(data)
+                parsed = parse_recipe_ingredients(ingredients)
+                if parsed:
+                    update_recipe_with_parsed_ingredients(recipe_id, parsed)
+                st.success("✅ Recipe saved!")
+                # Ask about special version only if no special version was provided
+                if not special_version:
+                    st.session_state["show_special_version_prompt"] = recipe_id
+                    st.session_state["saved_recipe_data"] = data
+                else:
+                    st.session_state["clear_manual_recipe_form"] = True
             st.rerun()
         except Exception as e:
             st.error(f"Failed to save recipe: {e}")
@@ -572,6 +590,26 @@ def _render_recipe_card(recipe: dict, *, is_version: bool = False):
         container.markdown('<div class="version-expander">', unsafe_allow_html=True)
     with container:
         with st.expander(header):
+            # Show special versions dropdown if this is a parent recipe
+            if not is_version:
+                try:
+                    versions = list(doc_ref.collection("versions").stream())
+                    if versions:
+                        version_names = [v.to_dict().get("special_version", "Unnamed Version") for v in versions]
+                        selected_version = st.selectbox(
+                            "Special Versions",
+                            options=["Original"] + version_names,
+                            key=f"version_select_{recipe['id']}"
+                        )
+                        
+                        if selected_version != "Original":
+                            # Show the selected version
+                            version_idx = version_names.index(selected_version)
+                            version_data = versions[version_idx].to_dict()
+                            recipe = version_data  # Use version data for display
+                except Exception as e:
+                    print(f"Error loading versions: {e}")
+            
             if recipe.get("image_url"):
                 # Center the image and standardize its display size
                 col_center = st.columns([1, 6, 1])[1]
