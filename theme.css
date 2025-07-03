@@ -44,6 +44,26 @@ body, html {
     margin-top: 0 !important;
 }
 
+/* Reduce Streamlit's default header spacing */
+[data-testid="stAppViewContainer"] {
+    padding-top: 0 !important;
+}
+
+[data-testid="stHeader"] {
+    height: 0 !important;
+    display: none !important;
+}
+
+[data-testid="stToolbar"] {
+    display: none !important;
+}
+
+/* Compact header area */
+.main > div:first-child {
+    padding-top: 0 !important;
+    margin-top: 0 !important;
+}
+
 /* -----------------------------
    TOUCH-FRIENDLY BUTTONS
 ----------------------------- */
@@ -592,3 +612,34 @@ button[id^="upcoming_"], button[id^="view_"] {
     display: flex;
 }
 
+
+
+/* Additional spacing fixes for header - Added to reduce 500px gap */
+.stApp > header {
+    height: 0 \!important;
+    min-height: 0 \!important;
+}
+
+.stApp [data-testid="stDecoration"] {
+    display: none \!important;
+}
+
+/* Ensure no extra padding on main content */
+.main .block-container:first-child {
+    padding-top: 0 \!important;
+}
+
+/* Logo specific adjustments */
+.element-container:has(img) {
+    line-height: 0 \!important;
+}
+
+/* Prevent Streamlit from adding space for missing elements */
+.stHidden {
+    display: none \!important;
+}
+
+/* Fix for blank page on refresh */
+.stApp {
+    min-height: 100vh \!important;
+}

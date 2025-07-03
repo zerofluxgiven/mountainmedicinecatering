@@ -753,14 +753,18 @@ def render_top_navbar(tabs):
         st.warning("⚠️ No navigation tabs defined.")
         return
 
-    # Inject logo banner above tabs
+    # Inject logo banner above tabs with reduced spacing
     with st.container():
         st.markdown(
-            "<div style='text-align:center; padding: 1rem 0;'>",
+            """
+            <div style='text-align:center; margin: -2rem 0 -1rem 0; padding: 0;'>
+                <img src='https://mountainmedicine-6e572.web.app/mountain_logo_longer.png' 
+                     style='width: 600px; max-width: 90%; height: 200px; object-fit: contain; 
+                            display: inline-block; margin: 0 auto;' />
+            </div>
+            """,
             unsafe_allow_html=True,
         )
-        st.image("https://mountainmedicine-6e572.web.app/mountain_logo_longer.png", width=600)
-        st.markdown("</div>", unsafe_allow_html=True)
 
     default_tab = "Dashboard" if "Dashboard" in tabs else tabs[0]
     current_tab = st.session_state.get("top_nav", default_tab)
