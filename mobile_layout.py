@@ -105,7 +105,7 @@ class MobileLayout:
             except:
                 self._is_mobile = False
         return self._is_mobile
-    
+
     def apply_mobile_theme(self):
         """Apply mobile-specific CSS and optimizations"""
         css_file = Path(__file__).resolve().parent / "theme.css"
@@ -134,6 +134,13 @@ class MobileLayout:
             </style>
             """
             st.markdown(mobile_css, unsafe_allow_html=True)
+
+    def handle_mobile_file_upload(self, label: str = "Upload or take a photo", type: Optional[List[str]] = None):
+        """Provide a mobile-friendly file uploader with camera support."""
+        uploaded = st.file_uploader(label, type=type)
+        if not uploaded:
+            uploaded = st.camera_input(label)
+        return uploaded
     
     def render_mobile_navigation(self):
         """Use the unified top navigation for mobile"""
