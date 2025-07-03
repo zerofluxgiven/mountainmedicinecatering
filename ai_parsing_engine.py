@@ -189,7 +189,47 @@ def extract_text_from_pdf(uploaded_file):
         print(f"PDF parse error: {e}")
     return text
 
-def extract_text_with_vision(uploaded_file):\n    \"\"\"Use OpenAI Vision API to extract text from image\"\"\"\n    try:\n        import base64\n        uploaded_file.seek(0)\n        \n        # Encode image to base64\n        image_data = base64.b64encode(uploaded_file.read()).decode('utf-8')\n        \n        # Create vision request\n        response = client.chat.completions.create(\n            model=\"gpt-4-vision-preview\",\n            messages=[\n                {\n                    \"role\": \"user\",\n                    \"content\": [\n                        {\n                            \"type\": \"text\",\n                            \"text\": \"Please extract ALL text from this image, including any recipes, ingredients, instructions, or other text. Return the text exactly as it appears.\"\n                        },\n                        {\n                            \"type\": \"image_url\",\n                            \"image_url\": {\n                                \"url\": f\"data:image/jpeg;base64,{image_data}\"\n                            }\n                        }\n                    ]\n                }\n            ],\n            max_tokens=2000\n        )\n        \n        extracted_text = response.choices[0].message.content\n        st.success(f\"AI Vision extracted {len(extracted_text)} characters\")\n        return extracted_text\n        \n    except Exception as e:\n        print(f\"Vision API error: {e}\")\n        return \"\"\n\ndef extract_text_from_image(uploaded_file):
+def extract_text_with_vision(uploaded_file):
+    """Use OpenAI Vision API to extract text from image"""
+    try:
+        import base64
+        uploaded_file.seek(0)
+        
+        # Encode image to base64
+        image_data = base64.b64encode(uploaded_file.read()).decode('utf-8')
+        
+        # Create vision request
+        response = client.chat.completions.create(
+            model="gpt-4-vision-preview",
+            messages=[
+                {
+                    "role": "user",
+                    "content": [
+                        {
+                            "type": "text",
+                            "text": "Please extract ALL text from this image, including any recipes, ingredients, instructions, or other text. Return the text exactly as it appears."
+                        },
+                        {
+                            "type": "image_url",
+                            "image_url": {
+                                "url": f"data:image/jpeg;base64,{image_data}"
+                            }
+                        }
+                    ]
+                }
+            ],
+            max_tokens=2000
+        )
+        
+        extracted_text = response.choices[0].message.content
+        st.success(f"AI Vision extracted {len(extracted_text)} characters")
+        return extracted_text
+        
+    except Exception as e:
+        print(f"Vision API error: {e}")
+        return ""
+
+def extract_text_from_image(uploaded_file):
     try:
         # Reset file pointer
         uploaded_file.seek(0)
