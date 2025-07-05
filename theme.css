@@ -64,6 +64,36 @@ body, html {
     margin-top: 0 !important;
 }
 
+/* Remove all top spacing from Streamlit containers */
+.appview-container {
+    padding-top: 0 !important;
+}
+
+.main {
+    padding-top: 0 !important;
+    margin-top: 0 !important;
+}
+
+section.main > div {
+    padding-top: 0 !important;
+}
+
+/* Target the specific block container */
+section[data-testid="stSidebar"] + div {
+    padding-top: 0 !important;
+}
+
+/* Remove iframe padding if running in iframe */
+body {
+    padding-top: 0 !important;
+    margin-top: 0 !important;
+}
+
+html {
+    padding-top: 0 !important;
+    margin-top: 0 !important;
+}
+
 /* -----------------------------
    TOUCH-FRIENDLY BUTTONS
 ----------------------------- */

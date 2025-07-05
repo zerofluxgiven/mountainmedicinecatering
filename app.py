@@ -110,6 +110,24 @@ st.markdown("""
 div[data-testid='stRadio'] > label {
     display: none;
 }
+/* Remove all top padding */
+.main .block-container {
+    padding-top: 0rem !important;
+    max-width: 100%;
+}
+[data-testid="stAppViewContainer"] {
+    padding-top: 0 !important;
+}
+.stApp {
+    padding-top: 0 !important;
+}
+.stApp > div:first-child {
+    padding-top: 0 !important;
+}
+/* Remove the decorative rainbow bar */
+[data-testid="stDecoration"] {
+    display: none !important;
+}
 </style>
 """, unsafe_allow_html=True)
 
