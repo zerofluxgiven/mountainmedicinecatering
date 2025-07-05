@@ -234,12 +234,22 @@ def extract_text_from_image(uploaded_file):
         # Reset file pointer
         uploaded_file.seek(0)
         
-        # Open and prepare image
-        image = Image.open(uploaded_file)
+        # Try to open image
+        try:
+            image = Image.open(uploaded_file)
+        except Exception as e:
+            st.warning(f"Could not open image with PIL: {str(e)}")
+            # Fall back to vision API immediately for unsupported formats
+            st.info("Using AI vision for text extraction...")
+            return extract_text_with_vision(uploaded_file)
         
         # Convert to RGB if necessary (handles RGBA, LA, etc.)
         if image.mode not in ('RGB', 'L'):
-            image = image.convert('RGB')
+            try:
+                image = image.convert('RGB')
+            except Exception as e:
+                st.warning(f"Could not convert image mode: {str(e)}")
+                return extract_text_with_vision(uploaded_file)
         
         # Apply image preprocessing for better OCR
         # Resize if image is too small
@@ -272,7 +282,11 @@ def extract_text_from_image(uploaded_file):
             except:
                 continue
         
-        st.warning("OCR failed to extract text. Trying alternative method...")
+        st.warning("OCR failed to extract text. Trying AI vision method...")
+        # Try vision API as last resort
+        vision_text = extract_text_with_vision(uploaded_file)
+        if vision_text:
+            return vision_text
         return ""
         
     except Exception as e:

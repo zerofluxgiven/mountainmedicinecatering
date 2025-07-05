@@ -867,57 +867,18 @@ def render_top_navbar(tabs):
 def render_mobile_hamburger_menu(tabs, current_tab, user):
     """Render hamburger menu for mobile navigation"""
     
-    # Add hamburger button with custom styling
-    st.markdown("""
-    <style>
-    .hamburger-container {
-        position: fixed;
-        top: 0.5rem;
-        right: 0.5rem;
-        z-index: 1000;
-    }
-    .hamburger-btn {
-        background: #6C4AB6;
-        border: none;
-        padding: 0.75rem;
-        border-radius: 8px;
-        cursor: pointer;
-        width: 50px;
-        height: 50px;
-        display: flex;
-        flex-direction: column;
-        justify-content: center;
-        align-items: center;
-        gap: 4px;
-        box-shadow: 0 2px 8px rgba(0,0,0,0.1);
-    }
-    .hamburger-btn:active {
-        transform: scale(0.95);
-    }
-    .hamburger-line {
-        width: 24px;
-        height: 3px;
-        background: white;
-        border-radius: 2px;
-    }
-    </style>
-    
-    <div class="hamburger-container">
-        <button class="hamburger-btn" onclick="document.getElementById('hamburger_toggle').click()">
-            <div class="hamburger-line"></div>
-            <div class="hamburger-line"></div>
-            <div class="hamburger-line"></div>
-        </button>
-    </div>
-    """, unsafe_allow_html=True)
-    
-    # Hidden button for Streamlit interaction
-    if st.button("", key="hamburger_toggle", help="Menu", disabled=False, type="secondary"):
-        st.session_state["show_mobile_menu"] = not st.session_state.get("show_mobile_menu", False)
-        st.rerun()
+    # Create columns for mobile header
+    col1, col2, col3 = st.columns([4, 1, 1])
     
     # Show current page name
-    st.markdown(f"### {current_tab}")
+    with col1:
+        st.markdown(f"**{current_tab}**")
+    
+    # Hamburger button in top right
+    with col3:
+        if st.button("☰", key="hamburger_toggle", help="Menu", use_container_width=True):
+            st.session_state["show_mobile_menu"] = not st.session_state.get("show_mobile_menu", False)
+            st.rerun()
     
     # Render dropdown menu if open
     if st.session_state.get("show_mobile_menu", False):
