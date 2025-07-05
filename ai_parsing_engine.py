@@ -90,9 +90,16 @@ def parse_file(uploaded_file, target_type="all", user_id=None, file_id=None):
         st.success(f"✅ Extracted {len(raw_text)} characters of text.")
         print(f"📄 Extracted text preview: {raw_text[:300]}...")
     else:
-        st.error("❌ No text could be extracted from this file.")
-        st.info("💡 Tip: Make sure the file contains readable text. For images, ensure they have clear text.")
-        return {}
+        # For images, try to parse even without extracted text
+        file_type = getattr(uploaded_file, 'type', '')
+        if file_type.startswith('image'):
+            st.warning("⚠️ No text extracted from image. Attempting direct recipe parsing...")
+            # Create a minimal text prompt for the AI
+            raw_text = "Parse this as a recipe with ingredients and instructions"
+        else:
+            st.error("❌ No text could be extracted from this file.")
+            st.info("💡 Tip: Make sure the file contains readable text. For images, ensure they have clear text.")
+            return {}
 
     parsed = {}
     target_types = [target_type] if target_type != "all" else [
@@ -198,9 +205,16 @@ def extract_text_with_vision(uploaded_file):
         # Encode image to base64
         image_data = base64.b64encode(uploaded_file.read()).decode('utf-8')
         
-        # Create vision request
+        # Check if client is initialized
+        if not client:
+            st.error("❌ OpenAI client not initialized")
+            return ""
+            
+        st.info("🔍 Using Vision API to extract text from image...")
+        
+        # Create vision request with updated model
         response = client.chat.completions.create(
-            model="gpt-4-vision-preview",
+            model="gpt-4o",  # Updated model that supports vision
             messages=[
                 {
                     "role": "user",
@@ -226,7 +240,11 @@ def extract_text_with_vision(uploaded_file):
         return extracted_text
         
     except Exception as e:
+        st.error(f"Vision API error: {str(e)}")
         print(f"Vision API error: {e}")
+        # Check if it's an API key issue
+        if "api_key" in str(e).lower() or "unauthorized" in str(e).lower():
+            st.error("❌ OpenAI API key issue. Please check your configuration.")
         return ""
 
 def extract_text_from_image(uploaded_file):
