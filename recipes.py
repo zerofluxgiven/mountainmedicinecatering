@@ -19,6 +19,66 @@ db = get_db()
 bucket = get_bucket()
 
 
+def merge_recipe_data(existing_data, new_data):
+    """Merge data from second page into existing recipe data."""
+    merged = existing_data.copy()
+    
+    # Merge ingredients - append new ones
+    existing_ingredients = existing_data.get("ingredients", [])
+    new_ingredients = new_data.get("ingredients", [])
+    
+    if isinstance(existing_ingredients, str):
+        existing_ingredients = [existing_ingredients]
+    if isinstance(new_ingredients, str):
+        new_ingredients = [new_ingredients]
+    
+    # Combine ingredients
+    if new_ingredients:
+        if existing_ingredients:
+            merged["ingredients"] = existing_ingredients + new_ingredients
+        else:
+            merged["ingredients"] = new_ingredients
+    
+    # Merge instructions - append new ones
+    existing_instructions = existing_data.get("instructions", [])
+    new_instructions = new_data.get("instructions", [])
+    
+    if isinstance(existing_instructions, str):
+        existing_instructions = [existing_instructions]
+    if isinstance(new_instructions, str):
+        new_instructions = [new_instructions]
+    
+    # Combine instructions
+    if new_instructions:
+        if existing_instructions:
+            merged["instructions"] = existing_instructions + new_instructions
+        else:
+            merged["instructions"] = new_instructions
+    
+    # Merge other fields - prefer existing unless empty
+    for field in ["notes", "tags", "allergens"]:
+        if field in new_data and new_data[field]:
+            if field == "tags" or field == "allergens":
+                # Combine lists
+                existing = merged.get(field, [])
+                new = new_data.get(field, [])
+                merged[field] = list(set(existing + new))
+            else:
+                # Append text
+                existing = merged.get(field, "")
+                new = new_data.get(field, "")
+                if existing and new:
+                    merged[field] = f"{existing}\n{new}"
+                elif new:
+                    merged[field] = new
+    
+    # Keep original name and serves
+    if "name" not in merged or not merged["name"]:
+        merged["name"] = new_data.get("name", "Unnamed Recipe")
+    
+    return merged
+
+
 def find_recipe_by_name(name: str):
     """Return existing recipe with the same name if any."""
     try:
@@ -443,10 +503,17 @@ def add_recipe_via_upload_ui():
             unsafe_allow_html=True,
         )
         
+        # Check if we're adding a second page
+        is_adding_second_page = st.session_state.get("add_second_page_mode", False)
+        existing_recipe_data = st.session_state.get("first_page_recipe_data", {})
+        
+        if is_adding_second_page and existing_recipe_data:
+            st.info("📄 Adding page 2 to your recipe. Upload the back side or additional page.")
+        
         uploaded_file = safe_file_uploader(
-            "Upload a recipe file (PDF, image, or document)",
+            "Upload a recipe file (PDF, image, or document)" if not is_adding_second_page else "Upload page 2 of your recipe",
             type=["pdf", "jpg", "jpeg", "png", "txt", "docx"],
-            key="recipe_upload_file"
+            key="recipe_upload_file" if not is_adding_second_page else "recipe_upload_file_page2"
         )
         
         if uploaded_file:
@@ -458,8 +525,29 @@ def add_recipe_via_upload_ui():
                 parsed_data = parse_file(uploaded_file, target_type="recipes")
                 recipe_data = parsed_data.get("recipes", {})
                 
-                if recipe_data and recipe_data.get("name"):
-                    st.success("✅ Recipe extracted successfully!")
+                if recipe_data and (recipe_data.get("name") or is_adding_second_page):
+                    # Merge with existing data if adding second page
+                    if is_adding_second_page and existing_recipe_data:
+                        recipe_data = merge_recipe_data(existing_recipe_data, recipe_data)
+                        st.success("✅ Page 2 added successfully!")
+                    else:
+                        st.success("✅ Recipe extracted successfully!")
+                    
+                    # Add prompt for second page if this is the first page
+                    if not is_adding_second_page:
+                        st.markdown(
+                            """<div style='background-color: #f0f2f6; padding: 0.75rem; border-radius: 8px; margin-bottom: 1rem;'>
+                            <strong>📄 Have a second page?</strong> 
+                            <button style='margin-left: 1rem; padding: 0.25rem 0.75rem; background: #6C4AB6; color: white; 
+                                          border: none; border-radius: 4px; cursor: pointer;'
+                                    onclick="window.location.reload()">Add Page 2</button>
+                            </div>""",
+                            unsafe_allow_html=True
+                        )
+                        if st.button("➕ Add Page 2", key="add_page_2_button"):
+                            st.session_state["add_second_page_mode"] = True
+                            st.session_state["first_page_recipe_data"] = recipe_data
+                            st.rerun()
                     
                     # Preview the recipe
                     col1, col2 = st.columns([2, 1])
@@ -498,9 +586,15 @@ def add_recipe_via_upload_ui():
                                 recipe_id = save_recipe_to_firestore(recipe_data, user_id=user_id)
                                 st.success(f"✅ Recipe saved successfully!")
                                 st.balloons()
-                                # Clear the upload
+                                # Clear the upload and multi-page state
                                 if "recipe_upload_file" in st.session_state:
                                     del st.session_state["recipe_upload_file"]
+                                if "recipe_upload_file_page2" in st.session_state:
+                                    del st.session_state["recipe_upload_file_page2"]
+                                if "add_second_page_mode" in st.session_state:
+                                    del st.session_state["add_second_page_mode"]
+                                if "first_page_recipe_data" in st.session_state:
+                                    del st.session_state["first_page_recipe_data"]
                                 st.rerun()
                     
                     with col2:
@@ -510,15 +604,27 @@ def add_recipe_via_upload_ui():
                             user_id = user.get("id") if user else None
                             recipe_id = save_recipe_to_firestore(recipe_data, user_id=user_id)
                             st.session_state["editing_recipe_id"] = recipe_id
-                            # Clear the upload
+                            # Clear the upload and multi-page state
                             if "recipe_upload_file" in st.session_state:
                                 del st.session_state["recipe_upload_file"]
+                            if "recipe_upload_file_page2" in st.session_state:
+                                del st.session_state["recipe_upload_file_page2"]
+                            if "add_second_page_mode" in st.session_state:
+                                del st.session_state["add_second_page_mode"]
+                            if "first_page_recipe_data" in st.session_state:
+                                del st.session_state["first_page_recipe_data"]
                             st.rerun()
                     
                     with col3:
                         if st.button("❌ Cancel", use_container_width=True):
                             if "recipe_upload_file" in st.session_state:
                                 del st.session_state["recipe_upload_file"]
+                            if "recipe_upload_file_page2" in st.session_state:
+                                del st.session_state["recipe_upload_file_page2"]
+                            if "add_second_page_mode" in st.session_state:
+                                del st.session_state["add_second_page_mode"]
+                            if "first_page_recipe_data" in st.session_state:
+                                del st.session_state["first_page_recipe_data"]
                             st.rerun()
                 else:
                     st.error("❌ Could not extract a valid recipe from this file.")
@@ -638,7 +744,9 @@ def _render_recipe_card(recipe: dict, *, is_version: bool = False):
 
             col_edit, col_add, col_del = st.columns(3)
             if col_edit.button("Edit", key=f"edit_{recipe['id']}"):
-                st.session_state["editing_recipe_id"] = recipe["id"]
+                # For versions, we need to edit the parent recipe
+                edit_id = parent_id if is_version else recipe["id"]
+                st.session_state["editing_recipe_id"] = edit_id
                 st.rerun()
             if col_add.button("Add Version", key=f"addver_{recipe['id']}"):
                 st.session_state[f"add_ver_{recipe['id']}"] = True
@@ -670,8 +778,8 @@ def _render_recipe_card(recipe: dict, *, is_version: bool = False):
                 )
                 tags = st.text_input("Tags (comma-separated)", value=", ".join(recipe.get("tags", [])), key=f"ver_tags_{recipe['id']}")
                 col_c, col_s = st.columns(2)
-                save = col_s.form_submit_button("Save")
                 cancel = col_c.form_submit_button("Cancel")
+                save = col_s.form_submit_button("Save")
 
                 if save:
                     user = get_user()

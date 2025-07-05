@@ -179,8 +179,8 @@ def recipe_editor_ui(recipe_id=None, prefill_data=None):
         st.markdown("---")
         st.markdown("### Confirm Tags")
         tags_val = st.text_input("Tags", value=st.session_state.get("confirm_tags", ""), key="confirm_tags_final")
-        col_ok, col_cancel = st.columns(2)
-        if col_ok.button("✅ Confirm Save"):
+        col_ok, col_cancel, col_spacer = st.columns([1.2, 0.8, 3])
+        if col_ok.button("✅ Confirm Save", use_container_width=True):
             data = pending["data"]
             data["tags"] = [t.strip() for t in tags_val.split(',') if t.strip()]
             doc_id = pending.get("doc_id")
@@ -203,7 +203,7 @@ def recipe_editor_ui(recipe_id=None, prefill_data=None):
             st.session_state.pop("confirm_tags", None)
             st.success("✅ Recipe saved!")
             st.rerun()
-        if col_cancel.button("Cancel", key="cancel_save_tags"):
+        if col_cancel.button("Cancel", key="cancel_save_tags", use_container_width=True):
             st.session_state.pop("pending_recipe_save")
             st.session_state.pop("confirm_tags", None)
             st.rerun()
