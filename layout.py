@@ -789,6 +789,10 @@ def render_top_navbar(tabs):
     # Check if mobile mode
     is_mobile = st.session_state.get("mobile_mode", False)
     
+    # Debug info - remove this after testing
+    if st.session_state.get("device_type"):
+        st.caption(f"Device: {st.session_state.get('device_type')} | Mobile: {is_mobile}")
+    
     if is_mobile:
         # Mobile hamburger menu
         selected_tab = render_mobile_hamburger_menu(main_tabs, current_tab, user)
