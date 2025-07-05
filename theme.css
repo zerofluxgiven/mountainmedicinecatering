@@ -616,6 +616,22 @@ button[id^="upcoming_"], button[id^="view_"] {
 @media (max-width: 768px) {
     .nav-container { overflow-x: auto !important; }
     .nav-tabs { flex-wrap: nowrap !important; }
+    
+    /* Style hamburger menu button */
+    button[data-testid="hamburger_toggle"] {
+        background: var(--primary-purple) !important;
+        color: white !important;
+        font-size: 1.5rem !important;
+        padding: 0.5rem !important;
+        min-height: 50px !important;
+        min-width: 50px !important;
+        border-radius: 8px !important;
+    }
+    
+    /* Hide desktop navigation on mobile */
+    .custom-tab-button {
+        display: none !important;
+    }
 }
 
 /* Mobile slide-down navigation menu */

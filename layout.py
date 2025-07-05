@@ -786,72 +786,135 @@ def render_top_navbar(tabs):
     if not main_tabs:
         main_tabs = tabs  # fallback
 
-    # Custom tab layout - 2 rows, 5 tabs each, aligned left
-    selected_tab = current_tab
+    # Check if mobile mode
+    is_mobile = st.session_state.get("mobile_mode", False)
     
-    # Split tabs into two rows
-    row1_tabs = main_tabs[:5]
-    row2_tabs = main_tabs[5:10] if len(main_tabs) > 5 else []
-    
-    # Custom CSS for tab buttons
-    st.markdown("""
-    <style>
-    .custom-tab-button {
-        background-color: #6C4AB6;
-        color: white;
-        border: none;
-        padding: 0.75rem 1.5rem;
-        margin: 0.25rem;
-        border-radius: 8px;
-        font-size: 1.1rem;
-        font-weight: 600;
-        cursor: pointer;
-        transition: all 0.2s ease;
-        min-width: 140px;
-        text-align: center;
-    }
-    .custom-tab-button:hover {
-        background-color: #563a9d;
-        transform: translateY(-1px);
-    }
-    .custom-tab-button.active {
-        background-color: #4a3280;
-        box-shadow: inset 0 2px 4px rgba(0,0,0,0.2);
-    }
-    .tab-container {
-        display: flex;
-        flex-wrap: wrap;
-        align-items: flex-start;
-        margin: 1rem 0;
-        padding: 0;
-    }
-    </style>
-    """, unsafe_allow_html=True)
-    
-    # Render tabs in two rows
-    tab_container = st.container()
-    with tab_container:
-        # First row
-        if row1_tabs:
-            cols1 = st.columns(len(row1_tabs) + 1)  # Extra column for spacing
-            for i, tab in enumerate(row1_tabs):
-                with cols1[i]:
-                    if st.button(tab, key=f"tab_{tab}_1", use_container_width=True):
-                        st.session_state["top_nav"] = tab
-                        selected_tab = tab
-                        st.rerun()
+    if is_mobile:
+        # Mobile hamburger menu
+        selected_tab = render_mobile_hamburger_menu(main_tabs, current_tab, user)
+    else:
+        # Desktop tab layout - 2 rows, 5 tabs each, aligned left
+        selected_tab = current_tab
         
-        # Second row
-        if row2_tabs:
-            cols2 = st.columns(len(row2_tabs) + 1)  # Extra column for spacing
-            for i, tab in enumerate(row2_tabs):
-                with cols2[i]:
-                    if st.button(tab, key=f"tab_{tab}_2", use_container_width=True):
-                        st.session_state["top_nav"] = tab
-                        selected_tab = tab
-                        st.rerun()
+        # Split tabs into two rows
+        row1_tabs = main_tabs[:5]
+        row2_tabs = main_tabs[5:10] if len(main_tabs) > 5 else []
+        
+        # Custom CSS for tab buttons
+        st.markdown("""
+        <style>
+        .custom-tab-button {
+            background-color: #6C4AB6;
+            color: white;
+            border: none;
+            padding: 0.75rem 1.5rem;
+            margin: 0.25rem;
+            border-radius: 8px;
+            font-size: 1.1rem;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.2s ease;
+            min-width: 140px;
+            text-align: center;
+        }
+        .custom-tab-button:hover {
+            background-color: #563a9d;
+            transform: translateY(-1px);
+        }
+        .custom-tab-button.active {
+            background-color: #4a3280;
+            box-shadow: inset 0 2px 4px rgba(0,0,0,0.2);
+        }
+        .tab-container {
+            display: flex;
+            flex-wrap: wrap;
+            align-items: flex-start;
+            margin: 1rem 0;
+            padding: 0;
+        }
+        </style>
+        """, unsafe_allow_html=True)
+        
+        # Render tabs in two rows
+        tab_container = st.container()
+        with tab_container:
+            # First row
+            if row1_tabs:
+                cols1 = st.columns(len(row1_tabs) + 1)  # Extra column for spacing
+                for i, tab in enumerate(row1_tabs):
+                    with cols1[i]:
+                        if st.button(tab, key=f"tab_{tab}_1", use_container_width=True):
+                            st.session_state["top_nav"] = tab
+                            selected_tab = tab
+                            st.rerun()
+            
+            # Second row
+            if row2_tabs:
+                cols2 = st.columns(len(row2_tabs) + 1)  # Extra column for spacing
+                for i, tab in enumerate(row2_tabs):
+                    with cols2[i]:
+                        if st.button(tab, key=f"tab_{tab}_2", use_container_width=True):
+                            st.session_state["top_nav"] = tab
+                            selected_tab = tab
+                            st.rerun()
 
     return selected_tab
+
+
+# ----------------------------
+# 📱 Mobile Hamburger Menu
+# ----------------------------
+def render_mobile_hamburger_menu(tabs, current_tab, user):
+    """Render hamburger menu for mobile navigation"""
+    
+    # Position hamburger button in top right
+    col1, col2, col3 = st.columns([6, 1, 1])
+    
+    with col3:
+        if st.button("☰", key="hamburger_toggle", help="Menu"):
+            st.session_state["show_mobile_menu"] = not st.session_state.get("show_mobile_menu", False)
+            st.rerun()
+    
+    # Show current page name
+    with col1:
+        st.markdown(f"### {current_tab}")
+    
+    # Render dropdown menu if open
+    if st.session_state.get("show_mobile_menu", False):
+        with st.container():
+            st.markdown("---")
+            # Close button
+            if st.button("✕ Close Menu", key="close_menu", use_container_width=True):
+                st.session_state["show_mobile_menu"] = False
+                st.rerun()
+            
+            # Navigation items
+            st.markdown("### Navigation")
+            for tab in tabs:
+                if tab != current_tab:  # Don't show current tab
+                    if st.button(f"→ {tab}", key=f"mobile_nav_{tab}", use_container_width=True):
+                        st.session_state["top_nav"] = tab
+                        st.session_state["show_mobile_menu"] = False
+                        st.rerun()
+            
+            # User section at bottom
+            st.markdown("---")
+            if user:
+                name = user.get("name", "Unknown")
+                email = user.get("email", "")
+                st.markdown(f"**👤 User:** {name}")
+                if email:
+                    st.caption(email)
+                
+                # Logout button
+                logout_clicked = st.button("🔓 Logout", key="mobile_logout_btn", use_container_width=True, type="primary")
+                if logout_clicked:
+                    st.session_state["show_mobile_menu"] = False
+                    # Clear the menu state first
+                    st.query_params["logout"] = "true"
+                    st.rerun()
+    
+    return current_tab
 
 
 # ----------------------------
@@ -1112,16 +1175,19 @@ def render_login_status_button():
         name = user.get("name") or user.get("email")
         # Split name and take first part for compactness
         display_name = name.split()[0] if name and ' ' in name else name
-        st.markdown(f"""
-        <div style='position: fixed; top: 0.5rem; right: 0.5rem; z-index: 999;'>
-            <button style='background: #6C4AB6; color: white; border: none; 
-                           padding: 0.4rem 0.8rem; border-radius: 6px; 
-                           font-size: 0.85rem; cursor: pointer;'
-                    onclick=\"window.location.href='/?logout=true'\">
-                {display_name} ↗
-            </button>
-        </div>
-        """, unsafe_allow_html=True)
+        
+        # Only show on desktop - mobile will have it in hamburger menu
+        if not st.session_state.get("mobile_mode", False):
+            st.markdown(f"""
+            <div style='position: fixed; top: 0.5rem; right: 0.5rem; z-index: 999;'>
+                <button style='background: #6C4AB6; color: white; border: none; 
+                               padding: 0.4rem 0.8rem; border-radius: 6px; 
+                               font-size: 0.85rem; cursor: pointer;'
+                        onclick="window.location.href='/?logout=true'">
+                    🔓 {display_name}
+                </button>
+            </div>
+            """, unsafe_allow_html=True)
     else:
         st.markdown("""
         <div style='position: fixed; top: 1rem; right: 1rem; z-index: 999;'>
