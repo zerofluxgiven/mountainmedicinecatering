@@ -525,7 +525,15 @@ def add_recipe_via_upload_ui():
                 parsed_data = parse_file(uploaded_file, target_type="recipes")
                 recipe_data = parsed_data.get("recipes", {})
                 
-                if recipe_data and (recipe_data.get("name") or is_adding_second_page):
+                # Debug info
+                if not recipe_data:
+                    st.warning(f"⚠️ No recipe data extracted. Parsed data: {list(parsed_data.keys())}")
+                
+                if recipe_data:
+                    # Ensure recipe has a name
+                    if not recipe_data.get("name"):
+                        recipe_data["name"] = "Unnamed Recipe"
+                    
                     # Merge with existing data if adding second page
                     if is_adding_second_page and existing_recipe_data:
                         recipe_data = merge_recipe_data(existing_recipe_data, recipe_data)
