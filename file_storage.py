@@ -167,25 +167,16 @@ def save_uploaded_file(file, event_id: str, uploaded_by: str):
         fcopy.name = filename
         fcopy.type = mimetype
         
-        # Try to extract text first
+        # Just do full parsing once - parse_file already extracts text internally
         try:
-            raw_text = extract_text(fcopy)
-            fcopy.seek(0)
+            parsed_data = parse_file(fcopy, target_type="all", user_id=uploaded_by, file_id=file_id)
+            recipe = parsed_data.get("recipes", {})
+            # Don't auto-save here - let the UI handle it
+            if recipe and isinstance(recipe, dict):
+                st.info(f"📖 Found recipe: {recipe.get('name', 'Unnamed')}")
         except Exception as e:
-            st.warning(f"Text extraction failed: {e}")
-            print(f"Text extraction error: {e}")
-        
-        # Try full parsing if we have text
-        if raw_text:
-            try:
-                parsed_data = parse_file(fcopy, target_type="all", user_id=uploaded_by, file_id=file_id)
-                recipe = parsed_data.get("recipes", {})
-                if recipe and isinstance(recipe, dict) and recipe.get("name"):
-                    save_recipe_to_firestore(recipe, user_id=uploaded_by, file_id=file_id)
-                    st.success(f"✅ Recipe '{recipe.get('name')}' saved successfully")
-            except Exception as e:
-                st.error(f"Recipe parsing failed: {e}")
-                print(f"Recipe parsing error: {e}")
+            st.error(f"Parsing failed: {e}")
+            print(f"Parsing error: {e}")
     except Exception as e:
         st.error(f"File processing failed: {e}")
         print(f"File processing error: {e}")

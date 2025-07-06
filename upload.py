@@ -90,7 +90,26 @@ def upload_ui_mobile():
             st.session_state["last_uploaded_file"] = result
 
         st.success("✅ File uploaded and parsed.")
-
+        
+        # Check if a recipe was parsed
+        parsed_recipe = result.get("parsed", {}).get("recipes", {})
+        if parsed_recipe and isinstance(parsed_recipe, dict):
+            # Automatically open recipe editor
+            from recipes_editor import recipe_editor_ui
+            st.info("📝 Opening recipe editor...")
+            
+            # Add multi-page support
+            st.markdown(
+                """<div style='background-color: #f0f2f6; padding: 0.75rem; border-radius: 8px; margin-bottom: 1rem;'>
+                <strong>📄 Have a second page?</strong> After saving, you can add another page.
+                </div>""",
+                unsafe_allow_html=True
+            )
+            
+            recipe_editor_ui(prefill_data=parsed_recipe)
+            return  # Don't show the rest of the upload UI
+        
+        # Only show these if not a recipe
         if st.button("View / Edit Data"):
             from file_storage import _render_parsed_data_editor
             _render_parsed_data_editor({
