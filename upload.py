@@ -15,11 +15,14 @@ from recipes import save_recipe_to_firestore
 # ----------------------------
 @require_role("user")
 def upload_ui_desktop(event_id: str = None):
-    st.subheader("📄 Upload a File")
+    st.subheader("📄 Upload Files")
+    st.info("💡 Tip: You can select multiple files (e.g., front and back of a recipe)")
 
-    file = safe_file_uploader(
-        "Select file to upload",
+    files = st.file_uploader(
+        "Select file(s) to upload",
         type=["pdf", "png", "jpg", "jpeg", "txt", "csv", "docx"],
+        accept_multiple_files=True,
+        key="desktop_multi_upload"
     )
     user = session_get("user")
 
@@ -36,32 +39,41 @@ def upload_ui_desktop(event_id: str = None):
     )
     eid = event_options.get(eid_label) if eid_label != "None" else None
 
-    if file and user:
+    if files and user and st.button("📄 Parse Files", type="primary"):
         uploaded_by = user["id"]
-        with st.spinner("Parsing and uploading..."):
-            result = save_uploaded_file(file, eid, uploaded_by)
-
-        st.success(f"✅ File uploaded! File ID: {result['file_id']}")
-
-        parsed_recipe = result.get("parsed", {})
-        if is_meaningful_recipe(parsed_recipe):
-            col_a, col_b = st.columns([1, 1])
-            with col_a:
-                if st.button("💾 Save Recipe", key="save_recipe_upload"):
-                    parsed_recipe["author_name"] = user.get("name", uploaded_by)
-                    recipe_id = save_recipe_to_firestore(parsed_recipe)
-                    if recipe_id:
-                        st.success(f"✅ Recipe saved! ID: {recipe_id}")
+        with st.spinner(f"Processing {len(files)} file(s)..."):
+            combined_recipe = {}
+            all_results = []
+            
+            # Process each file
+            for idx, file in enumerate(files):
+                st.text(f"Processing {file.name}...")
+                result = save_uploaded_file(file, eid, uploaded_by)
+                all_results.append(result)
+                
+                # Extract and merge recipes
+                parsed_recipe = result.get("parsed", {}).get("recipes", {})
+                if parsed_recipe and isinstance(parsed_recipe, dict):
+                    if idx == 0:
+                        combined_recipe = parsed_recipe
                     else:
-                        st.error("❌ Failed to save recipe.")
-            with col_b:
-                with st.expander("Parsed Data", expanded=False):
-                    st.json(parsed_recipe)
-            if eid:
-                st.session_state["parsed_recipe_context"] = parsed_recipe | {
-                    "event_id": eid
-                }
-                save_parsed_menu_ui(st.session_state["parsed_recipe_context"])
+                        from recipes import merge_recipe_data
+                        combined_recipe = merge_recipe_data(combined_recipe, parsed_recipe)
+
+        st.success(f"✅ {len(files)} file(s) processed!")
+
+        if combined_recipe:
+            if len(files) > 1:
+                st.success(f"✨ Merged {len(files)} pages into one recipe")
+                
+            # Open recipe editor automatically
+            from recipes_editor import recipe_editor_ui
+            st.info("📝 Opening recipe editor...")
+            recipe_editor_ui(prefill_data=combined_recipe)
+            return
+            
+        # If no recipe found, show file manager
+        st.warning("No recipe found in uploaded files")
 
     st.markdown("---")
     st.markdown("## 📁 File Manager")
@@ -78,47 +90,65 @@ def upload_ui_mobile():
     event_id = get_active_event_id()
     db = get_db()
 
-    st.markdown("### Upload a new file")
-    uploaded_file = safe_file_uploader(
-        "Drop or select a file",
+    st.markdown("### Upload Recipe Files")
+    st.info("💡 You can select multiple files (e.g., front and back of a recipe card)")
+    
+    uploaded_files = st.file_uploader(
+        "Select one or more files",
         type=["pdf", "txt", "jpg", "png", "jpeg", "csv", "docx"],
+        accept_multiple_files=True,
+        key="multi_upload_files"
     )
 
-    if uploaded_file:
-        with st.spinner("Parsing and uploading..."):
-            result = save_uploaded_file(uploaded_file, event_id, user_id)
-            st.session_state["last_uploaded_file"] = result
+    if uploaded_files and st.button("📄 Parse Recipe", type="primary", use_container_width=True):
+        with st.spinner(f"Parsing {len(uploaded_files)} file(s)..."):
+            combined_recipe = {}
+            all_results = []
+            
+            # Process each file
+            for idx, uploaded_file in enumerate(uploaded_files):
+                st.text(f"Processing {uploaded_file.name}...")
+                result = save_uploaded_file(uploaded_file, event_id, user_id)
+                all_results.append(result)
+                
+                # Extract recipe from this file
+                parsed_recipe = result.get("parsed", {}).get("recipes", {})
+                if parsed_recipe and isinstance(parsed_recipe, dict):
+                    if idx == 0:
+                        # First file becomes the base
+                        combined_recipe = parsed_recipe
+                    else:
+                        # Merge subsequent files
+                        from recipes import merge_recipe_data
+                        combined_recipe = merge_recipe_data(combined_recipe, parsed_recipe)
+            
+            st.session_state["last_uploaded_files"] = all_results
 
-        st.success("✅ File uploaded and parsed.")
+        st.success(f"✅ {len(uploaded_files)} file(s) processed!")
         
-        # Check if a recipe was parsed
-        parsed_recipe = result.get("parsed", {}).get("recipes", {})
-        if parsed_recipe and isinstance(parsed_recipe, dict):
-            # Automatically open recipe editor
+        # Check if we got a recipe
+        if combined_recipe:
+            # Automatically open recipe editor with combined data
             from recipes_editor import recipe_editor_ui
-            st.info("📝 Opening recipe editor...")
+            st.info("📝 Opening recipe editor with combined data...")
             
-            # Add multi-page support
-            st.markdown(
-                """<div style='background-color: #f0f2f6; padding: 0.75rem; border-radius: 8px; margin-bottom: 1rem;'>
-                <strong>📄 Have a second page?</strong> After saving, you can add another page.
-                </div>""",
-                unsafe_allow_html=True
-            )
+            if len(uploaded_files) > 1:
+                st.success(f"✨ Merged {len(uploaded_files)} pages into one recipe")
             
-            recipe_editor_ui(prefill_data=parsed_recipe)
+            recipe_editor_ui(prefill_data=combined_recipe)
             return  # Don't show the rest of the upload UI
         
         # Only show these if not a recipe
         if st.button("View / Edit Data"):
-            from file_storage import _render_parsed_data_editor
-            _render_parsed_data_editor({
-                "id": result["file_id"],
-                "name": uploaded_file.name,
-                "parsed_data": {"parsed": result.get("parsed", {})}
-            }, db)
-
-        show_save_file_actions(st.session_state["last_uploaded_file"])
+            st.warning("No recipe found in uploaded files")
+            # Show the first file's data
+            if all_results:
+                from file_storage import _render_parsed_data_editor
+                _render_parsed_data_editor({
+                    "id": all_results[0]["file_id"],
+                    "name": uploaded_files[0].name,
+                    "parsed_data": {"parsed": all_results[0].get("parsed", {})}
+                }, db)
 
     st.markdown("---")
     st.markdown("## 📁 File Manager")
