@@ -4,10 +4,17 @@ import streamlit as st
 
 # Initialize Firebase app (only once)
 if not firebase_admin._apps:
-    cred = credentials.Certificate(dict(st.secrets["firebase_admin"]))
-    firebase_admin.initialize_app(cred, {
-        "storageBucket": st.secrets["firebase"]["storageBucket"]
-    })
+    try:
+        cred = credentials.Certificate(dict(st.secrets["firebase_admin"]))
+        storage_bucket = st.secrets.get("firebase", {}).get("storageBucket")
+        if not storage_bucket:
+            raise ValueError("Missing firebase.storageBucket in secrets")
+        firebase_admin.initialize_app(cred, {
+            "storageBucket": storage_bucket
+        })
+    except Exception as e:
+        st.error(f"Firebase initialization failed: {str(e)}")
+        raise
 
 # Export Firestore + Storage
 db = firestore.client()

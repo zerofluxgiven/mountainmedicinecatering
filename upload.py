@@ -48,8 +48,13 @@ def upload_ui_desktop(event_id: str = None):
             # Process each file
             for idx, file in enumerate(files):
                 st.text(f"Processing {file.name}...")
-                result = save_uploaded_file(file, eid, uploaded_by)
-                all_results.append(result)
+                try:
+                    result = save_uploaded_file(file, eid, uploaded_by)
+                    all_results.append(result)
+                except Exception as e:
+                    st.error(f"Failed to upload {file.name}: {str(e)}")
+                    st.error("Please check your Firebase configuration and try again.")
+                    return
                 
                 # Extract and merge recipes
                 parsed_recipe = result.get("parsed", {}).get("recipes", {})
@@ -108,8 +113,13 @@ def upload_ui_mobile():
             # Process each file
             for idx, uploaded_file in enumerate(uploaded_files):
                 st.text(f"Processing {uploaded_file.name}...")
-                result = save_uploaded_file(uploaded_file, event_id, user_id)
-                all_results.append(result)
+                try:
+                    result = save_uploaded_file(uploaded_file, event_id, user_id)
+                    all_results.append(result)
+                except Exception as e:
+                    st.error(f"Failed to upload {uploaded_file.name}: {str(e)}")
+                    st.error("Please check your Firebase configuration and try again.")
+                    return
                 
                 # Extract recipe from this file
                 parsed_recipe = result.get("parsed", {}).get("recipes", {})
