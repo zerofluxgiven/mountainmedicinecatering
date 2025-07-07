@@ -104,7 +104,13 @@
     provider.setCustomParameters({ prompt: 'select_account' });
 
     function detectDevice() {
-      return /iphone|ipad|android/i.test(navigator.userAgent) ? "mobile" : "desktop";
+      // More comprehensive mobile detection
+      const userAgent = navigator.userAgent.toLowerCase();
+      const isMobile = /iphone|ipod|ipad|android|mobile|blackberry|opera mini|iemobile/i.test(userAgent) ||
+                      (navigator.maxTouchPoints && navigator.maxTouchPoints > 2) ||
+                      window.matchMedia("(max-width: 768px)").matches;
+      console.log("Device detection:", userAgent, "Mobile:", isMobile);
+      return isMobile ? "mobile" : "desktop";
     }
 
     function redirect(token, device) {
