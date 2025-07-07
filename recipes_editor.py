@@ -64,7 +64,7 @@ def recipe_editor_ui(recipe_id=None, prefill_data=None):
             value=recipe.get("name") or recipe.get("title", ""),
         )
         special_version = st.text_input("Special Version", value=recipe.get("special_version", ""))
-        serves = st.number_input("Serves", min_value=0.5, step=None, value=float(recipe.get("serves", 4)))
+        serves = st.number_input("Serves", min_value=1.0, step=1.0, value=float(recipe.get("serves", 4)), format="%.0f")
         
         ingredients = st.text_area("Ingredients", value=value_to_text(recipe.get("ingredients")))
         if prefill_data and recipe.get("ingredients"):
@@ -138,18 +138,40 @@ def recipe_editor_ui(recipe_id=None, prefill_data=None):
             st.rerun()
 
     # Scaling controls outside the main form
+    st.markdown("### 🔢 Scale Recipe")
     target_servings = st.number_input(
         "Scale to how many servings?",
+        min_value=1.0,
+        max_value=100.0,
         value=float(recipe.get("serves", 4)),
-        step=None,
+        step=1.0,
+        format="%.0f"
     )
     if st.button("Scale Recipe"):
         try:
             scaled = scale_recipe(recipe, target_servings)
-            st.session_state["inline_editor_data"] = scaled
-            st.session_state["inline_editor_type"] = "recipe"
-            st.success("Recipe scaled successfully.")
+            # Store scaled recipe data directly in session state for this editor instance
+            scale_key = f"scaled_recipe_{recipe_id or 'new'}"
+            st.session_state[scale_key] = scaled
+            st.success(f"Recipe scaled to {int(target_servings)} servings!")
             st.info(scaled.get("scaling_notes", ""))
+            # Show the scaled recipe below
+            with st.expander("📋 Scaled Recipe", expanded=True):
+                st.markdown(f"**{scaled.get('name', 'Unnamed Recipe')}** (Serves {int(target_servings)})")
+                st.markdown("#### Ingredients")
+                render_ingredient_columns(scaled.get("ingredients"))
+                st.markdown("#### Instructions")
+                st.markdown(value_to_text(scaled.get("instructions", "")))
+                if scaled.get("notes"):
+                    st.markdown("#### Notes")
+                    st.markdown(scaled.get("notes"))
+                # Button to save the scaled version as a new recipe
+                if st.button("💾 Save as New Recipe", key="save_scaled"):
+                    new_id = save_recipe_to_firestore(scaled, user_id=user_id)
+                    if new_id:
+                        st.success("✅ Scaled recipe saved as new recipe!")
+                        st.session_state["editing_recipe_id"] = new_id
+                        st.rerun()
         except Exception as e:
             st.error(f"Scaling failed: {e}")
 
