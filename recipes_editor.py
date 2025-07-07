@@ -21,6 +21,8 @@ def render_ingredient_columns(items):
 
 
 
+
+
 # ----------------------------
 # 📖 Recipe Editor UI
 # ----------------------------
@@ -30,9 +32,10 @@ def recipe_editor_ui(recipe_id=None, prefill_data=None):
 
     user_id = get_user_id()
     event_id = get_active_event_id()
-
+    
     doc_ref = None
     recipe = None
+    
     if recipe_id:
         doc_ref = db.collection("recipes").document(recipe_id)
         doc = doc_ref.get()
@@ -57,6 +60,7 @@ def recipe_editor_ui(recipe_id=None, prefill_data=None):
     # Check if serves is missing and set a default
     if "serves" not in recipe or not isinstance(recipe.get("serves"), (int, float)):
         recipe["serves"] = 4  # Default serving size
+
 
     with st.form("edit_recipe_form"):
         name = st.text_input(
@@ -150,28 +154,47 @@ def recipe_editor_ui(recipe_id=None, prefill_data=None):
     if st.button("Scale Recipe"):
         try:
             scaled = scale_recipe(recipe, target_servings)
-            # Store scaled recipe data directly in session state for this editor instance
-            scale_key = f"scaled_recipe_{recipe_id or 'new'}"
-            st.session_state[scale_key] = scaled
-            st.success(f"Recipe scaled to {int(target_servings)} servings!")
-            st.info(scaled.get("scaling_notes", ""))
-            # Show the scaled recipe below
+            st.success(f"✅ Recipe scaled to {int(target_servings)} servings!")
+            if scaled.get("scaling_notes"):
+                st.info(scaled.get("scaling_notes"))
+            
+            # Show the scaled recipe in an expander
             with st.expander("📋 Scaled Recipe", expanded=True):
                 st.markdown(f"**{scaled.get('name', 'Unnamed Recipe')}** (Serves {int(target_servings)})")
+                
                 st.markdown("#### Ingredients")
-                render_ingredient_columns(scaled.get("ingredients"))
+                render_ingredient_columns(scaled.get("ingredients", []))
+                
                 st.markdown("#### Instructions")
                 st.markdown(value_to_text(scaled.get("instructions", "")))
+                
                 if scaled.get("notes"):
                     st.markdown("#### Notes")
                     st.markdown(scaled.get("notes"))
-                # Button to save the scaled version as a new recipe
-                if st.button("💾 Save as New Recipe", key="save_scaled"):
-                    new_id = save_recipe_to_firestore(scaled, user_id=user_id)
-                    if new_id:
-                        st.success("✅ Scaled recipe saved as new recipe!")
-                        st.session_state["editing_recipe_id"] = new_id
+                
+                # Option to save as new recipe
+                col1, col2 = st.columns(2)
+                with col1:
+                    if st.button("💾 Save as New Recipe", key="save_scaled_new"):
+                        new_id = save_recipe_to_firestore(scaled, user_id=user_id)
+                        if new_id:
+                            st.success("✅ Scaled recipe saved as new recipe!")
+                            st.session_state["editing_recipe_id"] = new_id
+                            st.rerun()
+                
+                with col2:
+                    if doc_ref and st.button("📝 Update Current Recipe", key="update_with_scaled"):
+                        # Update the current recipe with scaled values
+                        doc_ref.update({
+                            "ingredients": scaled.get("ingredients"),
+                            "instructions": scaled.get("instructions"),
+                            "serves": int(target_servings),
+                            "notes": scaled.get("notes", recipe.get("notes", "")),
+                            "updated_at": datetime.utcnow()
+                        })
+                        st.success("✅ Recipe updated with scaled values!")
                         st.rerun()
+                        
         except Exception as e:
             st.error(f"Scaling failed: {e}")
 

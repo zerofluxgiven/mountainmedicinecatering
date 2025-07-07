@@ -142,21 +142,34 @@ def show_file_analytics():
 # ----------------------------
 
 def save_uploaded_file(file, event_id: str, uploaded_by: str):
-    from firebase_init import get_db, get_bucket
-    db = get_db()
-    bucket = get_bucket()
+    try:
+        from firebase_init import get_db, get_bucket
+        db = get_db()
+        bucket = get_bucket()
+    except Exception as e:
+        st.error(f"Firebase initialization error: {str(e)}")
+        raise Exception(f"Failed to initialize Firebase: {str(e)}")
 
     file_id = generate_id("file")
-    content = file.getvalue()
-    filename = file.name
-    mimetype, _ = mimetypes.guess_type(filename)
-    mimetype = mimetype or "application/octet-stream"
+    
+    try:
+        content = file.getvalue()
+        filename = file.name
+        mimetype, _ = mimetypes.guess_type(filename)
+        mimetype = mimetype or "application/octet-stream"
+    except Exception as e:
+        st.error(f"File read error: {str(e)}")
+        raise Exception(f"Failed to read file: {str(e)}")
 
-    folder = event_id or "unlinked"
-    storage_path = f"uploads/{folder}/{file_id}_{filename}"
-    blob = bucket.blob(storage_path)
-    blob.upload_from_string(content, content_type=mimetype)
-    blob.make_public()
+    try:
+        folder = event_id or "unlinked"
+        storage_path = f"uploads/{folder}/{file_id}_{filename}"
+        blob = bucket.blob(storage_path)
+        blob.upload_from_string(content, content_type=mimetype)
+        blob.make_public()
+    except Exception as e:
+        st.error(f"Firebase Storage upload error: {str(e)}")
+        raise Exception(f"Failed to upload to Firebase Storage: {str(e)}")
 
     raw_text = None
     recipe = {}
