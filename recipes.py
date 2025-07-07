@@ -429,7 +429,7 @@ def add_recipe_manual_ui():
         with st.form("manual_recipe_form"):
             name = st.text_input("Recipe Name", key="manual_recipe_name")
             special_version = st.text_input("Special Version", key="manual_special_version")
-            serves = st.number_input("Serves", min_value=1, value=4, key="manual_serves", step=None)
+            serves = st.number_input("Serves", min_value=1, value=4, key="manual_serves", step=1)
             ingredients = st.text_area("Ingredients", key="manual_ingredients")
             instructions = st.text_area("Instructions", key="manual_instructions")
             notes = st.text_area("Notes", key="manual_notes")
