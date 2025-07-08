@@ -6,7 +6,17 @@
       "Bash(git push:*)",
       "Bash(grep:*)",
       "Bash(rg:*)",
-      "Bash(ls:*)"
+      "Bash(ls:*)",
+      "Bash(git checkout:*)",
+      "Bash(git fetch:*)",
+      "Bash(python:*)",
+      "Bash(test:*)",
+      "Bash(find:*)",
+      "Bash(cp:*)",
+      "Bash(mv:*)",
+      "Bash(mkdir:*)",
+      "Bash(unzip:*)",
+      "Bash(cat:*)"
     ],
     "deny": []
   }

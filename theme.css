@@ -36,6 +36,22 @@ body, html {
 }
 
 /* -----------------------------
+   Scaled Version Buttons
+----------------------------- */
+/* Purple buttons for scaled versions */
+button[data-testid*="scaled_"] {
+    background-color: var(--primary-purple) !important;
+    color: white !important;
+    font-size: 0.875rem !important;
+    padding: 0.25rem 0.5rem !important;
+    min-height: 32px !important;
+}
+
+button[data-testid*="scaled_"]:hover {
+    background-color: var(--accent-purple) !important;
+}
+
+/* -----------------------------
    MOBILE-FIRST BASE STYLES
 ----------------------------- */
 .main .block-container {
