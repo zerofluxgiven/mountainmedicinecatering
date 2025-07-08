@@ -16,7 +16,10 @@
       "Bash(mv:*)",
       "Bash(mkdir:*)",
       "Bash(unzip:*)",
-      "Bash(cat:*)"
+      "Bash(cat:*)",
+      "Bash(git rm:*)",
+      "Bash(git restore:*)",
+      "Bash(chmod:*)"
     ],
     "deny": []
   }

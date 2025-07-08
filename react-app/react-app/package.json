@@ -6,6 +6,11 @@
     "start": "react-scripts start",
     "build": "react-scripts build",
     "test": "react-scripts test",
+    "test:coverage": "react-scripts test --coverage --watchAll=false",
+    "test:watch": "react-scripts test --watch",
+    "test:debug": "react-scripts --inspect-brk test --runInBand --no-cache",
+    "test:firebase": "node ../test-firebase-connection.js",
+    "test:health": "../test-health.sh",
     "eject": "react-scripts eject"
   },
   "dependencies": {
@@ -14,5 +19,12 @@
     "react-dom": "^18.2.0",
     "react-scripts": "5.0.1",
     "react-router-dom": "^6.23.0"
+  },
+  "devDependencies": {
+    "@testing-library/react": "^13.4.0",
+    "@testing-library/jest-dom": "^5.16.5",
+    "@testing-library/user-event": "^14.4.3",
+    "dotenv": "^16.0.3",
+    "identity-obj-proxy": "^3.0.0"
   }
 }
