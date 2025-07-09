@@ -1,9 +1,5 @@
-const vision = require('@google-cloud/vision');
 const pdfParse = require('pdf-parse');
 const fetch = require('node-fetch');
-
-// Initialize Vision client for OCR
-const visionClient = new vision.ImageAnnotatorClient();
 
 // Parse event details from various file types using AI
 async function parseEventFromFile(fileBuffer, mimeType, openai) {
@@ -12,11 +8,30 @@ async function parseEventFromFile(fileBuffer, mimeType, openai) {
   try {
     // Extract text based on file type
     if (mimeType.includes('image')) {
-      // Use Google Vision API for OCR on images
-      const [result] = await visionClient.textDetection({
-        image: { content: fileBuffer.toString('base64') }
+      // Use OpenAI Vision API directly for images
+      const base64Image = fileBuffer.toString('base64');
+      const response = await openai.chat.completions.create({
+        model: "gpt-4-vision-preview",
+        messages: [
+          {
+            role: "user",
+            content: [
+              {
+                type: "text",
+                text: "Extract all text from this event flyer/invitation image. Include all dates, times, locations, and contact information."
+              },
+              {
+                type: "image_url",
+                image_url: {
+                  url: `data:${mimeType};base64,${base64Image}`
+                }
+              }
+            ]
+          }
+        ],
+        max_tokens: 1000
       });
-      extractedText = result.textAnnotations?.[0]?.description || '';
+      extractedText = response.choices[0].message.content;
     } else if (mimeType === 'application/pdf') {
       // Parse PDF to extract text
       const pdfData = await pdfParse(fileBuffer);

@@ -36,7 +36,20 @@
       "Bash(git init:*)",
       "Bash(firebase projects:list:*)",
       "WebFetch(domain:console.firebase.google.com)",
-      "Bash(gcloud config get-value:*)"
+      "Bash(gcloud config get-value:*)",
+      "Bash(firebase functions:list:*)",
+      "Bash(firebase functions:config:get:*)",
+      "Bash(firebase functions:log:*)",
+      "Bash(rm:*)",
+      "Bash(firebase functions:delete:*)",
+      "Bash(firebase use:*)",
+      "Bash(firebase functions:config:set:*)",
+      "Bash(firebase login:*)",
+      "Bash(gcloud functions add-iam-policy-binding:*)",
+      "Bash(--member=\"allUsers\" )",
+      "Bash(--role=\"roles/cloudfunctions.invoker\" )",
+      "Bash(--project=mountainmedicine-6e572 )",
+      "Bash(--region=us-central1)"
     ],
     "deny": []
   }

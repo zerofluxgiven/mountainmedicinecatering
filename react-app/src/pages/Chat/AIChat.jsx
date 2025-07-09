@@ -54,10 +54,10 @@ export default function AIChat() {
         createdAt: serverTimestamp(),
         lastMessageAt: serverTimestamp(),
         context: {
-          eventId: selectedEventId,
-          eventCount: events.length,
-          recipeCount: recipes.length,
-          menuCount: menus.length
+          eventId: selectedEventId || null,
+          eventCount: events?.length || 0,
+          recipeCount: recipes?.length || 0,
+          menuCount: menus?.length || 0
         }
       };
 

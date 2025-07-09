@@ -2,7 +2,7 @@
 // Parses event details from uploaded flyers/invitations
 
 import { httpsCallable } from 'firebase/functions';
-import { functions } from '../config/firebase';
+import { functions, auth } from '../config/firebase';
 
 const MOCK_DELAY = 1500; // Simulate API delay
 
@@ -167,9 +167,25 @@ export async function parseEventFromFile(file) {
       }
     }
     
+    // Check if user is authenticated
+    if (!auth.currentUser) {
+      console.error('User not authenticated for AI parsing');
+      throw new Error('Authentication required for AI parsing');
+    }
+    
     // For images, PDFs, and complex files, use Firebase Function with AI
+    console.log('File size:', file.size, 'bytes');
+    
+    // Check file size (Firebase Functions have a 10MB limit for callable functions)
+    if (file.size > 9 * 1024 * 1024) { // 9MB to be safe
+      throw new Error('File too large. Please use a file smaller than 9MB.');
+    }
+    
     const fileData = await fileToBase64(file);
     const parseEventFlyer = httpsCallable(functions, 'parseEventFlyer');
+    
+    console.log('Calling parseEventFlyer function with auth user:', auth.currentUser.uid);
+    console.log('File type:', file.type);
     
     const result = await parseEventFlyer({
       fileData: fileData,
@@ -184,11 +200,15 @@ export async function parseEventFromFile(file) {
   } catch (error) {
     console.error('Error parsing event file:', error);
     
-    // Check if it's a function not found error
-    if (error.code === 'functions/not-found' || error.message?.includes('404')) {
-      console.warn('AI parsing function not deployed. Using fallback parser.');
+    // Check if it's a function not found error, internal error, or auth error
+    if (error.code === 'functions/not-found' || 
+        error.message?.includes('404') || 
+        error.code === 'internal' ||
+        error.code === 'unauthenticated' ||
+        error.message?.includes('403')) {
+      console.warn('AI parsing function not available or authentication issue. Using fallback parser.', error.code);
       
-      // Always try fallback parser when functions aren't deployed
+      // Always try fallback parser when functions aren't available
       const text = await readFileAsText(file);
       if (text) {
         return mockParseEvent(text);
@@ -204,8 +224,12 @@ export async function parseEventFromFile(file) {
     }
     
     // Provide helpful error message
-    if (error.code === 'functions/not-found' || error.message?.includes('404')) {
-      throw new Error('AI parsing is not available yet. For now, text files can be parsed locally, but images and PDFs require the AI service to be deployed. Please enter details manually or use a text file.');
+    if (error.code === 'functions/not-found' || 
+        error.message?.includes('404') || 
+        error.code === 'internal' ||
+        error.code === 'unauthenticated' ||
+        error.message?.includes('403')) {
+      throw new Error('AI parsing is temporarily unavailable. Text files can still be parsed locally. For images and PDFs, please enter details manually or try again later.');
     }
     
     throw new Error('Unable to parse event details from this file. Please try a different file or enter details manually.');

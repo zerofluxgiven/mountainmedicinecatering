@@ -328,3 +328,42 @@ exports.healthCheck = functions.https.onRequest((req, res) => {
     res.json({ status: "healthy", timestamp: new Date().toISOString() });
   });
 });
+
+// HTTP version of parseEventFlyer with CORS support (temporary workaround)
+exports.parseEventFlyerHTTP = functions.https.onRequest((req, res) => {
+  cors(req, res, async () => {
+    try {
+      // Check if it's a POST request
+      if (req.method !== 'POST') {
+        res.status(405).json({ error: 'Method not allowed' });
+        return;
+      }
+
+      // Get auth token from header
+      const authToken = req.headers.authorization?.split('Bearer ')[1];
+      if (!authToken) {
+        res.status(401).json({ error: 'Unauthorized' });
+        return;
+      }
+
+      // Verify the token
+      const decodedToken = await admin.auth().verifyIdToken(authToken);
+      
+      const { fileData, mimeType } = req.body;
+      
+      if (!fileData || !mimeType) {
+        res.status(400).json({ error: 'Missing fileData or mimeType' });
+        return;
+      }
+
+      // Parse the event
+      const buffer = Buffer.from(fileData, 'base64');
+      const parsedEvent = await parseEventFromFile(buffer, mimeType, openai);
+      
+      res.json({ success: true, event: parsedEvent });
+    } catch (error) {
+      console.error('ParseEventFlyerHTTP error:', error);
+      res.status(500).json({ error: error.message });
+    }
+  });
+});
