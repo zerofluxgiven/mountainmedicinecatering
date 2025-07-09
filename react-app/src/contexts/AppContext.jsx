@@ -17,14 +17,10 @@ export function AppProvider({ children }) {
   const { currentUser } = useAuth();
   
   // Global app state
-  const [selectedEventId, setSelectedEventId] = useState(null);
   const [events, setEvents] = useState([]);
   const [recipes, setRecipes] = useState([]);
   const [menus, setMenus] = useState([]);
   const [loading, setLoading] = useState(true);
-
-  // Get active event details
-  const activeEvent = events.find(e => e.id === selectedEventId);
 
   // Load events
   useEffect(() => {
@@ -58,15 +54,16 @@ export function AppProvider({ children }) {
     return () => unsubscribe();
   }, [currentUser]);
 
-  // Load recipes for selected event
+  // Load all recipes
   useEffect(() => {
-    if (!selectedEventId) {
+    if (!currentUser) {
       setRecipes([]);
       return;
     }
 
-    // For now, load all recipes (later we can filter by event)
+    // Load all recipes regardless of selected event
     const unsubscribe = onSnapshot(collection(db, 'recipes'), (snapshot) => {
+      console.log('Recipes snapshot received:', snapshot.size, 'documents');
       const recipeData = snapshot.docs.map(doc => ({
         id: doc.id,
         ...doc.data()
@@ -76,24 +73,21 @@ export function AppProvider({ children }) {
       recipeData.sort((a, b) => (a.name || '').localeCompare(b.name || ''));
       
       setRecipes(recipeData);
+    }, (error) => {
+      console.error('Error loading recipes:', error);
     });
 
     return () => unsubscribe();
-  }, [selectedEventId]);
+  }, [currentUser]);
 
-  // Load menus for selected event
+  // Load all menus
   useEffect(() => {
-    if (!selectedEventId) {
+    if (!currentUser) {
       setMenus([]);
       return;
     }
 
-    const q = query(
-      collection(db, 'menus'),
-      where('event_id', '==', selectedEventId)
-    );
-
-    const unsubscribe = onSnapshot(q, (snapshot) => {
+    const unsubscribe = onSnapshot(collection(db, 'menus'), (snapshot) => {
       const menuData = snapshot.docs.map(doc => ({
         id: doc.id,
         ...doc.data()
@@ -103,19 +97,14 @@ export function AppProvider({ children }) {
     });
 
     return () => unsubscribe();
-  }, [selectedEventId]);
+  }, [currentUser]);
 
   const value = {
     // State
-    selectedEventId,
-    activeEvent,
     events,
     recipes,
     menus,
     loading,
-    
-    // Actions
-    setSelectedEventId,
   };
 
   return (

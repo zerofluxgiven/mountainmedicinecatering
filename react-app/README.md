@@ -1,102 +1,125 @@
-# Mountain Medicine Kitchen - React App
+# Mountain Medicine Catering
 
-This is the React migration of the Mountain Medicine Catering Streamlit application.
+A comprehensive catering management application built with React and Firebase.
 
-## Setup
+## Live Demo
+🚀 **[Visit Mountain Medicine Catering](https://mountainmedicine-6e572.web.app)**
 
-1. **Install dependencies**:
-   ```bash
-   npm install
-   ```
+## Features
 
-2. **Configure environment variables**:
-   - Copy `.env.example` to `.env`
-   - Fill in your Firebase configuration values
-   - Get these from your Firebase Console or existing Streamlit secrets
+### 📅 Event Management
+- Create and manage catering events
+- Track guest counts and dietary restrictions
+- Upload and parse event flyers with AI
+- Manage event-specific menus and recipes
 
-3. **Run the development server**:
-   ```bash
-   npm start
-   ```
+### 📖 Recipe Management
+- Store and organize recipes
+- Smart recipe scaling based on guest count
+- Recipe versioning system (track changes over time)
+- Special dietary versions (Gluten-Free, Vegan, etc.)
+- AI-powered recipe import from text/images
 
-## Project Structure
+### 🍽️ Menu Building
+- Visual drag-and-drop menu builder
+- Organize recipes into menu sections
+- Calculate total servings automatically
+- Export menus as PDFs
 
+### 🥕 Ingredient Tracking
+- Comprehensive ingredient database
+- Allergen tracking and management
+- Automatic shopping list generation
+- Ingredient categorization
+
+### 🤖 AI Features
+- Recipe parsing from various file formats
+- Event flyer parsing to extract details
+- AI chat assistant for catering questions
+- Smart suggestions and automation
+
+### 📱 Mobile Support
+- Fully responsive design
+- Touch-optimized interfaces
+- Mobile-friendly navigation
+
+## Technology Stack
+
+- **Frontend**: React 18 with React Router
+- **Backend**: Firebase (Auth, Firestore, Storage, Functions)
+- **AI Integration**: OpenAI GPT-4
+- **Styling**: Custom CSS with responsive design
+- **State Management**: React Context API
+- **File Processing**: PDF parsing, image OCR
+- **Deployment**: Firebase Hosting
+
+## Getting Started
+
+### Prerequisites
+- Node.js 18 or higher
+- npm or yarn
+- Firebase account
+- OpenAI API key (for AI features)
+
+### Installation
+
+1. Clone the repository
+```bash
+git clone https://github.com/yourusername/mountain-medicine-catering.git
+cd mountain-medicine-catering
 ```
-src/
-├── components/          # Reusable UI components
-│   ├── Auth/           # Authentication components
-│   └── Layout/         # App layout and navigation
-├── contexts/           # React Context providers
-│   ├── AuthContext.jsx # Authentication state
-│   └── AppContext.jsx  # Global app state
-├── pages/              # Page components
-│   └── Login/          # Login page
-├── services/           # API and Firebase services
-├── hooks/              # Custom React hooks
-├── utils/              # Utility functions
-└── styles/             # Global styles
+
+2. Install dependencies
+```bash
+npm install
+cd functions && npm install
 ```
 
-## Development Progress
+3. Configure environment variables
+```bash
+cp .env.example .env.local
+# Edit .env.local with your Firebase config
+```
 
-### ✅ Completed
-- Basic React setup with routing
-- Firebase configuration
-- Authentication context
-- App-wide state management
-- Protected routes
-- Main layout with sidebar
-- Login page
-- Purple theme matching Streamlit app
+4. Set up Firebase
+```bash
+firebase login
+firebase use --add
+```
 
-### 🚧 In Progress
-- Dashboard page
-- Events management
-- Recipe management
-- Menu builder
-- Ingredients tracking
-- AI chat interface
+5. Deploy Firebase Functions
+```bash
+cd functions
+firebase deploy --only functions
+```
 
-### 📋 TODO
-- API endpoints (Firebase Functions)
-- File upload functionality
-- PDF export
-- Mobile responsive design
-- Real-time updates
-- Testing setup
-
-## Key Differences from Streamlit
-
-1. **State Management**: Using React Context instead of `st.session_state`
-2. **Routing**: React Router for navigation instead of Streamlit pages
-3. **Real-time Updates**: Firestore listeners instead of full page reloads
-4. **Component-based**: Reusable components instead of function-based pages
-
-## Firebase Integration
-
-The app uses the same Firebase project as the Streamlit app:
-- **Authentication**: Firebase Auth
-- **Database**: Firestore
-- **Storage**: Firebase Storage
-- **Hosting**: Can be deployed to Firebase Hosting
-
-## Available Scripts
-
-- `npm start` - Run development server
-- `npm build` - Build for production
-- `npm test` - Run tests
-- `npm run deploy` - Deploy to Firebase Hosting (configure first)
+6. Run the development server
+```bash
+npm start
+```
 
 ## Deployment
 
-1. Build the app:
-   ```bash
-   npm run build
-   ```
+The app automatically deploys to Firebase Hosting when changes are pushed to the main branch.
 
-2. Deploy to Firebase:
-   ```bash
-   firebase deploy --only hosting
-   ```
+Manual deployment:
+```bash
+npm run build
+firebase deploy
+```
 
-Make sure to configure Firebase Hosting to serve the React app at a different path than the Streamlit app (e.g., `/app`).
+## Contributing
+
+1. Fork the repository
+2. Create your feature branch (`git checkout -b feature/amazing-feature`)
+3. Commit your changes (`git commit -m 'Add some amazing feature'`)
+4. Push to the branch (`git push origin feature/amazing-feature`)
+5. Open a Pull Request
+
+## License
+
+This project is proprietary software for Mountain Medicine Catering.
+
+## Support
+
+For support, please contact the development team.

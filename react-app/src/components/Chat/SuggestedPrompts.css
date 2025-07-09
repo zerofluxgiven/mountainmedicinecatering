@@ -1,0 +1,141 @@
+/* Suggested Prompts Styles */
+.suggested-prompts {
+  width: 100%;
+  max-width: 800px;
+  margin: 0 auto;
+}
+
+.suggested-prompts h3 {
+  font-size: 1.125rem;
+  color: var(--text-primary);
+  margin: 0 0 1.5rem 0;
+  text-align: center;
+}
+
+/* Prompt Categories */
+.prompt-categories {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+  gap: 1.5rem;
+  margin-bottom: 2rem;
+}
+
+.prompt-category {
+  background: white;
+  border-radius: 0.75rem;
+  padding: 1.5rem;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
+  transition: transform 0.2s, box-shadow 0.2s;
+}
+
+.prompt-category:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+}
+
+/* Category Header */
+.category-header {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  margin-bottom: 1rem;
+}
+
+.category-icon {
+  font-size: 1.5rem;
+}
+
+.category-header h4 {
+  font-size: 1rem;
+  color: var(--text-primary);
+  margin: 0;
+}
+
+/* Prompt List */
+.prompt-list {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+}
+
+.prompt-button {
+  text-align: left;
+  padding: 0.75rem 1rem;
+  background-color: var(--background);
+  border: 1px solid transparent;
+  border-radius: 0.5rem;
+  color: var(--text-primary);
+  font-size: 0.875rem;
+  line-height: 1.4;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.prompt-button:hover {
+  background-color: white;
+  border-color: var(--primary-color);
+  color: var(--primary-color);
+  transform: translateX(4px);
+}
+
+.prompt-button:active {
+  transform: translateX(2px);
+}
+
+/* Prompts Footer */
+.prompts-footer {
+  text-align: center;
+  padding: 1.5rem;
+  background-color: var(--background);
+  border-radius: 0.5rem;
+  margin-top: 2rem;
+}
+
+.prompts-footer p {
+  margin: 0;
+  color: var(--text-secondary);
+  font-size: 0.875rem;
+}
+
+/* Responsive */
+@media (max-width: 768px) {
+  .suggested-prompts h3 {
+    font-size: 1rem;
+    margin-bottom: 1rem;
+  }
+
+  .prompt-categories {
+    grid-template-columns: 1fr;
+    gap: 1rem;
+  }
+
+  .prompt-category {
+    padding: 1rem;
+  }
+
+  .category-header {
+    margin-bottom: 0.75rem;
+  }
+
+  .category-icon {
+    font-size: 1.25rem;
+  }
+
+  .category-header h4 {
+    font-size: 0.875rem;
+  }
+
+  .prompt-button {
+    padding: 0.625rem 0.875rem;
+    font-size: 0.8125rem;
+  }
+
+  .prompts-footer {
+    padding: 1rem;
+    margin-top: 1.5rem;
+  }
+
+  .prompts-footer p {
+    font-size: 0.8125rem;
+  }
+}

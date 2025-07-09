@@ -1,37 +1,20 @@
 // jest-dom adds custom jest matchers for asserting on DOM nodes.
+// allows you to do things like:
+// expect(element).toHaveTextContent(/react/i)
+// learn more: https://github.com/testing-library/jest-dom
 import '@testing-library/jest-dom';
 
 // Mock Firebase
 jest.mock('./config/firebase', () => ({
   auth: {
-    currentUser: null,
+    currentUser: { uid: 'test-user-id', email: 'test@example.com' },
     signInWithEmailAndPassword: jest.fn(),
-    createUserWithEmailAndPassword: jest.fn(),
     signOut: jest.fn(),
-    onAuthStateChanged: jest.fn(),
+    onAuthStateChanged: jest.fn()
   },
-  db: {
-    collection: jest.fn(() => ({
-      doc: jest.fn(() => ({
-        get: jest.fn(),
-        set: jest.fn(),
-        update: jest.fn(),
-        delete: jest.fn(),
-      })),
-      where: jest.fn(() => ({
-        get: jest.fn(),
-      })),
-      orderBy: jest.fn(() => ({
-        get: jest.fn(),
-      })),
-    })),
-  },
-  storage: {
-    ref: jest.fn(() => ({
-      put: jest.fn(),
-      getDownloadURL: jest.fn(),
-    })),
-  },
+  db: {},
+  storage: {},
+  functions: {}
 }));
 
 // Mock window.matchMedia
@@ -49,20 +32,10 @@ Object.defineProperty(window, 'matchMedia', {
   })),
 });
 
-// Suppress console errors in tests
-const originalError = console.error;
-beforeAll(() => {
-  console.error = (...args) => {
-    if (
-      typeof args[0] === 'string' &&
-      args[0].includes('Warning: ReactDOM.render')
-    ) {
-      return;
-    }
-    originalError.call(console, ...args);
-  };
-});
-
-afterAll(() => {
-  console.error = originalError;
-});
+// Mock IntersectionObserver
+global.IntersectionObserver = class IntersectionObserver {
+  constructor() {}
+  disconnect() {}
+  observe() {}
+  unobserve() {}
+};

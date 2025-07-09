@@ -1,11 +1,13 @@
 import React from 'react';
+import { useNavigate } from 'react-router-dom';
 import { useApp } from '../../contexts/AppContext';
 import { useAuth } from '../../contexts/AuthContext';
 import './Dashboard.css';
 
 export default function Dashboard() {
-  const { currentUser, userRole } = useAuth();
-  const { activeEvent, events, recipes, menus } = useApp();
+  const navigate = useNavigate();
+  const { currentUser } = useAuth();
+  const { events, recipes, menus } = useApp();
 
   const upcomingEvents = events.filter(event => {
     const eventDate = new Date(event.start_date?.seconds * 1000 || event.start_date);
@@ -17,7 +19,7 @@ export default function Dashboard() {
       <div className="dashboard-header">
         <h1>Welcome back, {currentUser?.email?.split('@')[0]}!</h1>
         <p className="dashboard-subtitle">
-          {activeEvent ? `Working on: ${activeEvent.name}` : 'Select an event to get started'}
+          Your catering command center
         </p>
       </div>
 
@@ -47,41 +49,34 @@ export default function Dashboard() {
           </div>
         </div>
 
-        {activeEvent && (
-          <div className="stat-card">
-            <div className="stat-icon">👥</div>
-            <div className="stat-content">
-              <div className="stat-value">{activeEvent.guest_count || 0}</div>
-              <div className="stat-label">Guest Count</div>
-            </div>
-          </div>
-        )}
       </div>
 
       {/* Quick Actions */}
-      {activeEvent && (
-        <div className="quick-actions">
-          <h2>Quick Actions</h2>
+      <div className="quick-actions">
+        <h2>Quick Actions</h2>
           <div className="action-buttons">
-            <button className="action-btn">
+            <button className="action-btn" onClick={() => navigate('/events/new')}>
+              <span className="action-icon">📅</span>
+              <span>Create Event</span>
+            </button>
+            <button className="action-btn" onClick={() => navigate('/recipes/new')}>
               <span className="action-icon">📝</span>
               <span>Add Recipe</span>
             </button>
-            <button className="action-btn">
+            <button className="action-btn" onClick={() => navigate('/menus/new')}>
               <span className="action-icon">🍽️</span>
               <span>Create Menu</span>
             </button>
-            <button className="action-btn">
+            <button className="action-btn" onClick={() => navigate('/shopping-list')}>
               <span className="action-icon">📋</span>
               <span>Shopping List</span>
             </button>
-            <button className="action-btn">
+            <button className="action-btn" onClick={() => navigate('/export')}>
               <span className="action-icon">📄</span>
               <span>Export PDF</span>
             </button>
           </div>
-        </div>
-      )}
+      </div>
 
       {/* Upcoming Events */}
       <div className="upcoming-events">

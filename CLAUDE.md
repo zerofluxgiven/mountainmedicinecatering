@@ -848,6 +848,45 @@ it('should create recipe and update event', async () => {
 })
 ```
 
+## Event Mode (Planned Feature)
+
+**Event Mode** is a planned feature for the React app that will provide a scoped view when editing an event. This feature will:
+
+### 1. Event Planning Dashboard
+When editing an event, users will enter a dedicated planning dashboard that provides:
+- Event details editing
+- Menu management for that specific event
+- Recipe editing within the context of the event
+- All edits scoped to the particular event
+
+### 2. Multiple Menus per Event
+Events can have multiple menus to handle different dietary needs:
+- Main menu
+- Vegan menu
+- Allergy-specific menus (e.g., peanut-free menu)
+- All menus displayed side-by-side for concurrent planning
+
+### 3. Menu Structure
+Each menu contains:
+- **Meals** (not menu types): breakfast, lunch, dinner, ceremony, etc.
+- Each meal includes:
+  - Description field
+  - Instructions field
+  - Notes field
+  - Multiple recipes as clickable cards
+
+### 4. Scoped Editing
+When in event mode:
+- Shopping lists pertain to that specific event
+- To-do lists are event-specific
+- All changes are contextualized to the selected event
+
+### Data Model Updates
+The React app has been updated to support the new menu structure:
+- Menus contain `meals` array (not `sections`)
+- Each meal has `type`, `description`, `instructions`, `notes`, and `recipes` fields
+- Backward compatibility maintained with `sections` field
+
 ## Development Commands
 
 ### Running the Application

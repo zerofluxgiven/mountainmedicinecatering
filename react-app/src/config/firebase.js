@@ -1,7 +1,8 @@
 import { initializeApp } from 'firebase/app';
-import { getAuth } from 'firebase/auth';
-import { getFirestore } from 'firebase/firestore';
-import { getStorage } from 'firebase/storage';
+import { getAuth, connectAuthEmulator, setPersistence, browserLocalPersistence } from 'firebase/auth';
+import { getFirestore, connectFirestoreEmulator } from 'firebase/firestore';
+import { getStorage, connectStorageEmulator } from 'firebase/storage';
+import { getFunctions, connectFunctionsEmulator } from 'firebase/functions';
 
 // Firebase configuration from environment variables or secrets
 const firebaseConfig = {
@@ -20,5 +21,30 @@ const app = initializeApp(firebaseConfig);
 export const auth = getAuth(app);
 export const db = getFirestore(app);
 export const storage = getStorage(app);
+export const functions = getFunctions(app);
+
+// Set auth persistence to local (survives browser refresh)
+setPersistence(auth, browserLocalPersistence).catch(error => {
+  console.error('Error setting auth persistence:', error);
+});
+
+// Connect to emulators in development
+if (window.location.hostname === 'localhost' && process.env.REACT_APP_USE_EMULATORS === 'true') {
+  console.log('Connecting to Firebase emulators...');
+  
+  // Only connect if not already connected
+  if (!window._firebaseEmulatorsConnected) {
+    try {
+      connectAuthEmulator(auth, 'http://localhost:9099', { disableWarnings: true });
+      connectFirestoreEmulator(db, 'localhost', 8080);
+      connectStorageEmulator(storage, 'localhost', 9199);
+      connectFunctionsEmulator(functions, 'localhost', 5001);
+      window._firebaseEmulatorsConnected = true;
+      console.log('Connected to Firebase emulators');
+    } catch (error) {
+      console.warn('Failed to connect to emulators:', error);
+    }
+  }
+}
 
 export default app;

@@ -48,7 +48,7 @@ export function AuthProvider({ children }) {
       id: user.uid,
       email: user.email,
       name: name,
-      role: 'viewer', // Default role
+      role: 'user', // Default role - matches old app hierarchy
       created_at: new Date(),
       last_login: new Date()
     });
@@ -78,8 +78,9 @@ export function AuthProvider({ children }) {
   // Check if user has required role
   function hasRole(requiredRole) {
     const roleHierarchy = {
-      'admin': 3,
-      'editor': 2,
+      'admin': 4,
+      'manager': 3,
+      'user': 2,
       'viewer': 1
     };
 
@@ -91,7 +92,9 @@ export function AuthProvider({ children }) {
 
   // Set up auth state listener
   useEffect(() => {
+    console.log('Setting up auth listener...');
     const unsubscribe = onAuthStateChanged(auth, async (user) => {
+      console.log('Auth state changed:', user ? 'User logged in' : 'No user');
       if (user) {
         setCurrentUser(user);
         await loadUserData(user.uid);
@@ -117,7 +120,7 @@ export function AuthProvider({ children }) {
 
   return (
     <AuthContext.Provider value={value}>
-      {!loading && children}
+      {children}
     </AuthContext.Provider>
   );
 }
