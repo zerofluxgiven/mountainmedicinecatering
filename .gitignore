@@ -25,3 +25,7 @@ Thumbs.db
 *.bak
 # Temporary pip logs
 =*
+
+# Archived directories
+mountainmedicine-kitchen/
+streamlit-app-archive/
