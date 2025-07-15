@@ -1,6 +1,6 @@
 # AI Agents & Context Guide
 
-This file serves as a central index for AI agents (Claude, GPT, etc.) to quickly understand the Mountain Medicine Catering codebase and find relevant documentation.
+This file serves as a central index for AI agents (Claude, GPT, etc.) to quickly understand the Mountain Medicine Kitchen codebase and find relevant documentation.
 
 ## 🚀 Quick Start for AI Agents
 
@@ -65,9 +65,11 @@ mountainmedicinecatering/          # Main Streamlit app
 - **Active Feature Branch**: `fix/parsing-and-data-consistency`
 
 ### Technology Stack
-- **Current Production**: Streamlit + Firebase
-- **Migration Target**: React + Firebase (same backend)
+- **Current Production**: React + Firebase (migration completed)
+- **Previous Version**: Streamlit + Firebase (archived)
 - **Deployment**: Firebase Hosting via GitHub Actions
+- **PDF Generation**: Client-side with jsPDF and html2canvas
+- **Image Processing**: Firebase Functions with Sharp library
 
 ## 🎯 Common Tasks
 
@@ -96,23 +98,34 @@ mountainmedicinecatering/          # Main Streamlit app
 1. **Event Context System**: Most operations require a selected event
 2. **Authentication Flow**: Firebase Auth with role-based permissions
 3. **Recipe Scaling**: Smart ingredient parsing and fraction handling
-4. **Mobile Support**: Separate mobile components and detection
-5. **AI Integration**: OpenAI for parsing recipes and chat
+4. **Mobile Support**: Responsive design with touch optimization
+5. **AI Integration**: Claude API (Anthropic) + OpenAI for dual capabilities
+6. **PDF Export**: Client-side generation with visual margins and auto-download
+7. **Allergen Safety**: Hierarchical allergen system with custom allergen support
+8. **Menu Planning**: Calendar-style interface for multi-day event planning
+9. **Image Processing**: Automated thumbnail generation for performance
 
 ## 🔧 Development Commands
 
 ```bash
-# Streamlit app
-streamlit run app.py
-
-# React app
+# React app (main application)
 cd react-app
 npm install
 npm start
 
+# Firebase Functions (for backend)
+cd react-app/functions
+npm install
+firebase emulators:start
+
 # Run all React tests
 cd react-app
 ./run-tests.sh
+
+# Build and deploy
+cd react-app
+npm run build
+firebase deploy
 
 # Check git status
 git status
@@ -131,11 +144,32 @@ When starting work:
 
 ## 🚨 Important Notes
 
-1. **Two Repos Exist**: Main app and kitchen repo (for parallel development)
-2. **Same Firebase**: Both Streamlit and React use the same backend
-3. **Gradual Migration**: React app supplements, doesn't replace Streamlit yet
-4. **Test Everything**: Comprehensive testing infrastructure in place
-5. **Document Changes**: Update relevant .md files when making changes
+1. **React Migration Complete**: The app now runs entirely on React with Firebase backend
+2. **Professional PDF Export**: All entities support PDF generation with visual margins
+3. **Enhanced Safety System**: Hierarchical allergen management prevents safety issues
+4. **Performance Optimized**: Thumbnail generation and image processing for fast loading
+5. **Test Everything**: Comprehensive testing infrastructure in place
+6. **Document Changes**: Update relevant .md files when making changes
+
+## 🆕 Recent Major Features (Version 2.5)
+
+### PDF Export System
+- **Client-side generation**: Uses jsPDF and html2canvas
+- **Visual margins**: 40mm margins with dashed indicators
+- **Auto-download**: PDFs save automatically with descriptive filenames
+- **All entities supported**: Recipes, menus, events all export to PDF
+
+### Enhanced Allergen Management
+- **Hierarchical system**: Parent allergens contain child allergens
+- **Custom allergen support**: Add specific allergens beyond defaults
+- **Real-time filtering**: Recipe lists update instantly
+- **Safety-first approach**: Always prioritize guest safety
+
+### UI/UX Improvements
+- **Recipe card optimization**: Reduced height, hover overlays
+- **Autocomplete search**: Better recipe and tag filtering
+- **Thumbnail generation**: Automated image optimization
+- **Enhanced recipe parsing**: Better section detection and formatting
 
 ---
 
