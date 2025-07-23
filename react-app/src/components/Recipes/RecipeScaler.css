@@ -1,9 +1,21 @@
-/* Recipe Scaler Styles */
-.recipe-scaler {
+/* Recipe Scaler Overlay */
+.recipe-scaler-overlay {
   position: fixed;
-  top: 50%;
-  left: 50%;
-  transform: translate(-50%, -50%);
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background-color: rgba(0, 0, 0, 0.5);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 1000;
+  cursor: pointer;
+}
+
+/* Recipe Scaler Modal */
+.recipe-scaler {
+  position: relative;
   background: white;
   border-radius: 0.5rem;
   box-shadow: 0 10px 25px rgba(0, 0, 0, 0.2);
@@ -11,7 +23,7 @@
   width: 90%;
   max-height: 90vh;
   overflow-y: auto;
-  z-index: 1001;
+  cursor: default;
 }
 
 .scaler-header {
@@ -285,27 +297,133 @@
 
 /* Print Styles */
 @media print {
-  .printable {
-    background: white !important;
-    color: black !important;
+  /* When printing from scaler */
+  body.printing-scaled-recipe .recipe-scaler {
+    position: static;
+    transform: none;
+    box-shadow: none;
+    max-width: 100%;
+    width: 100%;
+    height: auto;
+    max-height: none;
+    overflow: visible;
+    border-radius: 0;
   }
 
+  body.printing-scaled-recipe {
+    font-size: 11pt;
+    line-height: 1.4;
+    color: #000;
+    background: white;
+  }
+
+  /* Hide non-printable elements */
   .scaler-header,
   .scaler-controls,
   .quick-scale-buttons,
   .scaling-notes,
-  .scaler-actions {
+  .scaler-actions,
+  .close-btn {
     display: none !important;
   }
 
+  /* Recipe content styling */
   .scaled-recipe {
     padding: 0;
+    background: white !important;
+    color: black !important;
   }
 
   .scaled-recipe h3 {
-    font-size: 1.5rem;
-    margin-bottom: 1rem;
-    border-bottom: 2px solid #ccc;
+    font-size: 20pt;
+    margin: 0 0 16pt 0;
+    padding-bottom: 8pt;
+    border-bottom: 2pt solid #000;
+    color: #000;
+    page-break-after: avoid;
+  }
+
+  .scaled-section {
+    margin-bottom: 16pt;
+    page-break-inside: avoid;
+  }
+
+  .scaled-section h4 {
+    font-size: 14pt;
+    color: #000;
+    margin-bottom: 8pt;
+    text-transform: uppercase;
+    letter-spacing: 0.5pt;
+    page-break-after: avoid;
+  }
+
+  /* Ingredients with checkboxes */
+  .scaled-ingredients {
+    margin: 0;
+    padding: 0;
+  }
+
+  .scaled-ingredients li {
+    padding: 4pt 0;
+    border-bottom: 0.5pt dotted #ccc;
+    color: #000;
+    page-break-inside: avoid;
+  }
+
+  .scaled-ingredients li::before {
+    content: "□ ";
+    color: #000;
+    margin-right: 8pt;
+    font-size: 10pt;
+  }
+
+  /* Instructions */
+  .scaled-instructions {
+    color: #000;
+  }
+
+  .scaled-instructions p {
+    margin-bottom: 8pt;
+    line-height: 1.5;
+    page-break-inside: avoid;
+  }
+
+  .scaled-instructions ol {
+    margin: 0;
+    padding: 0;
+  }
+
+  .scaled-instructions li {
+    padding-left: 24pt;
+    margin-bottom: 12pt;
+    color: #000;
+    page-break-inside: avoid;
+  }
+
+  .scaled-instructions li::before {
+    background-color: #333;
+    color: white;
+    width: 18pt;
+    height: 18pt;
+    font-size: 10pt;
+  }
+
+  /* Add footer with scale info */
+  .scaled-recipe::after {
+    content: "Recipe scaled for " attr(data-servings) " servings. Printed on " attr(data-print-date);
+    display: block;
+    margin-top: 24pt;
+    padding-top: 12pt;
+    border-top: 1pt solid #ccc;
+    font-size: 9pt;
+    color: #666;
+    text-align: center;
+  }
+
+  /* Page setup */
+  @page {
+    margin: 0.75in;
+    size: letter;
   }
 }
 

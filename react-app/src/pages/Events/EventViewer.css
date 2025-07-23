@@ -4,6 +4,19 @@
   margin: 0 auto;
 }
 
+/* Event header container for scroll-away functionality */
+.event-header-container {
+  position: sticky;
+  top: 0;
+  z-index: 100;
+  background: var(--background);
+  transition: transform 0.3s ease-in-out;
+}
+
+.event-header-container.scroll-hidden {
+  transform: translateY(-100%);
+}
+
 /* Header */
 .event-header {
   background: white;
@@ -73,6 +86,12 @@
   padding: 0.25rem;
   margin-bottom: 2rem;
   overflow-x: auto;
+  -webkit-overflow-scrolling: touch;
+  scrollbar-width: none;
+}
+
+.event-tabs::-webkit-scrollbar {
+  display: none;
 }
 
 .tab {
@@ -180,7 +199,7 @@
 /* Stats Grid */
 .stats-grid {
   display: grid;
-  grid-template-columns: repeat(3, 1fr);
+  grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
   gap: 1rem;
   margin-top: 1rem;
 }
@@ -190,6 +209,8 @@
   padding: 1rem;
   background-color: var(--background);
   border-radius: 0.375rem;
+  min-width: 0;
+  overflow: hidden;
 }
 
 .stat-value {
@@ -203,6 +224,8 @@
 .stat-label {
   font-size: 0.875rem;
   color: var(--text-secondary);
+  word-wrap: break-word;
+  overflow-wrap: break-word;
 }
 
 /* Details Section */
@@ -295,6 +318,37 @@
   padding: 0.5rem 1rem;
 }
 
+.special-menu-summary {
+  background: white;
+  padding: 1.5rem;
+  border-radius: 0.5rem;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+  margin-bottom: 2rem;
+  border-left: 4px solid var(--primary);
+}
+
+.special-menu-summary h3 {
+  font-size: 1.125rem;
+  color: var(--text-primary);
+  margin: 0 0 0.5rem 0;
+}
+
+.special-menu-count {
+  color: var(--text-secondary);
+  margin: 0;
+}
+
+.special-menu-indicator {
+  display: inline-flex;
+  align-items: center;
+  padding: 0.25rem 0.5rem;
+  background-color: rgba(107, 70, 193, 0.1);
+  color: var(--primary);
+  border-radius: 0.25rem;
+  font-size: 0.75rem;
+  font-weight: 600;
+}
+
 .allergies-list {
   background: white;
   padding: 1.5rem;
@@ -345,6 +399,36 @@
   margin-top: 1rem;
   padding-top: 1rem;
   border-top: 1px solid var(--border);
+}
+
+/* Event Images */
+.event-images-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+  gap: 1rem;
+  margin-top: 1rem;
+}
+
+.event-image-container {
+  position: relative;
+  aspect-ratio: 1;
+  overflow: hidden;
+  border-radius: 0.5rem;
+  border: 1px solid var(--border);
+}
+
+.event-image {
+  width: 100%;
+  height: 100%;
+  object-fit: contain;
+  object-position: center;
+  background-color: var(--background);
+  cursor: pointer;
+  transition: transform 0.2s ease;
+}
+
+.event-image:hover {
+  transform: scale(1.05);
 }
 
 /* Timeline Section */
@@ -457,33 +541,108 @@
 
 /* Responsive */
 @media (max-width: 768px) {
+  .event-viewer {
+    padding: 0;
+  }
+  
+  /* Fix header container on mobile */
+  .event-header-container {
+    position: static;
+    background: transparent;
+    margin-bottom: 0;
+    transform: none !important;
+  }
+  
   .event-header {
     padding: 1rem;
+    margin-bottom: 0;
+    border-radius: 0;
+    box-shadow: none;
+    border-bottom: 1px solid var(--border);
   }
-
+  
   .event-header h1 {
-    font-size: 1.5rem;
+    font-size: 1.25rem;
+    line-height: 1.3;
   }
-
+  
+  .back-link {
+    font-size: 0.75rem;
+  }
+  
   .event-title-row {
     flex-direction: column;
     align-items: flex-start;
+    gap: 0.5rem;
   }
-
+  
+  .selected-badge {
+    font-size: 0.75rem;
+    padding: 0.25rem 0.5rem;
+  }
+  
+  .event-actions {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.5rem;
+    width: 100%;
+    margin-top: 0.5rem;
+  }
+  
   .event-actions {
     display: grid;
-    grid-template-columns: 1fr;
+    grid-template-columns: 1fr 1fr;
+    gap: 0.5rem;
     width: 100%;
+    margin-top: 0.75rem;
   }
-
+  
+  .event-actions .btn {
+    min-width: 0;
+    font-size: 0.8125rem;
+    padding: 0.625rem 0.5rem;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+  }
+  
+  .event-actions .btn-danger {
+    grid-column: span 2;
+  }
+  
+  .event-actions .btn-primary.new-menu-button {
+    grid-column: span 2;
+  }
+  
+  /* Fix tabs on mobile */
   .event-tabs {
-    overflow-x: scroll;
+    overflow-x: auto;
     -webkit-overflow-scrolling: touch;
+    margin: 0;
+    padding: 0.5rem;
+    border-radius: 0;
+    box-shadow: none;
+    border-bottom: 2px solid var(--border);
+    background: white;
+    position: sticky;
+    top: 0;
+    z-index: 99;
+    scrollbar-width: none;
   }
-
+  
+  .event-tabs::-webkit-scrollbar {
+    display: none;
+  }
+  
   .tab {
-    padding: 0.5rem 1rem;
+    padding: 0.625rem 1rem;
     font-size: 0.875rem;
+    min-width: fit-content;
+  }
+  
+  /* Fix content padding */
+  .event-content {
+    padding: 0.75rem;
   }
 
   .overview-grid {
@@ -491,7 +650,20 @@
   }
 
   .stats-grid {
-    grid-template-columns: 1fr;
+    grid-template-columns: repeat(2, 1fr);
+    gap: 0.75rem;
+  }
+  
+  .stat {
+    padding: 0.75rem;
+  }
+  
+  .stat-value {
+    font-size: 1.5rem;
+  }
+  
+  .stat-label {
+    font-size: 0.75rem;
   }
 
   .allergies-header {
@@ -502,6 +674,70 @@
 
   .modal-content {
     margin: 1rem;
+  }
+  
+  /* Additional mobile fixes */
+  .menus-section {
+    padding: 1rem;
+    border-radius: 0;
+    box-shadow: none;
+    border-top: 1px solid var(--border);
+  }
+  
+  .menus-header {
+    flex-direction: column;
+    gap: 0.75rem;
+    align-items: stretch;
+  }
+  
+  .menus-header h2 {
+    font-size: 1.25rem;
+  }
+  
+  .menus-grid {
+    grid-template-columns: 1fr;
+    gap: 1rem;
+  }
+  
+  .info-card {
+    padding: 1rem;
+    border-radius: 0.5rem;
+    margin-bottom: 1rem;
+    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.05);
+  }
+  
+  .info-card h2 {
+    font-size: 1.125rem;
+    margin-bottom: 1rem;
+    font-weight: 600;
+    color: var(--text-primary);
+  }
+  
+  .info-row {
+    padding: 0.625rem 0;
+    display: flex;
+    align-items: flex-start;
+    gap: 1rem;
+  }
+  
+  .info-label {
+    min-width: 40%;
+    font-size: 0.8125rem;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    flex-shrink: 0;
+  }
+  
+  .info-value {
+    font-size: 0.875rem;
+    line-height: 1.4;
+    flex: 1;
+    text-align: left;
+    word-break: break-word;
+  }
+  
+  .shopping-section {
+    padding: 0;
   }
 }
 
@@ -589,4 +825,14 @@
 .btn-sm {
   padding: 0.375rem 0.75rem;
   font-size: 0.875rem;
+}
+
+/* Shopping Section */
+.shopping-section {
+  padding: 0;
+  background: transparent;
+}
+
+.shopping-section .smart-shopping-list {
+  padding: 0;
 }

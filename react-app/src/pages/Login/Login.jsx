@@ -1,7 +1,8 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { signInWithPopup, GoogleAuthProvider, signInWithEmailAndPassword } from 'firebase/auth';
 import { auth } from '../../config/firebase';
+import { useAuth } from '../../contexts/AuthContext';
 import './Login.css';
 import TestAuth from './TestAuth';
 
@@ -13,6 +14,14 @@ export default function Login() {
   const [showEmailLogin, setShowEmailLogin] = useState(false);
   
   const navigate = useNavigate();
+  const { currentUser, loading: authLoading } = useAuth();
+
+  // Redirect if already logged in
+  useEffect(() => {
+    if (!authLoading && currentUser) {
+      navigate('/');
+    }
+  }, [currentUser, authLoading, navigate]);
 
   const handleGoogleSignIn = async () => {
     try {
@@ -22,7 +31,20 @@ export default function Login() {
       await signInWithPopup(auth, provider);
       navigate('/');
     } catch (error) {
-      setError('Failed to sign in with Google: ' + error.message);
+      console.error('Google sign in error:', error);
+      
+      // Provide user-friendly error messages
+      if (error.code === 'auth/popup-blocked') {
+        setError('Pop-up was blocked. Please allow pop-ups for this site and try again.');
+      } else if (error.code === 'auth/popup-closed-by-user') {
+        setError('Sign in cancelled. Please try again.');
+      } else if (error.code === 'auth/unauthorized-domain') {
+        setError('This domain is not authorized for sign in. Please contact support.');
+      } else if (error.code === 'auth/network-request-failed') {
+        setError('Network error. Please check your connection and try again.');
+      } else {
+        setError('Failed to sign in. Please try again or use email sign in.');
+      }
     } finally {
       setLoading(false);
     }
@@ -37,11 +59,42 @@ export default function Login() {
       await signInWithEmailAndPassword(auth, email, password);
       navigate('/');
     } catch (error) {
-      setError('Failed to log in: ' + error.message);
+      console.error('Email sign in error:', error);
+      
+      // Provide user-friendly error messages
+      if (error.code === 'auth/invalid-email') {
+        setError('Invalid email address.');
+      } else if (error.code === 'auth/user-disabled') {
+        setError('This account has been disabled. Please contact support.');
+      } else if (error.code === 'auth/user-not-found') {
+        setError('No account found with this email address.');
+      } else if (error.code === 'auth/wrong-password') {
+        setError('Incorrect password.');
+      } else if (error.code === 'auth/invalid-credential') {
+        setError('Invalid email or password.');
+      } else if (error.code === 'auth/network-request-failed') {
+        setError('Network error. Please check your connection and try again.');
+      } else {
+        setError('Failed to sign in. Please try again.');
+      }
     } finally {
       setLoading(false);
     }
   };
+
+  // Show loading while checking auth state
+  if (authLoading) {
+    return (
+      <div className="login-container">
+        <div className="login-card">
+          <div className="login-loading">
+            <div className="spinner"></div>
+            <p>Loading...</p>
+          </div>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="login-container">
@@ -52,7 +105,7 @@ export default function Login() {
             alt="Mountain Medicine" 
             className="login-logo"
           />
-          <h1>Mountain Medicine Catering</h1>
+          <h1>Mountain Medicine Kitchen</h1>
           <p>Sign in to your account</p>
         </div>
 
@@ -135,8 +188,8 @@ export default function Login() {
         )}
       </div>
       
-      {/* Debug info - remove in production */}
-      <TestAuth />
+      {/* Debug info - only show in development */}
+      {process.env.NODE_ENV === 'development' && <TestAuth />}
     </div>
   );
 }

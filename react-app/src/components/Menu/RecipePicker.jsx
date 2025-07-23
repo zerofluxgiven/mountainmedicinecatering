@@ -1,11 +1,14 @@
 import React, { useState, useMemo } from 'react';
 import { useApp } from '../../contexts/AppContext';
+import { formatTimeShort } from '../../utils/timeFormatting';
+import { useScrollVisibility } from '../../hooks/useScrollDirection';
 import './RecipePicker.css';
 
 export default function RecipePicker({ onSelect, onClose }) {
   const { recipes } = useApp();
   const [searchTerm, setSearchTerm] = useState('');
   const [selectedTags, setSelectedTags] = useState([]);
+  const isHeaderVisible = useScrollVisibility();
 
   // Extract unique tags
   const allTags = useMemo(() => {
@@ -23,9 +26,12 @@ export default function RecipePicker({ onSelect, onClose }) {
       if (searchTerm) {
         const search = searchTerm.toLowerCase();
         const nameMatch = recipe.name?.toLowerCase().includes(search);
-        const ingredientMatch = recipe.ingredients?.some(ing => 
-          ing.toLowerCase().includes(search)
-        );
+        const ingredientMatch = recipe.ingredients?.some(ing => {
+          const ingredientText = typeof ing === 'string' 
+            ? ing 
+            : ing.item || '';
+          return ingredientText.toLowerCase().includes(search);
+        });
         if (!nameMatch && !ingredientMatch) return false;
       }
 
@@ -55,48 +61,50 @@ export default function RecipePicker({ onSelect, onClose }) {
   return (
     <div className="recipe-picker-overlay" onClick={onClose}>
       <div className="recipe-picker-modal" onClick={e => e.stopPropagation()}>
-        <div className="picker-header">
-          <h2>Select Recipe</h2>
-          <button className="close-btn" onClick={onClose}>✕</button>
-        </div>
-
-        <div className="picker-filters">
-          <div className="search-bar">
-            <span className="search-icon">🔍</span>
-            <input
-              type="text"
-              placeholder="Search recipes..."
-              value={searchTerm}
-              onChange={(e) => setSearchTerm(e.target.value)}
-              className="search-input"
-              autoFocus
-            />
-            {searchTerm && (
-              <button 
-                className="clear-search"
-                onClick={() => setSearchTerm('')}
-              >
-                ✕
-              </button>
-            )}
+        <div className={`picker-header-container ${!isHeaderVisible ? 'scroll-hidden' : ''}`}>
+          <div className="picker-header">
+            <h2>Select Recipe</h2>
+            <button className="close-btn" onClick={onClose}>✕</button>
           </div>
 
-          {allTags.length > 0 && (
-            <div className="tag-filters">
-              <span className="filter-label">Filter by tags:</span>
-              <div className="tag-pills">
-                {allTags.map(tag => (
-                  <button
-                    key={tag}
-                    className={`tag-pill ${selectedTags.includes(tag) ? 'active' : ''}`}
-                    onClick={() => handleTagToggle(tag)}
-                  >
-                    {tag}
-                  </button>
-                ))}
-              </div>
+          <div className="picker-filters">
+            <div className="search-bar">
+              <span className="search-icon">🔍</span>
+              <input
+                type="text"
+                placeholder="Search recipes..."
+                value={searchTerm}
+                onChange={(e) => setSearchTerm(e.target.value)}
+                className="search-input"
+                autoFocus
+              />
+              {searchTerm && (
+                <button 
+                  className="clear-search"
+                  onClick={() => setSearchTerm('')}
+                >
+                  ✕
+                </button>
+              )}
             </div>
-          )}
+
+            {allTags.length > 0 && (
+              <div className="tag-filters">
+                <span className="filter-label">Filter by tags:</span>
+                <div className="tag-pills">
+                  {allTags.map(tag => (
+                    <button
+                      key={tag}
+                      className={`tag-pill ${selectedTags.includes(tag) ? 'active' : ''}`}
+                      onClick={() => handleTagToggle(tag)}
+                    >
+                      {tag}
+                    </button>
+                  ))}
+                </div>
+              </div>
+            )}
+          </div>
         </div>
 
         <div className="picker-results">
@@ -115,11 +123,17 @@ export default function RecipePicker({ onSelect, onClose }) {
                 
                 <div className="recipe-meta">
                   <span className="serves">Serves {recipe.serves || '?'}</span>
-                  {recipe.prep_time && (
-                    <span className="time">Prep: {recipe.prep_time}min</span>
-                  )}
-                  {recipe.cook_time && (
-                    <span className="time">Cook: {recipe.cook_time}min</span>
+                  {recipe.total_time ? (
+                    <span className="time">Total: {formatTimeShort(recipe.total_time)}</span>
+                  ) : (
+                    <>
+                      {recipe.prep_time && (
+                        <span className="time">Prep: {formatTimeShort(recipe.prep_time)}</span>
+                      )}
+                      {recipe.cook_time && (
+                        <span className="time">Cook: {formatTimeShort(recipe.cook_time)}</span>
+                      )}
+                    </>
                   )}
                 </div>
 

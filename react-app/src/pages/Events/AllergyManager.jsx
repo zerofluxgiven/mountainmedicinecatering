@@ -3,18 +3,22 @@ import { useParams, useNavigate, Link } from 'react-router-dom';
 import { 
   collection, 
   doc, 
-  getDoc, 
+  getDoc,
+  getDocs, 
   addDoc, 
   updateDoc, 
   deleteDoc, 
   onSnapshot, 
   query,
+  where,
   serverTimestamp 
 } from 'firebase/firestore';
 import { db } from '../../config/firebase';
 import { useAuth } from '../../contexts/AuthContext';
 import AllergyForm from '../../components/Allergy/AllergyForm';
 import AllergyList from '../../components/Allergy/AllergyList';
+import DietForm from '../../components/Diet/DietForm';
+import DietList from '../../components/Diet/DietList';
 import './AllergyManager.css';
 
 export default function AllergyManager() {
@@ -24,16 +28,26 @@ export default function AllergyManager() {
   
   const [event, setEvent] = useState(null);
   const [allergies, setAllergies] = useState([]);
+  const [diets, setDiets] = useState([]);
+  const [eventMenus, setEventMenus] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
-  const [showForm, setShowForm] = useState(false);
+  const [showAllergyForm, setShowAllergyForm] = useState(false);
+  const [showDietForm, setShowDietForm] = useState(false);
   const [editingAllergy, setEditingAllergy] = useState(null);
+  const [editingDiet, setEditingDiet] = useState(null);
   const [updatingEvent, setUpdatingEvent] = useState(false);
 
   useEffect(() => {
     loadEvent();
     const unsubscribe = subscribeToAllergies();
-    return () => unsubscribe();
+    const unsubscribeDiets = subscribeToDiets();
+    const unsubscribeMenus = subscribeToEventMenus();
+    return () => {
+      unsubscribe();
+      unsubscribeDiets();
+      unsubscribeMenus();
+    };
   }, [eventId]);
 
   const loadEvent = async () => {
@@ -72,6 +86,48 @@ export default function AllergyManager() {
     );
   };
 
+  const subscribeToDiets = () => {
+    console.log('Setting up diet subscription for event:', eventId);
+    const q = query(collection(db, 'events', eventId, 'diets'));
+    
+    return onSnapshot(q,
+      (snapshot) => {
+        console.log('Diet snapshot received, count:', snapshot.docs.length);
+        const dietData = snapshot.docs.map(doc => ({
+          id: doc.id,
+          ...doc.data()
+        }));
+        console.log('Diet data:', dietData);
+        setDiets(dietData);
+        setLoading(false);
+      },
+      (error) => {
+        console.error('Error fetching diets:', error);
+        setLoading(false);
+      }
+    );
+  };
+
+  const subscribeToEventMenus = () => {
+    const q = query(
+      collection(db, 'menus'),
+      where('event_id', '==', eventId)
+    );
+    
+    return onSnapshot(q,
+      (snapshot) => {
+        const menusData = snapshot.docs.map(doc => ({
+          id: doc.id,
+          ...doc.data()
+        }));
+        setEventMenus(menusData);
+      },
+      (error) => {
+        console.error('Error fetching event menus:', error);
+      }
+    );
+  };
+
   const updateEventAllergens = async (allergyList) => {
     // Aggregate all unique allergens
     const allergenSet = new Set();
@@ -105,7 +161,7 @@ export default function AllergyManager() {
         created_at: serverTimestamp(),
         updated_at: serverTimestamp()
       });
-      setShowForm(false);
+      setShowAllergyForm(false);
     } catch (err) {
       console.error('Error adding allergy:', err);
       alert('Failed to add allergy');
@@ -138,14 +194,93 @@ export default function AllergyManager() {
     }
   };
 
-  const handleEdit = (allergy) => {
-    setEditingAllergy(allergy);
-    setShowForm(true);
+  const handleAddDiet = async (dietData) => {
+    try {
+      console.log('Adding diet with data:', dietData);
+      console.log('Event ID:', eventId);
+      
+      // Ensure we have valid data
+      const dietToSave = {
+        guest_name: dietData.guest_name || '',
+        diet_types: dietData.diet_types || [],
+        custom_diet_names: dietData.custom_diet_names || [],
+        diet_name: dietData.diet_name || '',
+        restrictions: dietData.restrictions || [],
+        notes: dietData.notes || '',
+        sub_menu_id: dietData.sub_menu_id || null,
+        created_at: serverTimestamp(),
+        updated_at: serverTimestamp()
+      };
+      
+      console.log('Saving diet:', dietToSave);
+      
+      const docRef = await addDoc(collection(db, 'events', eventId, 'diets'), dietToSave);
+      console.log('Diet saved with ID:', docRef.id);
+      
+      // Force a refresh of the diet list by reading it directly
+      // This ensures immediate UI update while waiting for the snapshot
+      const dietsSnapshot = await getDocs(collection(db, 'events', eventId, 'diets'));
+      const updatedDiets = dietsSnapshot.docs.map(doc => ({
+        id: doc.id,
+        ...doc.data()
+      }));
+      setDiets(updatedDiets);
+      
+      setShowDietForm(false);
+      // The onSnapshot listener will maintain real-time updates after this
+    } catch (err) {
+      console.error('Error adding diet - Full error:', err);
+      console.error('Error code:', err.code);
+      console.error('Error message:', err.message);
+      alert(`Failed to add diet: ${err.message}`);
+    }
   };
 
-  const handleCancelForm = () => {
-    setShowForm(false);
+  const handleUpdateDiet = async (dietId, updates) => {
+    try {
+      await updateDoc(doc(db, 'events', eventId, 'diets', dietId), {
+        ...updates,
+        updated_at: serverTimestamp()
+      });
+      setEditingDiet(null);
+      setShowDietForm(false);
+    } catch (err) {
+      console.error('Error updating diet:', err);
+      alert('Failed to update diet');
+    }
+  };
+
+  const handleDeleteDiet = async (dietId) => {
+    if (!window.confirm('Are you sure you want to delete this diet record?')) {
+      return;
+    }
+    
+    try {
+      await deleteDoc(doc(db, 'events', eventId, 'diets', dietId));
+    } catch (err) {
+      console.error('Error deleting diet:', err);
+      alert('Failed to delete diet');
+    }
+  };
+
+  const handleEditAllergy = (allergy) => {
+    setEditingAllergy(allergy);
+    setShowAllergyForm(true);
+  };
+
+  const handleEditDiet = (diet) => {
+    setEditingDiet(diet);
+    setShowDietForm(true);
+  };
+
+  const handleCancelAllergyForm = () => {
+    setShowAllergyForm(false);
     setEditingAllergy(null);
+  };
+
+  const handleCancelDietForm = () => {
+    setShowDietForm(false);
+    setEditingDiet(null);
   };
 
   const getSeverityStats = () => {
@@ -197,13 +332,13 @@ export default function AllergyManager() {
             ← Back to Event
           </Link>
           
-          <h1>Allergy Management</h1>
+          <h1>Allergies & Dietary Restrictions</h1>
           <p className="event-name">{event?.name}</p>
           
-          {hasRole('user') && !showForm && (
+          {hasRole('user') && !showAllergyForm && (
             <button 
               className="btn btn-primary"
-              onClick={() => setShowForm(true)}
+              onClick={() => setShowAllergyForm(true)}
             >
               <span className="btn-icon">➕</span>
               Add Allergy
@@ -252,17 +387,18 @@ export default function AllergyManager() {
         </div>
       )}
 
-      {/* Add/Edit Form */}
-      {showForm && (
+      {/* Add/Edit Allergy Form */}
+      {showAllergyForm && (
         <div className="form-section">
           <h2>{editingAllergy ? 'Edit Allergy' : 'Add New Allergy'}</h2>
           <AllergyForm
             allergy={editingAllergy}
+            eventMenus={eventMenus}
             onSubmit={editingAllergy 
               ? (data) => handleUpdateAllergy(editingAllergy.id, data)
               : handleAddAllergy
             }
-            onCancel={handleCancelForm}
+            onCancel={handleCancelAllergyForm}
           />
         </div>
       )}
@@ -273,7 +409,8 @@ export default function AllergyManager() {
         {allergies.length > 0 ? (
           <AllergyList
             allergies={allergies}
-            onEdit={hasRole('user') ? handleEdit : null}
+            eventMenus={eventMenus}
+            onEdit={hasRole('user') ? handleEditAllergy : null}
             onDelete={hasRole('user') ? handleDeleteAllergy : null}
           />
         ) : (
@@ -282,9 +419,61 @@ export default function AllergyManager() {
             {hasRole('user') && (
               <button 
                 className="btn btn-primary"
-                onClick={() => setShowForm(true)}
+                onClick={() => setShowAllergyForm(true)}
               >
                 Add First Allergy
+              </button>
+            )}
+          </div>
+        )}
+      </div>
+
+      {/* Special Diets Section */}
+      <div className="diet-section">
+        <div className="section-header">
+          <h2>Special Diets</h2>
+          {hasRole('user') && !showDietForm && (
+            <button 
+              className="btn btn-primary"
+              onClick={() => setShowDietForm(true)}
+            >
+              <span className="btn-icon">➕</span>
+              Add Diet
+            </button>
+          )}
+        </div>
+
+        {/* Add/Edit Diet Form */}
+        {showDietForm && (
+          <div className="form-section">
+            <h3>{editingDiet ? 'Edit Diet' : 'Add New Diet'}</h3>
+            <DietForm
+              diet={editingDiet}
+              onSubmit={editingDiet 
+                ? (data) => handleUpdateDiet(editingDiet.id, data)
+                : handleAddDiet
+              }
+              onCancel={handleCancelDietForm}
+            />
+          </div>
+        )}
+
+        {/* Diet List */}
+        {diets.length > 0 ? (
+          <DietList
+            diets={diets}
+            onEdit={hasRole('user') ? handleEditDiet : null}
+            onDelete={hasRole('user') ? handleDeleteDiet : null}
+          />
+        ) : (
+          <div className="empty-state">
+            <p>No special diets recorded yet.</p>
+            {hasRole('user') && !showDietForm && (
+              <button 
+                className="btn btn-secondary"
+                onClick={() => setShowDietForm(true)}
+              >
+                Add First Diet
               </button>
             )}
           </div>

@@ -1,9 +1,8 @@
 import React, { useState, useRef } from 'react';
 import './FileUpload.css';
 
-export default function FileUpload({ onFileSelect, accept, multiple = false }) {
+export default function FileUpload({ onFileSelect, accept, multiple = false, fileQueue = [], processingStatus = {}, onRemoveFile }) {
   const [isDragging, setIsDragging] = useState(false);
-  const [selectedFiles, setSelectedFiles] = useState([]);
   const fileInputRef = useRef(null);
 
   const handleDragEnter = (e) => {
@@ -38,25 +37,44 @@ export default function FileUpload({ onFileSelect, accept, multiple = false }) {
   };
 
   const processFiles = (files) => {
+    // Just pass files to parent, don't manage state here
     if (multiple) {
-      setSelectedFiles(files);
       onFileSelect(files);
     } else {
       const file = files[0];
       if (file) {
-        setSelectedFiles([file]);
         onFileSelect(file);
       }
     }
   };
 
-  const removeFile = (index) => {
-    const newFiles = selectedFiles.filter((_, i) => i !== index);
-    setSelectedFiles(newFiles);
-    if (multiple) {
-      onFileSelect(newFiles);
-    } else if (newFiles.length === 0) {
-      onFileSelect(null);
+  const getStatusIcon = (status) => {
+    switch (status) {
+      case 'pending':
+        return '⏳';
+      case 'processing':
+        return '⚙️';
+      case 'done':
+        return '✅';
+      case 'error':
+        return '❌';
+      default:
+        return '';
+    }
+  };
+
+  const getStatusClass = (status) => {
+    switch (status) {
+      case 'pending':
+        return 'status-pending';
+      case 'processing':
+        return 'status-processing';
+      case 'done':
+        return 'status-done';
+      case 'error':
+        return 'status-error';
+      default:
+        return '';
     }
   };
 
@@ -96,28 +114,44 @@ export default function FileUpload({ onFileSelect, accept, multiple = false }) {
         </p>
       </div>
 
-      {selectedFiles.length > 0 && (
+      {fileQueue.length > 0 && (
         <div className="selected-files">
-          <h4>Selected Files:</h4>
-          {selectedFiles.map((file, index) => (
-            <div key={index} className="file-item">
-              <span className="file-icon">📄</span>
-              <div className="file-info">
-                <span className="file-name">{file.name}</span>
-                <span className="file-size">{formatFileSize(file.size)}</span>
+          <h4>Files:</h4>
+          {fileQueue.map((fileEntry) => {
+            const status = processingStatus[fileEntry.id]?.status || 'pending';
+            const error = processingStatus[fileEntry.id]?.error;
+            
+            return (
+              <div key={fileEntry.id} className="file-item">
+                <span className="file-icon">📄</span>
+                <div className="file-info">
+                  <span className="file-name">{fileEntry.name}</span>
+                  <span className="file-size">{formatFileSize(fileEntry.file.size)}</span>
+                  <div className={`file-status ${getStatusClass(status)}`}>
+                    <span className="status-icon">{getStatusIcon(status)}</span>
+                    <span className="status-text">
+                      {status === 'pending' && 'Waiting...'}
+                      {status === 'processing' && 'Processing...'}
+                      {status === 'done' && 'Done ✓'}
+                      {status === 'error' && (error || 'Failed')}
+                    </span>
+                  </div>
+                </div>
+                {onRemoveFile && status !== 'processing' && (
+                  <button
+                    type="button"
+                    className="remove-file"
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      onRemoveFile(fileEntry.id);
+                    }}
+                  >
+                    ✕
+                  </button>
+                )}
               </div>
-              <button
-                type="button"
-                className="remove-file"
-                onClick={(e) => {
-                  e.stopPropagation();
-                  removeFile(index);
-                }}
-              >
-                ✕
-              </button>
-            </div>
-          ))}
+            );
+          })}
         </div>
       )}
     </div>

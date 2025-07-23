@@ -51,6 +51,7 @@ export default function AIChat() {
       // Create new conversation
       const conversationData = {
         userId: currentUser.uid,
+        userEmail: currentUser.email, // Add email for fallback auth
         createdAt: serverTimestamp(),
         lastMessageAt: serverTimestamp(),
         context: {
@@ -267,10 +268,47 @@ Could you provide more details about what you're looking for?`;
     handleSendMessage(prompt);
   };
 
+  const handleNewConversation = async () => {
+    // Clear current messages
+    setMessages([]);
+    // Create new conversation
+    await initializeConversation();
+  };
+
+  const handleClearChat = () => {
+    if (window.confirm('Clear this conversation? Your chat history will be saved but this conversation will be cleared.')) {
+      // Just clear the current view, don't delete the conversation
+      setMessages([]);
+      // Add a system message
+      const clearMessage = {
+        role: 'assistant',
+        content: 'Chat cleared. How can I help you with your catering needs?',
+        timestamp: serverTimestamp()
+      };
+      addMessage('assistant', clearMessage.content);
+    }
+  };
+
   return (
     <div className="ai-chat">
       <div className="chat-header">
         <h1>AI Catering Assistant</h1>
+        <div className="header-actions">
+          <button 
+            className="btn-icon-only"
+            onClick={handleNewConversation}
+            title="New Conversation"
+          >
+            ➕
+          </button>
+          <button 
+            className="btn-icon-only"
+            onClick={handleClearChat}
+            title="Clear Chat"
+          >
+            🗑️
+          </button>
+        </div>
         {selectedEventId && (
           <div className="event-context">
             <span className="context-label">Planning for:</span>

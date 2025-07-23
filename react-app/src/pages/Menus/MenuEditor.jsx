@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { useParams, useNavigate, useLocation } from 'react-router-dom';
-import { doc, getDoc, setDoc, updateDoc, serverTimestamp, collection, query, onSnapshot } from 'firebase/firestore';
+import { doc, getDoc, setDoc, updateDoc, serverTimestamp, collection, query, onSnapshot, where } from 'firebase/firestore';
 import { db } from '../../config/firebase';
 import { useAuth } from '../../contexts/AuthContext';
 import { useApp } from '../../contexts/AppContext';
@@ -21,6 +21,7 @@ import {
 } from '@dnd-kit/sortable';
 import MealCard from '../../components/Menu/MealCard';
 import RecipePicker from '../../components/Menu/RecipePicker';
+import { migrateMenuStructure, validateMenuStructure } from '../../services/menuMigration';
 import './MenuEditor.css';
 
 export default function MenuEditor() {
@@ -39,11 +40,14 @@ export default function MenuEditor() {
     name: '',
     description: '',
     event_id: eventId || '',
-    meals: []
+    meals: [],
+    is_sub_menu: false,
+    parent_menu_id: ''
   });
   
   const [events, setEvents] = useState([]);
   const [currentEvent, setCurrentEvent] = useState(null);
+  const [eventMenus, setEventMenus] = useState([]);
   const [loading, setLoading] = useState(!isNew);
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState(null);
@@ -88,6 +92,29 @@ export default function MenuEditor() {
     return () => unsubscribe();
   };
 
+  const loadEventMenus = async (eventId) => {
+    try {
+      const q = query(
+        collection(db, 'menus'),
+        where('event_id', '==', eventId)
+      );
+      const unsubscribe = onSnapshot(q, (snapshot) => {
+        const menusData = snapshot.docs.map(doc => ({
+          id: doc.id,
+          ...doc.data()
+        }));
+        // Filter out the current menu being edited and sub-menus
+        const parentMenus = menusData.filter(menu => 
+          menu.id !== id && !menu.is_sub_menu
+        );
+        setEventMenus(parentMenus);
+      });
+      return () => unsubscribe();
+    } catch (err) {
+      console.error('Error loading event menus:', err);
+    }
+  };
+
   const loadMenu = async () => {
     try {
       setLoading(true);
@@ -99,12 +126,21 @@ export default function MenuEditor() {
       }
 
       const data = menuDoc.data();
+      // Migrate menu structure if needed
+      const migratedData = migrateMenuStructure(data);
       setFormData({
-        name: data.name || '',
-        description: data.description || '',
-        event_id: data.event_id || '',
-        meals: data.meals || data.sections || [] // Support old sections format temporarily
+        name: migratedData.name || '',
+        description: migratedData.description || '',
+        event_id: migratedData.event_id || '',
+        meals: migratedData.meals || [],
+        is_sub_menu: migratedData.is_sub_menu || false,
+        parent_menu_id: migratedData.parent_menu_id || ''
       });
+      
+      // Load menus for the event if it has one
+      if (migratedData.event_id) {
+        loadEventMenus(migratedData.event_id);
+      }
     } catch (err) {
       console.error('Error loading menu:', err);
       setError('Failed to load menu');
@@ -128,6 +164,10 @@ export default function MenuEditor() {
     if (field === 'event_id' && value) {
       const event = events.find(e => e.id === value);
       setCurrentEvent(event);
+      // Load menus for this event
+      loadEventMenus(value);
+    } else if (field === 'event_id' && !value) {
+      setEventMenus([]);
     }
   };
 
@@ -245,10 +285,11 @@ export default function MenuEditor() {
         id: `recipe-${Date.now()}`,
         recipe_id: recipe.id,
         recipe_name: recipe.name,
-        serves: scaledServes,
+        servings: scaledServes,  // Changed from 'serves' to 'servings'
         original_serves: recipe.serves,
         notes: '',
-        allergens: recipe.allergens || []
+        allergens: recipe.allergens || [],
+        sub_recipes: [] // For nested recipes like dressings, sauces, etc.
       };
       
       // Check for allergy conflicts if event is selected
@@ -308,6 +349,15 @@ export default function MenuEditor() {
       if (formData.event_id) {
         const selectedEvent = events.find(e => e.id === formData.event_id);
         eventName = selectedEvent?.name || '';
+      }
+      
+      // Validate menu structure before saving
+      const validationResult = validateMenuStructure(formData);
+      if (!validationResult.isValid) {
+        console.error('Menu validation failed:', validationResult.errors);
+        setError(`Menu validation failed: ${validationResult.errors.join(', ')}`);
+        setSaving(false);
+        return;
       }
       
       // Prepare menu data
@@ -436,6 +486,35 @@ export default function MenuEditor() {
                   ))}
                 </select>
             </div>
+
+            <div className="form-group checkbox-group">
+              <label>
+                <input
+                  type="checkbox"
+                  checked={formData.is_sub_menu}
+                  onChange={(e) => handleInputChange('is_sub_menu', e.target.checked)}
+                />
+                This is a sub-menu (e.g., dietary restriction menu)
+              </label>
+            </div>
+
+            {formData.is_sub_menu && (
+              <div className="form-group">
+                <label htmlFor="parent_menu_id">Parent Menu</label>
+                <select
+                  id="parent_menu_id"
+                  value={formData.parent_menu_id}
+                  onChange={(e) => handleInputChange('parent_menu_id', e.target.value)}
+                >
+                  <option value="">Select parent menu</option>
+                  {eventMenus.map(menu => (
+                    <option key={menu.id} value={menu.id}>
+                      {menu.name}
+                    </option>
+                  ))}
+                </select>
+              </div>
+            )}
 
             <div className="form-group">
               <label htmlFor="description">Description</label>

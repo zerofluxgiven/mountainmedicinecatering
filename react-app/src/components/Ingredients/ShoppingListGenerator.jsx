@@ -54,8 +54,18 @@ export default function ShoppingListGenerator({ eventId, recipes, menus, ingredi
           const neededServings = eventData.guest_count || 50;
           const multiplier = neededServings / recipeServings;
           
+          // Get all ingredients from recipe (handles both old and new format)
+          let allIngredients = [];
+          if (recipe.sections && Array.isArray(recipe.sections)) {
+            // New format with sections
+            allIngredients = recipe.sections.flatMap(section => section.ingredients || []);
+          } else if (recipe.ingredients && Array.isArray(recipe.ingredients)) {
+            // Old format with flat ingredients array
+            allIngredients = recipe.ingredients;
+          }
+          
           // Process each ingredient in the recipe
-          recipe.ingredients?.forEach(ingredientLine => {
+          allIngredients.forEach(ingredientLine => {
             // Parse ingredient (simplified - in production would use AI)
             const parsed = parseIngredientLine(ingredientLine);
             if (!parsed) return;

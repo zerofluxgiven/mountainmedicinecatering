@@ -11,34 +11,52 @@ if (process.env.NODE_ENV !== 'production') {
 // Initialize Firebase Admin
 admin.initializeApp();
 
-// Initialize OpenAI
+// Initialize OpenAI with config
 const openai = new OpenAI({
-  apiKey: process.env.OPENAI_API_KEY || functions.config().openai?.key,
+  apiKey: functions.config().openai?.key || process.env.OPENAI_API_KEY,
 });
 
 // Import function modules
-const { parseRecipeFromText, parseRecipeFromURL } = require("./recipes/parser");
+const { parseRecipeFromText, parseRecipeFromURL, parseRecipeFromFile } = require("./recipes/parser");
 const { parseEventFromFile, parseEventFromURL } = require("./events/parser");
 const { generateMenuPDF, generateShoppingListPDF } = require("./pdf/generator");
 const { sendEventReminder, sendMenuUpdate } = require("./email/notifications");
 const { handleChatMessage } = require("./chat/assistant");
+const createAskAI = require("./src/ai/askAI");
 
-// Recipe Parsing Function
-exports.parseRecipe = functions.https.onCall(async (data, context) => {
+// Recipe Parsing Function - Increased memory for image processing
+exports.parseRecipe = functions.https.onCall({ 
+    memory: '1GB',
+    timeoutSeconds: 60 
+  }, async (data, context) => {
   // Check authentication
   if (!context.auth) {
     throw new functions.https.HttpsError("unauthenticated", "User must be authenticated");
   }
 
-  const { text, url, type } = data;
+  const { text, url, type, fileData, mimeType } = data;
 
   try {
+    // Check if OpenAI is properly configured
+    if (!openai.apiKey) {
+      console.error("OpenAI API key is not configured");
+      throw new Error("Recipe parsing service is not properly configured. Please contact support.");
+    }
+    
     let parsedRecipe;
     
-    if (type === "url") {
+    console.log("Parse recipe called with:", { type, hasText: !!text, hasUrl: !!url, hasFileData: !!fileData, mimeType });
+    
+    if (type === "url" && url) {
       parsedRecipe = await parseRecipeFromURL(url, openai);
-    } else {
+    } else if (fileData && mimeType) {
+      // Handle file upload (including images)
+      const buffer = Buffer.from(fileData, 'base64');
+      parsedRecipe = await parseRecipeFromFile(buffer, mimeType, openai);
+    } else if (text) {
       parsedRecipe = await parseRecipeFromText(text, openai);
+    } else {
+      throw new Error("No valid input provided. Please provide text, URL, or file data.");
     }
 
     // Log the parsing for analytics
@@ -275,7 +293,11 @@ exports.chatAssistant = functions.https.onCall(async (data, context) => {
 });
 
 // Event Flyer Parsing Function
-exports.parseEventFlyer = functions.https.onCall(async (data, context) => {
+exports.parseEventFlyer = functions.https.onCall({ 
+    cors: true,
+    timeoutSeconds: 60,
+    memory: '512MB'
+  }, async (data, context) => {
   // Check authentication
   if (!context.auth) {
     throw new functions.https.HttpsError("unauthenticated", "User must be authenticated");
@@ -331,6 +353,16 @@ exports.healthCheck = functions.https.onRequest((req, res) => {
 
 // HTTP version of parseEventFlyer with CORS support (temporary workaround)
 exports.parseEventFlyerHTTP = functions.https.onRequest((req, res) => {
+  // Handle CORS preflight requests
+  if (req.method === 'OPTIONS') {
+    res.set('Access-Control-Allow-Origin', '*');
+    res.set('Access-Control-Allow-Methods', 'POST, OPTIONS');
+    res.set('Access-Control-Allow-Headers', 'Content-Type, Authorization');
+    res.set('Access-Control-Max-Age', '3600');
+    res.status(204).send('');
+    return;
+  }
+
   cors(req, res, async () => {
     try {
       // Check if it's a POST request
@@ -356,14 +388,58 @@ exports.parseEventFlyerHTTP = functions.https.onRequest((req, res) => {
         return;
       }
 
+      // Generate a temporary eventId for image storage
+      const tempEventId = `temp_${decodedToken.uid}_${Date.now()}`;
+      
       // Parse the event
       const buffer = Buffer.from(fileData, 'base64');
-      const parsedEvent = await parseEventFromFile(buffer, mimeType, openai);
+      const parsedEvent = await parseEventFromFile(buffer, mimeType, openai, tempEventId);
       
-      res.json({ success: true, event: parsedEvent });
+      res.json({ success: true, event: parsedEvent, tempEventId });
     } catch (error) {
       console.error('ParseEventFlyerHTTP error:', error);
       res.status(500).json({ error: error.message });
     }
   });
 });
+
+// Export the AI assistant function (now uses Claude)
+exports.askAI = createAskAI;
+
+// HTTP version as fallback for CORS issues
+exports.askAIHttp = require("./src/ai/askAIHttp");
+
+// HTTP version of aiCreateRecipe as temporary workaround
+exports.aiCreateRecipeHttp = require("./src/ai/aiCreateRecipeHttp");
+
+// Public HTTP version that properly handles CORS
+exports.aiCreateRecipeHttpPublic = require("./src/ai/aiCreateRecipeHttpPublic");
+
+// Export AI safety monitoring triggers
+const menuSafetyTriggers = require("./src/triggers/menuSafetyTriggers");
+exports.onMenuChange = menuSafetyTriggers.onMenuChange;
+exports.onEventGuestDataChange = menuSafetyTriggers.onEventGuestDataChange;
+exports.onAccommodationMenuCreate = menuSafetyTriggers.onAccommodationMenuCreate;
+exports.onDietChange = menuSafetyTriggers.onDietChange;
+exports.dailySafetySweep = menuSafetyTriggers.dailySafetySweep;
+
+// Export image thumbnail generation functions
+const { generateRecipeThumbnails, generateThumbnailsForExistingImages } = require("./images/thumbnailGenerator");
+exports.generateRecipeThumbnails = generateRecipeThumbnails;
+exports.generateThumbnailsForExistingImages = generateThumbnailsForExistingImages;
+
+// Export AI Action functions
+const aiActions = require("./src/ai/aiActions");
+exports.aiCreateRecipe = aiActions.aiCreateRecipe;
+exports.aiUpdateRecipe = aiActions.aiUpdateRecipe;
+exports.aiParseRecipeFromUrl = aiActions.aiParseRecipeFromUrl;
+exports.aiCreateMenu = aiActions.aiCreateMenu;
+exports.aiAddRecipeToMenu = aiActions.aiAddRecipeToMenu;
+
+// Export Complete AI Action functions
+const aiActionsComplete = require("./src/ai/aiActionsComplete");
+exports.aiScaleRecipe = aiActionsComplete.aiScaleRecipe;
+exports.aiCreateEvent = aiActionsComplete.aiCreateEvent;
+exports.aiGenerateShoppingList = aiActionsComplete.aiGenerateShoppingList;
+exports.aiManageAllergies = aiActionsComplete.aiManageAllergies;
+exports.aiExportPDF = aiActionsComplete.aiExportPDF;

@@ -245,10 +245,85 @@
   margin-top: 2rem;
 }
 
+/* Sub-Menus Section */
+.sub-menus-section {
+  margin: 2rem 0;
+  padding: 2rem;
+  background: var(--background);
+  border-radius: 0.5rem;
+}
+
+.sub-menus-section h2 {
+  margin: 0 0 1.5rem 0;
+  color: var(--text-primary);
+}
+
+.sub-menus-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+  gap: 1rem;
+}
+
+.sub-menu-card {
+  display: block;
+  padding: 1.5rem;
+  background: white;
+  border: 2px solid var(--border);
+  border-radius: 0.375rem;
+  text-decoration: none;
+  transition: all 0.2s;
+}
+
+.sub-menu-card:hover {
+  border-color: var(--primary-color);
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+}
+
+.sub-menu-card h3 {
+  margin: 0 0 0.5rem 0;
+  color: var(--text-primary);
+  font-size: 1.125rem;
+}
+
+.sub-menu-description {
+  margin: 0 0 1rem 0;
+  color: var(--text-secondary);
+  font-size: 0.875rem;
+  line-height: 1.5;
+}
+
+.sub-menu-link {
+  color: var(--primary-color);
+  font-weight: 500;
+  font-size: 0.875rem;
+}
+
+/* Parent Menu Link */
+.parent-menu-link {
+  margin: 1rem 0;
+  padding: 1rem;
+  background: rgba(107, 70, 193, 0.05);
+  border-radius: 0.375rem;
+  text-align: center;
+}
+
+.parent-menu-link p {
+  margin: 0;
+  color: var(--text-secondary);
+}
+
+.parent-menu-link a {
+  color: var(--primary-color);
+  font-weight: 500;
+  margin-left: 0.5rem;
+}
+
 /* Print Styles */
 @media print {
   .menu-header,
   .menu-info,
+  .sub-menus-section,
+  .parent-menu-link,
   .section-toggle {
     display: none !important;
   }

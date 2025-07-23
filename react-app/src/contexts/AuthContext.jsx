@@ -95,15 +95,58 @@ export function AuthProvider({ children }) {
     console.log('Setting up auth listener...');
     const unsubscribe = onAuthStateChanged(auth, async (user) => {
       console.log('Auth state changed:', user ? 'User logged in' : 'No user');
-      if (user) {
-        setCurrentUser(user);
-        await loadUserData(user.uid);
-      } else {
+      
+      try {
+        if (user) {
+          // Verify the user's token is still valid
+          const token = await user.getIdToken();
+          console.log('Got user token:', token ? 'Valid' : 'Invalid');
+          
+          setCurrentUser(user);
+          const userData = await loadUserData(user.uid);
+          
+          // If we can't load user data, the user might be in a bad state
+          if (!userData) {
+            console.error('Failed to load user data, logging out');
+            await logout();
+          }
+        } else {
+          setCurrentUser(null);
+          setUserRole(null);
+        }
+      } catch (error) {
+        console.error('Auth verification error:', error);
+        // If token verification fails, clear the user
         setCurrentUser(null);
         setUserRole(null);
+        
+        // Try to sign out to clear any bad state
+        try {
+          await signOut(auth);
+        } catch (signOutError) {
+          console.error('Sign out error:', signOutError);
+        }
+      } finally {
+        setLoading(false);
       }
+    }, (error) => {
+      // Handle auth errors
+      console.error('Auth listener error:', error);
+      setCurrentUser(null);
+      setUserRole(null);
       setLoading(false);
     });
+
+    // Add debug helper to window for testing
+    if (process.env.NODE_ENV === 'development') {
+      window.clearAuth = () => {
+        console.log('Clearing auth...');
+        logout();
+        localStorage.clear();
+        sessionStorage.clear();
+        window.location.href = '/login';
+      };
+    }
 
     return unsubscribe;
   }, []);

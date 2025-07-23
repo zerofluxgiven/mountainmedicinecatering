@@ -251,6 +251,21 @@
   color: var(--text-light);
 }
 
+/* Menu Assignment */
+.menu-assignment {
+  display: inline-block;
+  padding: 0.375rem 0.75rem;
+  background-color: rgba(107, 70, 193, 0.1);
+  color: var(--primary-color);
+  border-radius: 0.375rem;
+  font-weight: 500;
+}
+
+.menu-assignment.unknown {
+  background-color: rgba(0, 0, 0, 0.05);
+  color: var(--text-secondary);
+}
+
 /* Item Actions */
 .item-actions {
   display: flex;

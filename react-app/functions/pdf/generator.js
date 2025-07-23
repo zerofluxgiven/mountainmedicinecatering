@@ -9,6 +9,26 @@ const COLORS = {
   light: rgb(0.95, 0.95, 0.95)
 };
 
+// Format time from 24-hour to 12-hour with AM/PM
+function formatClockTime(timeString) {
+  if (!timeString) return null;
+  
+  const match = timeString.match(/^(\d{1,2}):(\d{2})/);
+  if (!match) return timeString;
+  
+  let hours = parseInt(match[1], 10);
+  const minutes = match[2];
+  const period = hours >= 12 ? 'PM' : 'AM';
+  
+  if (hours === 0) {
+    hours = 12;
+  } else if (hours > 12) {
+    hours = hours - 12;
+  }
+  
+  return `${hours}:${minutes} ${period}`;
+}
+
 async function generateMenuPDF(menuData, eventData) {
   const pdfDoc = await PDFDocument.create();
   const timesRomanFont = await pdfDoc.embedFont(StandardFonts.TimesRoman);
@@ -55,6 +75,23 @@ async function generateMenuPDF(menuData, eventData) {
       color: COLORS.secondary,
     });
     yPosition -= 20;
+
+    if (eventData.start_time || eventData.end_time) {
+      const timeStr = eventData.start_time && eventData.end_time
+        ? `${formatClockTime(eventData.start_time)} - ${formatClockTime(eventData.end_time)}`
+        : eventData.start_time
+        ? `Starting at ${formatClockTime(eventData.start_time)}`
+        : `Ending at ${formatClockTime(eventData.end_time)}`;
+        
+      page.drawText(`Time: ${timeStr}`, {
+        x: 50,
+        y: yPosition,
+        size: 14,
+        font: helveticaFont,
+        color: COLORS.secondary,
+      });
+      yPosition -= 20;
+    }
 
     if (eventData.guest_count) {
       page.drawText(`Guests: ${eventData.guest_count}`, {
@@ -228,6 +265,23 @@ async function generateShoppingListPDF(eventData, menus, recipes, ingredients, g
   });
   yPosition -= 15;
 
+  if (eventData.start_time || eventData.end_time) {
+    const timeStr = eventData.start_time && eventData.end_time
+      ? `${formatClockTime(eventData.start_time)} - ${formatClockTime(eventData.end_time)}`
+      : eventData.start_time
+      ? `Starting at ${formatClockTime(eventData.start_time)}`
+      : `Ending at ${formatClockTime(eventData.end_time)}`;
+      
+    page.drawText(`Time: ${timeStr}`, {
+      x: 50,
+      y: yPosition,
+      size: 12,
+      font: helveticaFont,
+      color: COLORS.secondary,
+    });
+    yPosition -= 15;
+  }
+
   page.drawText(`Guests: ${eventData.guest_count || "TBD"}`, {
     x: 50,
     y: yPosition,
@@ -353,7 +407,17 @@ function generateShoppingListData(eventData, menus, recipes, ingredients) {
         const neededServings = eventData.guest_count || 50;
         const multiplier = neededServings / recipeServings;
         
-        recipe.ingredients?.forEach(ingredientLine => {
+        // Get all ingredients from recipe (handles both old and new format)
+        let allIngredients = [];
+        if (recipe.sections && Array.isArray(recipe.sections)) {
+          // New format with sections
+          allIngredients = recipe.sections.flatMap(section => section.ingredients || []);
+        } else if (recipe.ingredients && Array.isArray(recipe.ingredients)) {
+          // Old format with flat ingredients array
+          allIngredients = recipe.ingredients;
+        }
+        
+        allIngredients.forEach(ingredientLine => {
           const parsed = parseIngredientLine(ingredientLine);
           if (!parsed) return;
           

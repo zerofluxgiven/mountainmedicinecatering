@@ -1,0 +1,265 @@
+/* Print Styles for PDF Export */
+
+/* Print margins visualization */
+.print-preview {
+  position: relative;
+  max-width: 210mm;
+  margin: 0 auto;
+  background: white;
+  box-shadow: 0 0 20px rgba(0, 0, 0, 0.1);
+}
+
+.print-preview::before {
+  content: '';
+  position: absolute;
+  top: 40mm;
+  left: 40mm;
+  right: 40mm;
+  bottom: 40mm;
+  border: 1px dashed #e0e0e0;
+  pointer-events: none;
+  z-index: 0;
+}
+
+.print-content {
+  position: relative;
+  padding: 40mm;
+  z-index: 1;
+}
+
+/* PDF margin indicators */
+.pdf-margin-indicator {
+  position: fixed;
+  border: 2px dashed #6B46C1;
+  pointer-events: none;
+  z-index: 9998;
+  opacity: 0;
+  transition: opacity 0.3s ease;
+}
+
+.pdf-margin-indicator.show {
+  opacity: 0.5;
+}
+
+.pdf-margin-indicator.top {
+  top: 40mm;
+  left: 40mm;
+  right: 40mm;
+  height: 0;
+}
+
+.pdf-margin-indicator.bottom {
+  bottom: 40mm;
+  left: 40mm;
+  right: 40mm;
+  height: 0;
+}
+
+.pdf-margin-indicator.left {
+  top: 40mm;
+  bottom: 40mm;
+  left: 40mm;
+  width: 0;
+}
+
+.pdf-margin-indicator.right {
+  top: 40mm;
+  bottom: 40mm;
+  right: 40mm;
+  width: 0;
+}
+
+/* Print-specific styles */
+@media print {
+  @page {
+    size: A4;
+    margin: 0;
+  }
+  
+  body {
+    margin: 0;
+    padding: 0;
+  }
+  
+  .print-container {
+    position: relative;
+    padding: 40mm;
+    min-height: 297mm;
+    box-sizing: border-box;
+  }
+  
+  /* Visual margin indicators for print */
+  .print-container::before {
+    content: '';
+    position: absolute;
+    top: 30mm;
+    left: 30mm;
+    right: 30mm;
+    bottom: 30mm;
+    border: 1px dashed #e0e0e0;
+    pointer-events: none;
+    z-index: -1;
+  }
+  
+  /* Hide non-printable elements */
+  .no-print,
+  nav,
+  .navigation,
+  .header-actions,
+  .form-actions,
+  .event-actions,
+  .recipe-actions,
+  .menu-actions,
+  button,
+  .btn {
+    display: none !important;
+  }
+  
+  /* Ensure content breaks properly */
+  .page-break {
+    page-break-after: always;
+  }
+  
+  .avoid-break {
+    page-break-inside: avoid;
+  }
+  
+  /* Better text rendering for print */
+  * {
+    -webkit-print-color-adjust: exact;
+    print-color-adjust: exact;
+    color-adjust: exact;
+  }
+  
+  /* Font adjustments for print */
+  body {
+    font-size: 12pt;
+    line-height: 1.5;
+    color: #1A1A1A;
+  }
+  
+  h1 { 
+    font-size: 24pt; 
+    margin-top: 0;
+    color: #6B46C1;
+  }
+  
+  h2 { 
+    font-size: 18pt;
+    color: #1A1A1A;
+  }
+  
+  h3 { 
+    font-size: 14pt;
+    color: #1A1A1A;
+  }
+  
+  h4 { 
+    font-size: 12pt;
+    color: #1A1A1A;
+  }
+  
+  /* Recipe specific print styles */
+  .recipe-viewer .recipe-header,
+  .recipe-viewer .recipe-actions {
+    display: none !important;
+  }
+  
+  .recipe-viewer h1 {
+    text-align: center;
+    margin-bottom: 20pt;
+  }
+  
+  .recipe-info-card {
+    border: 1px solid #e0e0e0;
+    padding: 10pt;
+    margin-bottom: 15pt;
+  }
+  
+  .ingredients-list,
+  .instructions {
+    margin-bottom: 20pt;
+  }
+  
+  /* Menu specific print styles */
+  .menu-viewer .menu-header,
+  .menu-viewer .menu-actions {
+    display: none !important;
+  }
+  
+  .menu-section {
+    border: 1px solid #e0e0e0;
+    padding: 10pt;
+    margin-bottom: 15pt;
+    page-break-inside: avoid;
+  }
+  
+  /* Event specific print styles */
+  .event-viewer .event-header,
+  .event-viewer .event-actions,
+  .event-viewer .event-tabs {
+    display: none !important;
+  }
+  
+  .info-card {
+    border: 1px solid #e0e0e0;
+    padding: 10pt;
+    margin-bottom: 15pt;
+    page-break-inside: avoid;
+  }
+  
+  /* Show print header */
+  .print-header {
+    display: block !important;
+    text-align: center;
+    margin-bottom: 20pt;
+  }
+  
+  .print-header h1 {
+    margin: 0;
+  }
+  
+  .print-header .subtitle {
+    font-size: 14pt;
+    color: #666;
+    margin-top: 5pt;
+  }
+  
+  /* Footer for all pages */
+  .print-footer {
+    position: fixed;
+    bottom: 20mm;
+    left: 40mm;
+    right: 40mm;
+    text-align: center;
+    font-size: 10pt;
+    color: #666;
+  }
+}
+
+/* Screen preview of print layout */
+@media screen {
+  .printing {
+    overflow: hidden;
+  }
+  
+  .printing .print-preview-overlay {
+    position: fixed;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background: rgba(0, 0, 0, 0.5);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    z-index: 9999;
+  }
+  
+  .printing .print-preview-message {
+    background: white;
+    padding: 20px;
+    border-radius: 8px;
+    text-align: center;
+  }
+}

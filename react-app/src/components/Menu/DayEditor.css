@@ -1,0 +1,464 @@
+.day-editor {
+  background: white;
+  border-radius: 12px;
+  box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+  overflow: hidden;
+  transition: all 0.3s ease;
+}
+
+.day-editor.expanded {
+  box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+}
+
+/* Day header */
+.day-header {
+  padding: 1rem 1.5rem;
+  cursor: pointer;
+  background: linear-gradient(135deg, #6b46c1 0%, #805ad5 100%);
+  color: white;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 1rem;
+  transition: background 0.2s;
+}
+
+.day-header:hover {
+  background: linear-gradient(135deg, #5a3ca8 0%, #6d48c2 100%);
+}
+
+.day-title {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  flex: 1;
+}
+
+.expand-icon {
+  font-size: 1.2rem;
+  transition: transform 0.2s;
+}
+
+.day-editor.expanded .expand-icon {
+  transform: rotate(0deg);
+}
+
+.day-editor.collapsed .expand-icon {
+  transform: rotate(-90deg);
+}
+
+.day-title h3 {
+  margin: 0;
+  font-size: 1.3rem;
+  font-weight: 600;
+  line-height: 1.2;
+}
+
+.day-date {
+  font-size: 0.9rem;
+  opacity: 0.9;
+  font-weight: 400;
+  cursor: pointer;
+  padding: 0.125rem 0.5rem;
+  border-radius: 4px;
+  transition: background 0.2s;
+}
+
+.day-date:hover {
+  background: rgba(255,255,255,0.2);
+}
+
+/* Date Editor Styles */
+.date-editor {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.5rem;
+  margin-left: 1rem;
+}
+
+.date-editor input[type="date"] {
+  padding: 0.25rem 0.5rem;
+  border: 1px solid rgba(255,255,255,0.5);
+  border-radius: 4px;
+  font-size: 0.875rem;
+  background: rgba(255,255,255,0.9);
+  color: #333;
+}
+
+.date-editor .btn {
+  padding: 0.25rem 0.5rem;
+  min-height: 28px;
+  font-size: 0.875rem;
+  background: rgba(255,255,255,0.9);
+  color: #333;
+  border: 1px solid rgba(255,255,255,0.5);
+}
+
+.date-editor .btn-primary {
+  background: #48BB78;
+  color: white;
+  border-color: #48BB78;
+}
+
+.date-editor .btn-primary:hover {
+  background: #38A169;
+}
+
+.date-editor .btn-secondary {
+  background: #E53E3E;
+  color: white;
+  border-color: #E53E3E;
+}
+
+.date-editor .btn-secondary:hover {
+  background: #C53030;
+}
+
+.day-summary {
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+  font-size: 0.9rem;
+}
+
+.meal-count,
+.course-count,
+.recipe-count {
+  background: rgba(255,255,255,0.2);
+  padding: 0.25rem 0.75rem;
+  border-radius: 20px;
+  font-weight: 500;
+}
+
+.allergen-warnings {
+  background: #fbbf24;
+  color: #92400e;
+  padding: 0.25rem 0.75rem;
+  border-radius: 20px;
+  font-weight: 500;
+  font-size: 0.85rem;
+}
+
+.day-actions {
+  display: flex;
+  gap: 0.5rem;
+}
+
+.day-actions button {
+  padding: 0.4rem 0.8rem;
+  border: 1px solid rgba(255,255,255,0.3);
+  background: rgba(255,255,255,0.1);
+  color: white;
+  border-radius: 6px;
+  font-size: 0.85rem;
+  cursor: pointer;
+  transition: all 0.2s;
+  white-space: nowrap;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.day-actions button:hover {
+  background: rgba(255,255,255,0.2);
+}
+
+.day-actions .btn-danger {
+  background: #dc2626;
+  border-color: #dc2626;
+}
+
+.day-actions .btn-danger:hover {
+  background: #b91c1c;
+}
+
+/* Remove day button styling */
+.remove-day-btn {
+  display: flex;
+  align-items: center;
+  gap: 0.25rem;
+}
+
+.remove-day-btn .remove-text {
+  display: none;
+}
+
+@media (max-width: 768px) {
+  .remove-day-btn .remove-icon {
+    display: none;
+  }
+  
+  .remove-day-btn .remove-text {
+    display: inline;
+  }
+}
+
+/* Day content */
+.day-content {
+  padding: 0;
+  background: #f8f9fa;
+}
+
+.meals-container {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+  padding: 0.5rem;
+  background: #f3f4f6;
+}
+
+/* Meal type selector modal */
+.meal-type-selector {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  z-index: 1000;
+}
+
+.selector-overlay {
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: rgba(0,0,0,0.5);
+}
+
+.selector-modal {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  background: white;
+  border-radius: 12px;
+  padding: 1.5rem;
+  box-shadow: 0 10px 30px rgba(0,0,0,0.3);
+  min-width: 400px;
+  max-width: 90vw;
+}
+
+.selector-modal h4 {
+  margin: 0 0 1rem 0;
+  text-align: center;
+  color: #2d3748;
+}
+
+.meal-type-options {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+  gap: 0.75rem;
+  margin-bottom: 1rem;
+}
+
+.meal-type-option {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 0.5rem;
+  padding: 1rem;
+  border: 2px solid transparent;
+  border-radius: 8px;
+  cursor: pointer;
+  transition: all 0.2s;
+  text-align: center;
+}
+
+.meal-type-option:hover {
+  border-color: #6b46c1;
+  transform: translateY(-2px);
+  box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+}
+
+.meal-icon {
+  font-size: 1.5rem;
+}
+
+.meal-label {
+  font-weight: 600;
+  color: #2d3748;
+}
+
+.meal-time {
+  font-size: 0.85rem;
+  color: #666;
+}
+
+/* Custom meal type option */
+.meal-type-option.custom {
+  background-color: #f3f4f6;
+  border: 2px dashed #d1d5db;
+  color: var(--text-primary);
+}
+
+.meal-type-option.custom:hover {
+  background-color: #e5e7eb;
+  border-color: var(--primary-color);
+}
+
+/* Custom meal input */
+.custom-meal-input {
+  margin-top: 1rem;
+  padding: 1rem;
+  background-color: #f9fafb;
+  border-radius: 0.5rem;
+  border: 1px solid var(--border);
+}
+
+.custom-meal-input input {
+  width: 100%;
+  padding: 0.75rem;
+  border: 2px solid var(--border);
+  border-radius: 0.375rem;
+  font-size: 1rem;
+  margin-bottom: 0.75rem;
+  transition: border-color 0.2s;
+}
+
+.custom-meal-input input:focus {
+  outline: none;
+  border-color: var(--primary-color);
+}
+
+.custom-meal-actions {
+  display: flex;
+  gap: 0.5rem;
+  justify-content: flex-end;
+}
+
+.custom-meal-actions .btn-sm {
+  padding: 0.5rem 1rem;
+  font-size: 0.875rem;
+}
+
+/* Responsive design */
+@media (max-width: 768px) {
+  .day-editor {
+    margin-bottom: 0.75rem;
+  }
+
+  .day-header {
+    padding: 0.75rem;
+    flex-wrap: nowrap;
+    gap: 0.5rem;
+  }
+  
+  .day-title {
+    flex: 1;
+    min-width: 0; /* Allow text truncation */
+    gap: 0.5rem;
+  }
+  
+  .day-title h3 {
+    font-size: 1rem;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+  }
+  
+  .day-date {
+    font-size: 0.75rem;
+    white-space: nowrap;
+  }
+  
+  .expand-icon {
+    font-size: 1rem;
+    flex-shrink: 0;
+  }
+  
+  /* Date editor mobile styles */
+  .date-editor {
+    position: fixed;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    background: white;
+    padding: 1.5rem;
+    border-radius: 12px;
+    box-shadow: 0 10px 40px rgba(0,0,0,0.3);
+    z-index: 1000;
+    margin: 0;
+    display: flex;
+    flex-direction: column;
+    gap: 1rem;
+    width: calc(100vw - 2rem);
+    max-width: 320px;
+  }
+  
+  .date-editor::before {
+    content: '';
+    position: fixed;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background: rgba(0,0,0,0.5);
+    z-index: -1;
+  }
+  
+  .date-editor input[type="date"] {
+    width: 100%;
+    padding: 0.875rem;
+    font-size: 1rem;
+    border: 2px solid #e5e7eb;
+    background: white;
+    color: #111827;
+    border-radius: 6px;
+  }
+  
+  .date-editor .btn {
+    width: 100%;
+    padding: 0.875rem;
+    font-size: 1rem;
+    min-height: 48px; /* iOS touch target */
+    border-radius: 6px;
+    font-weight: 600;
+  }
+  
+  .date-editor .btn-primary {
+    background: #48BB78;
+    border: none;
+    margin-bottom: 0.5rem;
+  }
+  
+  .date-editor .btn-secondary {
+    background: #718096;
+    border: none;
+  }
+  
+  .day-summary {
+    display: none; /* Hide summary counts on mobile to save space */
+  }
+  
+  .day-actions {
+    flex-shrink: 0;
+    flex-direction: row;
+    gap: 0.5rem;
+  }
+  
+  .day-actions button {
+    padding: 0.5rem;
+    font-size: 0.75rem;
+    min-width: 60px;
+    white-space: nowrap;
+  }
+  
+  /* Show minimal info when collapsed */
+  .day-editor.collapsed .day-header {
+    padding: 0.625rem 0.75rem;
+  }
+  
+  .day-editor.collapsed .day-actions {
+    opacity: 0.8;
+  }
+  
+  .selector-modal {
+    min-width: 300px;
+    margin: 1rem;
+  }
+  
+  .meal-type-options {
+    grid-template-columns: 1fr 1fr;
+  }
+}

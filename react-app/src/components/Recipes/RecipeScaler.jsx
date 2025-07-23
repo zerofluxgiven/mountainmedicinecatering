@@ -1,5 +1,7 @@
 import React, { useState, useMemo } from 'react';
 import { scaleRecipe } from '../../services/recipeScaler';
+import RecipeSections from '../Recipes/RecipeSections';
+import { generateRecipePDF } from '../../services/pdfGenerator';
 import './RecipeScaler.css';
 
 export default function RecipeScaler({ recipe, onClose, onSaveScaled }) {
@@ -21,15 +23,27 @@ export default function RecipeScaler({ recipe, onClose, onSaveScaled }) {
   };
 
   const handlePrint = () => {
-    window.print();
+    // Generate PDF content
+    const pdfContent = generateRecipePDF(recipe, scaledRecipe, targetServings);
+    
+    // Create a new window with the PDF content
+    const printWindow = window.open('', '_blank');
+    printWindow.document.write(pdfContent);
+    printWindow.document.close();
+    
+    // Wait for content to load then trigger print
+    printWindow.onload = () => {
+      printWindow.print();
+    };
   };
 
   return (
-    <div className="recipe-scaler">
-      <div className="scaler-header">
-        <h2>Scale Recipe</h2>
-        <button className="close-btn" onClick={onClose}>✕</button>
-      </div>
+    <div className="recipe-scaler-overlay" onClick={onClose}>
+      <div className="recipe-scaler" onClick={(e) => e.stopPropagation()}>
+        <div className="scaler-header">
+          <h2>Scale Recipe</h2>
+          <button className="close-btn" onClick={onClose}>✕</button>
+        </div>
 
       <div className="scaler-controls">
         <div className="serving-selector">
@@ -120,33 +134,60 @@ export default function RecipeScaler({ recipe, onClose, onSaveScaled }) {
       )}
 
       {/* Scaled Recipe Display */}
-      <div className="scaled-recipe printable">
+      <div 
+        className="scaled-recipe printable"
+        data-servings={targetServings}
+        data-print-date={new Date().toLocaleDateString()}
+      >
         <h3>{scaledRecipe.name} (Serves {targetServings})</h3>
 
-        <div className="scaled-section">
-          <h4>Ingredients</h4>
-          <ul className="scaled-ingredients">
-            {scaledRecipe.ingredients?.map((ingredient, index) => (
-              <li key={index}>{ingredient}</li>
-            ))}
-          </ul>
-        </div>
-
-        {scaledRecipe.instructions && (
-          <div className="scaled-section">
-            <h4>Instructions</h4>
-            <div className="scaled-instructions">
-              {typeof scaledRecipe.instructions === 'string' ? (
-                <p>{scaledRecipe.instructions}</p>
-              ) : (
-                <ol>
-                  {scaledRecipe.instructions.map((step, index) => (
-                    <li key={index}>{step}</li>
-                  ))}
-                </ol>
-              )}
+        {scaledRecipe.sections && scaledRecipe.sections.length > 0 ? (
+          <RecipeSections
+            sections={scaledRecipe.sections}
+            editMode={false}
+          />
+        ) : (
+          <>
+            <div className="scaled-section">
+              <h4>Ingredients</h4>
+              <ul className="scaled-ingredients">
+                {scaledRecipe.ingredients?.map((ingredient, index) => (
+                  <li key={index}>
+                    {typeof ingredient === 'string' 
+                      ? ingredient 
+                      : ingredient.item 
+                        ? `${ingredient.amount || ''} ${ingredient.unit || ''} ${ingredient.item}`.trim()
+                        : JSON.stringify(ingredient)}
+                  </li>
+                ))}
+              </ul>
             </div>
-          </div>
+
+            {scaledRecipe.instructions && (
+              <div className="scaled-section">
+                <h4>Instructions</h4>
+                <div className="scaled-instructions">
+                  {typeof scaledRecipe.instructions === 'string' ? (
+                    <p>{scaledRecipe.instructions}</p>
+                  ) : (
+                    <ol>
+                      {scaledRecipe.instructions.map((step, index) => (
+                        <li key={index}>
+                          {typeof step === 'string' 
+                            ? step 
+                            : step.instruction 
+                              ? step.instruction
+                              : step.step
+                                ? step.step
+                                : JSON.stringify(step)}
+                        </li>
+                      ))}
+                    </ol>
+                  )}
+                </div>
+              </div>
+            )}
+          </>
         )}
 
         {scaledRecipe.notes && (
@@ -180,6 +221,7 @@ export default function RecipeScaler({ recipe, onClose, onSaveScaled }) {
           Close
         </button>
       </div>
+    </div>
     </div>
   );
 }

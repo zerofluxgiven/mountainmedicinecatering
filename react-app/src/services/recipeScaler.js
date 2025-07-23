@@ -162,18 +162,64 @@ export function scaleRecipe(recipe, targetServings) {
   // Update servings
   scaledRecipe.serves = targetServings;
   
-  // Scale ingredients
-  if (recipe.ingredients) {
-    if (Array.isArray(recipe.ingredients)) {
-      scaledRecipe.ingredients = recipe.ingredients.map(ingredient => 
+  // Scale sections if they exist
+  if (recipe.sections && Array.isArray(recipe.sections)) {
+    scaledRecipe.sections = recipe.sections.map(section => ({
+      ...section,
+      ingredients: section.ingredients.map(ingredient =>
         scaleIngredient(ingredient, scaleFactor)
-      );
-    } else if (typeof recipe.ingredients === 'string') {
-      // Handle string ingredients (split by newlines)
-      const ingredientLines = recipe.ingredients.split('\n').filter(line => line.trim());
-      scaledRecipe.ingredients = ingredientLines.map(ingredient => 
-        scaleIngredient(ingredient, scaleFactor)
-      );
+      )
+    }));
+    
+    // Also update flattened ingredients for backward compatibility
+    scaledRecipe.ingredients = [];
+    scaledRecipe.sections.forEach(section => {
+      scaledRecipe.ingredients.push(...section.ingredients);
+    });
+  } else {
+    // Scale traditional format ingredients
+    if (recipe.ingredients) {
+      if (Array.isArray(recipe.ingredients)) {
+        scaledRecipe.ingredients = recipe.ingredients.map(ingredient => {
+          if (typeof ingredient === 'string') {
+            return scaleIngredient(ingredient, scaleFactor);
+          } else if (ingredient && typeof ingredient === 'object') {
+            // Handle object format {item, amount, unit}
+            const ingredientString = `${ingredient.amount || ''} ${ingredient.unit || ''} ${ingredient.item || ''}`.trim();
+            const scaledString = scaleIngredient(ingredientString, scaleFactor);
+            
+            // Parse the scaled string back to extract the new amount
+            const { quantity, unit: parsedUnit, original } = parseIngredientAmount(scaledString);
+            
+            if (quantity) {
+              // The quantity is already scaled from scaleIngredient, just format it
+              return {
+                ...ingredient,
+                amount: formatScaledAmount(quantity),
+                unit: parsedUnit || ingredient.unit,
+                item: ingredient.item
+              };
+            }
+            
+            // If parsing failed, return the original with a scaled amount if numeric
+            if (ingredient.amount && !isNaN(ingredient.amount)) {
+              return {
+                ...ingredient,
+                amount: (parseFloat(ingredient.amount) * scaleFactor).toString()
+              };
+            }
+            
+            return ingredient;
+          }
+          return ingredient;
+        });
+      } else if (typeof recipe.ingredients === 'string') {
+        // Handle string ingredients (split by newlines)
+        const ingredientLines = recipe.ingredients.split('\n').filter(line => line.trim());
+        scaledRecipe.ingredients = ingredientLines.map(ingredient => 
+          scaleIngredient(ingredient, scaleFactor)
+        );
+      }
     }
   }
   

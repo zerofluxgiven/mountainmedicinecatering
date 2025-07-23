@@ -1,11 +1,12 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
-import { doc, getDoc, setDoc, updateDoc, serverTimestamp } from 'firebase/firestore';
+import { doc, getDoc, setDoc, updateDoc, serverTimestamp, collection } from 'firebase/firestore';
 import { ref, uploadBytes, getDownloadURL } from 'firebase/storage';
 import { db, storage } from '../../config/firebase';
 import { useAuth } from '../../contexts/AuthContext';
 import FileUpload from '../../components/FileUpload/FileUpload';
 import { parseEventFromFile } from '../../services/eventParser';
+import { uploadEventImage, deleteEventImage } from '../../services/storageService';
 import './EventEditor.css';
 
 // Event types removed - no longer using predefined types
@@ -16,13 +17,13 @@ export default function EventEditor() {
   const { currentUser } = useAuth();
   
   const isNew = !id;
+  const endDateInputRef = useRef(null);
   
   // Form state
   const [formData, setFormData] = useState({
     name: '',
-    event_date: '',
-    start_time: '',
-    end_time: '',
+    start_date: '', // Changed from event_date
+    end_date: '',   // NEW: End date for multi-day events
     guest_count: '',
     client_name: '',
     client_email: '',
@@ -36,7 +37,12 @@ export default function EventEditor() {
     special_requests: '',
     budget: '',
     status: 'planning',
-    flyer_url: ''
+    flyer_url: '',
+    event_images: [],
+    // NEW: Enhanced dietary tracking
+    dietary_restrictions: [],
+    allergens: [],
+    guests_with_restrictions: []
   });
   
   const [loading, setLoading] = useState(!isNew);
@@ -46,12 +52,33 @@ export default function EventEditor() {
   const [flyerFile, setFlyerFile] = useState(null);
   const [uploading, setUploading] = useState(false);
   const [parsing, setParsing] = useState(false);
+  const [eventImages, setEventImages] = useState([]);
+  const [uploadingEventImage, setUploadingEventImage] = useState(false);
+  const eventImageInputRef = useRef(null);
 
   useEffect(() => {
     if (!isNew) {
       loadEvent();
     }
   }, [id, isNew]);
+
+  // Handle clicking outside of date pickers to close them
+  useEffect(() => {
+    const handleDocumentClick = (e) => {
+      // If clicking outside any date input, blur all date inputs
+      if (!e.target.matches('input[type="date"]')) {
+        const dateInputs = document.querySelectorAll('input[type="date"]');
+        dateInputs.forEach(input => {
+          if (input !== e.target) {
+            input.blur();
+          }
+        });
+      }
+    };
+
+    document.addEventListener('click', handleDocumentClick);
+    return () => document.removeEventListener('click', handleDocumentClick);
+  }, []);
 
   const loadEvent = async () => {
     try {
@@ -65,16 +92,32 @@ export default function EventEditor() {
 
       const data = eventDoc.data();
       
-      // Format date for input
-      let formattedDate = '';
+      // Format dates for input
+      let formattedStartDate = '';
+      let formattedEndDate = '';
+      
+      // Handle legacy event_date field
       if (data.event_date) {
-        const date = data.event_date.toDate?.() || new Date(data.event_date);
-        formattedDate = date.toISOString().split('T')[0];
+        const date = data.event_date.toDate ? data.event_date.toDate() : new Date(data.event_date);
+        formattedStartDate = date.toISOString().split('T')[0];
+        formattedEndDate = formattedStartDate; // Single day event
+      }
+      
+      // Use start_date and end_date if available
+      if (data.start_date) {
+        const startDate = data.start_date.toDate ? data.start_date.toDate() : new Date(data.start_date);
+        formattedStartDate = startDate.toISOString().split('T')[0];
+      }
+      
+      if (data.end_date) {
+        const endDate = data.end_date.toDate ? data.end_date.toDate() : new Date(data.end_date);
+        formattedEndDate = endDate.toISOString().split('T')[0];
       }
       
       setFormData({
         name: data.name || '',
-        event_date: formattedDate,
+        start_date: formattedStartDate,
+        end_date: formattedEndDate,
         start_time: data.start_time || '',
         end_time: data.end_time || '',
         guest_count: data.guest_count || '',
@@ -90,8 +133,18 @@ export default function EventEditor() {
         special_requests: data.special_requests || '',
         budget: data.budget || '',
         status: data.status || 'planning',
-        flyer_url: data.flyer_url || ''
+        flyer_url: data.flyer_url || '',
+        event_images: data.event_images || [],
+        // Enhanced dietary tracking
+        dietary_restrictions: data.dietary_restrictions || [],
+        allergens: data.allergens || [],
+        guests_with_restrictions: data.guests_with_restrictions || []
       });
+      
+      // Set existing event images
+      if (data.event_images) {
+        setEventImages(data.event_images);
+      }
     } catch (err) {
       console.error('Error loading event:', err);
       setError('Failed to load event');
@@ -110,6 +163,30 @@ export default function EventEditor() {
         return next;
       });
     }
+    
+    // When start date is selected, auto-focus end date and suggest next day
+    if (field === 'start_date' && value) {
+      // Calculate next day
+      const startDate = new Date(value);
+      startDate.setDate(startDate.getDate() + 1);
+      const nextDay = startDate.toISOString().split('T')[0];
+      
+      // If end date is empty or before start date, set it to next day
+      setFormData(prev => {
+        if (!prev.end_date || prev.end_date < value) {
+          return { ...prev, [field]: value, end_date: nextDay };
+        }
+        return { ...prev, [field]: value };
+      });
+      
+      // Focus the end date input after a brief delay
+      setTimeout(() => {
+        if (endDateInputRef.current) {
+          endDateInputRef.current.focus();
+          // Don't auto-open picker - let user click to open it
+        }
+      }, 100);
+    }
   };
 
   const validateForm = () => {
@@ -119,12 +196,12 @@ export default function EventEditor() {
       errors.name = 'Event name is required';
     }
     
-    if (!formData.event_date) {
-      errors.event_date = 'Event date is required';
+    if (!formData.start_date) {
+      errors.start_date = 'Start date is required';
     }
     
-    if (!formData.client_name.trim()) {
-      errors.client_name = 'Client name is required';
+    if (!formData.end_date) {
+      errors.end_date = 'End date is required';
     }
     
     if (formData.client_email && !isValidEmail(formData.client_email)) {
@@ -161,16 +238,35 @@ export default function EventEditor() {
         // Update form with parsed data
         const updates = {};
         if (parsedData.name && !formData.name) updates.name = parsedData.name;
-        if (parsedData.event_date && !formData.event_date) {
+        if (parsedData.event_date) {
           const date = new Date(parsedData.event_date);
-          updates.event_date = date.toISOString().split('T')[0];
+          const dateStr = date.toISOString().split('T')[0];
+          if (!formData.start_date) updates.start_date = dateStr;
+          if (!formData.end_date) updates.end_date = dateStr; // Single day event by default
+        }
+        // Handle new date fields from parser
+        if (parsedData.start_date) {
+          const date = new Date(parsedData.start_date);
+          const dateStr = date.toISOString().split('T')[0];
+          if (!formData.start_date) updates.start_date = dateStr;
+        }
+        if (parsedData.end_date) {
+          const date = new Date(parsedData.end_date);
+          const dateStr = date.toISOString().split('T')[0];
+          if (!formData.end_date) updates.end_date = dateStr;
         }
         if (parsedData.start_time && !formData.start_time) updates.start_time = parsedData.start_time;
+        if (parsedData.end_time && !formData.end_time) updates.end_time = parsedData.end_time;
         if (parsedData.venue && !formData.venue) updates.venue = parsedData.venue;
         if (parsedData.venue_address && !formData.venue_address) updates.venue_address = parsedData.venue_address;
         if (parsedData.description && !formData.description) updates.description = parsedData.description;
         if (parsedData.guest_count && !formData.guest_count) updates.guest_count = parsedData.guest_count;
         if (parsedData.website && !formData.website) updates.website = parsedData.website;
+        
+        // Always update event_images if they exist
+        if (parsedData.event_images && parsedData.event_images.length > 0) {
+          updates.event_images = parsedData.event_images;
+        }
         
         if (Object.keys(updates).length > 0) {
           setFormData(prev => ({ ...prev, ...updates }));
@@ -185,6 +281,44 @@ export default function EventEditor() {
     }
   };
 
+  const handleEventImageSelect = async (e) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    
+    if (!file.type.startsWith('image/')) {
+      alert('Please select an image file');
+      return;
+    }
+    
+    setUploadingEventImage(true);
+    setError(null);
+    
+    try {
+      // Upload image to Firebase Storage
+      const eventId = id || `temp_${Date.now()}`;
+      const imageUrl = await uploadEventImage(file, eventId);
+      
+      // Add to event images array
+      setEventImages(prev => [...prev, imageUrl]);
+      
+      // Clear the input
+      if (eventImageInputRef.current) {
+        eventImageInputRef.current.value = '';
+      }
+    } catch (err) {
+      console.error('Error uploading event image:', err);
+      setError('Failed to upload image. Please try again.');
+    } finally {
+      setUploadingEventImage(false);
+    }
+  };
+
+  const removeEventImage = (index) => {
+    if (window.confirm('Remove this image?')) {
+      setEventImages(prev => prev.filter((_, i) => i !== index));
+    }
+  };
+
   const handleSubmit = async (e) => {
     e.preventDefault();
     
@@ -196,9 +330,16 @@ export default function EventEditor() {
     setError(null);
     
     try {
-      // Convert date string to Date object
-      const eventDate = new Date(formData.event_date);
-      eventDate.setHours(12, 0, 0, 0); // Set to noon to avoid timezone issues
+      // Convert date strings to Date objects with better handling
+      const startDate = new Date(formData.start_date + 'T12:00:00');
+      const endDate = new Date(formData.end_date + 'T12:00:00');
+      
+      // Validate dates
+      if (isNaN(startDate.getTime()) || isNaN(endDate.getTime())) {
+        setError('Invalid date format. Please check your dates.');
+        setSaving(false);
+        return;
+      }
       
       // Upload flyer if selected
       let flyerUrl = formData.flyer_url;
@@ -219,12 +360,22 @@ export default function EventEditor() {
       // Prepare event data
       const eventData = {
         ...formData,
-        event_date: eventDate,
+        start_date: startDate,
+        end_date: endDate,
         guest_count: formData.guest_count ? parseInt(formData.guest_count) : null,
         budget: formData.budget ? parseFloat(formData.budget) : null,
         flyer_url: flyerUrl,
+        event_images: eventImages,
         updated_at: serverTimestamp()
       };
+      
+      // Debug logging
+      console.log('Saving event with data:', {
+        id: id || 'new',
+        start_date: startDate.toISOString(),
+        end_date: endDate.toISOString(),
+        formData
+      });
       
       if (isNew) {
         // Add creation metadata
@@ -232,8 +383,8 @@ export default function EventEditor() {
         eventData.created_by = currentUser.email;
         eventData.allergens = []; // Initialize empty allergens array
         
-        // Generate ID
-        const newId = doc(db, 'events').id;
+        // Generate ID using collection reference
+        const newId = doc(collection(db, 'events')).id;
         await setDoc(doc(db, 'events', newId), eventData);
         
         navigate(`/events/${newId}`);
@@ -250,7 +401,11 @@ export default function EventEditor() {
     }
   };
 
-  const handleCancel = () => {
+  const handleCancel = (e) => {
+    if (e) {
+      e.preventDefault();
+      e.stopPropagation();
+    }
     if (window.confirm('Are you sure you want to cancel? Any unsaved changes will be lost.')) {
       navigate(id ? `/events/${id}` : '/events');
     }
@@ -289,7 +444,7 @@ export default function EventEditor() {
             <button 
               type="button"
               className="btn btn-secondary"
-              onClick={handleCancel}
+              onClick={(e) => handleCancel(e)}
               disabled={saving}
             >
               Cancel
@@ -332,37 +487,36 @@ export default function EventEditor() {
 
             <div className="form-row">
               <div className="form-group">
-                <label htmlFor="event_date">Event Date *</label>
+                <label htmlFor="start_date">Start Date *</label>
                 <input
-                  id="event_date"
+                  id="start_date"
                   type="date"
-                  value={formData.event_date}
-                  onChange={(e) => handleInputChange('event_date', e.target.value)}
-                  className={validationErrors.event_date ? 'error' : ''}
+                  value={formData.start_date}
+                  onChange={(e) => handleInputChange('start_date', e.target.value)}
+                  className={validationErrors.start_date ? 'error' : ''}
                 />
-                {validationErrors.event_date && (
-                  <span className="field-error">{validationErrors.event_date}</span>
+                {validationErrors.start_date && (
+                  <span className="field-error">{validationErrors.start_date}</span>
                 )}
               </div>
 
               <div className="form-group">
-                <label htmlFor="start_time">Start Time</label>
+                <label htmlFor="end_date">End Date *</label>
                 <input
-                  id="start_time"
-                  type="time"
-                  value={formData.start_time}
-                  onChange={(e) => handleInputChange('start_time', e.target.value)}
+                  ref={endDateInputRef}
+                  id="end_date"
+                  type="date"
+                  value={formData.end_date}
+                  onChange={(e) => handleInputChange('end_date', e.target.value)}
+                  min={formData.start_date} // Can't end before it starts!
+                  className={validationErrors.end_date ? 'error' : ''}
                 />
-              </div>
-
-              <div className="form-group">
-                <label htmlFor="end_time">End Time</label>
-                <input
-                  id="end_time"
-                  type="time"
-                  value={formData.end_time}
-                  onChange={(e) => handleInputChange('end_time', e.target.value)}
-                />
+                {validationErrors.end_date && (
+                  <span className="field-error">{validationErrors.end_date}</span>
+                )}
+                <small className="field-help">
+                  For single-day events, use the same date for start and end
+                </small>
               </div>
             </div>
 
@@ -414,7 +568,7 @@ export default function EventEditor() {
             <h2>Client Information</h2>
             
             <div className="form-group">
-              <label htmlFor="client_name">Client Name *</label>
+              <label htmlFor="client_name">Client Name</label>
               <input
                 id="client_name"
                 type="text"
@@ -528,6 +682,62 @@ export default function EventEditor() {
                   <p>Parsing event details from file...</p>
                 </div>
               )}
+            </div>
+          </section>
+
+          {/* Event Images */}
+          <section className="editor-section">
+            <h2>Event Images</h2>
+            
+            <div className="form-group">
+              <label>Add Event Photos</label>
+              
+              <div className="event-images-upload">
+                <input
+                  ref={eventImageInputRef}
+                  type="file"
+                  accept="image/*"
+                  onChange={handleEventImageSelect}
+                  style={{ display: 'none' }}
+                />
+                
+                <button
+                  type="button"
+                  className="btn btn-secondary"
+                  onClick={() => eventImageInputRef.current?.click()}
+                  disabled={uploadingEventImage}
+                >
+                  {uploadingEventImage ? 'Uploading...' : '📷 Add Photo'}
+                </button>
+                
+                {eventImages.length > 0 && (
+                  <div className="event-images-grid">
+                    {eventImages.map((imageUrl, index) => (
+                      <div key={index} className="event-image-item">
+                        <img 
+                          src={imageUrl} 
+                          alt={`Event ${index + 1}`}
+                          onClick={() => window.open(imageUrl, '_blank')}
+                        />
+                        <button
+                          type="button"
+                          className="remove-image-btn"
+                          onClick={() => removeEventImage(index)}
+                          title="Remove image"
+                        >
+                          ✕
+                        </button>
+                      </div>
+                    ))}
+                  </div>
+                )}
+                
+                {eventImages.length === 0 && (
+                  <p className="help-text">
+                    Add photos from the event for reference. These will be displayed in the event viewer.
+                  </p>
+                )}
+              </div>
             </div>
           </section>
 

@@ -68,7 +68,12 @@ export default function MenuList() {
   });
 
   const handleMenuClick = (menuId) => {
-    navigate(`/menus/${menuId}`);
+    // Check if user wants to edit (holding alt/option key)
+    if (window.event?.altKey) {
+      navigate(`/menus/${menuId}/plan`);
+    } else {
+      navigate(`/menus/${menuId}`);
+    }
   };
 
   const handleCreateNew = () => {

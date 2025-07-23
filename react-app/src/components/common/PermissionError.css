@@ -1,0 +1,96 @@
+.permission-error-banner {
+  position: fixed;
+  top: 20px;
+  left: 50%;
+  transform: translateX(-50%);
+  z-index: 10000;
+  max-width: 600px;
+  width: 90%;
+  background: #fee;
+  border: 2px solid #f44;
+  border-radius: 8px;
+  padding: 1rem;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.2);
+  animation: slideDown 0.3s ease-out;
+}
+
+@keyframes slideDown {
+  from {
+    transform: translateX(-50%) translateY(-100%);
+    opacity: 0;
+  }
+  to {
+    transform: translateX(-50%) translateY(0);
+    opacity: 1;
+  }
+}
+
+.permission-error-content h3 {
+  margin: 0 0 0.5rem 0;
+  color: #d00;
+  font-size: 1.2rem;
+}
+
+.error-message {
+  background: #fff;
+  padding: 0.5rem;
+  border-radius: 4px;
+  margin: 0.5rem 0;
+  font-family: monospace;
+  font-size: 0.9rem;
+}
+
+.permission-help {
+  background: #fff;
+  border: 1px solid #ddd;
+  border-radius: 4px;
+  padding: 1rem;
+  margin: 1rem 0;
+}
+
+.permission-help h4 {
+  margin: 0 0 0.5rem 0;
+  color: #333;
+  font-size: 1rem;
+}
+
+.permission-help ol {
+  margin: 0.5rem 0;
+  padding-left: 1.5rem;
+}
+
+.permission-help li {
+  margin: 0.25rem 0;
+}
+
+.permission-help code {
+  background: #f5f5f5;
+  padding: 0.2rem 0.4rem;
+  border-radius: 3px;
+  font-size: 0.9rem;
+  color: #d00;
+  font-weight: bold;
+}
+
+.error-note {
+  margin: 0.5rem 0 0 0;
+  font-size: 0.85rem;
+  color: #666;
+  border-top: 1px solid #eee;
+  padding-top: 0.5rem;
+}
+
+.dismiss-btn {
+  background: #f44;
+  color: white;
+  border: none;
+  padding: 0.5rem 1rem;
+  border-radius: 4px;
+  cursor: pointer;
+  font-size: 0.9rem;
+  margin-top: 0.5rem;
+}
+
+.dismiss-btn:hover {
+  background: #d33;
+}

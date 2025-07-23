@@ -1,8 +1,9 @@
 const pdfParse = require('pdf-parse');
 const fetch = require('node-fetch');
+const { uploadEventImage } = require('../services/storageService');
 
 // Parse event details from various file types using AI
-async function parseEventFromFile(fileBuffer, mimeType, openai) {
+async function parseEventFromFile(fileBuffer, mimeType, openai, eventId = null) {
   let extractedText = '';
   
   try {
@@ -11,7 +12,7 @@ async function parseEventFromFile(fileBuffer, mimeType, openai) {
       // Use OpenAI Vision API directly for images
       const base64Image = fileBuffer.toString('base64');
       const response = await openai.chat.completions.create({
-        model: "gpt-4-vision-preview",
+        model: "gpt-4o",
         messages: [
           {
             role: "user",
@@ -47,7 +48,7 @@ async function parseEventFromFile(fileBuffer, mimeType, openai) {
     
     // Use OpenAI to parse event details
     const completion = await openai.chat.completions.create({
-      model: "gpt-4",
+      model: "gpt-4o",
       messages: [
         {
           role: "system",
@@ -83,6 +84,18 @@ For times, use 24-hour format (HH:MM).`
     
     const parsedData = JSON.parse(completion.choices[0].message.content);
     
+    // Upload image if it's an image file and we have an eventId
+    let event_images = [];
+    if (mimeType.includes('image') && eventId) {
+      try {
+        const imageUrl = await uploadEventImage(fileBuffer, eventId, mimeType);
+        event_images = [imageUrl];
+      } catch (error) {
+        console.error('Failed to upload event image:', error);
+        // Continue without the image
+      }
+    }
+    
     // Map to our event model
     return {
       name: parsedData.event_name || parsedData.title || '',
@@ -99,6 +112,7 @@ For times, use 24-hour format (HH:MM).`
       event_type: parsedData.event_type || '',
       dress_code: parsedData.dress_code || '',
       rsvp_deadline: parsedData.rsvp_deadline || '',
+      event_images: event_images,
       // Include raw extracted text for reference
       raw_text: extractedText.substring(0, 5000) // Limit to 5000 chars
     };

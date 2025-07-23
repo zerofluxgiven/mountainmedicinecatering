@@ -1,16 +1,22 @@
 import React, { useState, useEffect } from 'react';
 import { useParams, useNavigate, Link } from 'react-router-dom';
-import { doc, getDoc, deleteDoc } from 'firebase/firestore';
+import { doc, getDoc, deleteDoc, updateDoc, serverTimestamp } from 'firebase/firestore';
 import { db } from '../../config/firebase';
 import { useAuth } from '../../contexts/AuthContext';
+import { useDeezNuts } from '../../contexts/DeezNutsContext';
 import RecipeScaler from '../../components/Recipes/RecipeScaler';
-import { getSpecialVersions, getVersionHistory, createSpecialVersion } from '../../services/recipeVersions';
+import RecipeSections from '../../components/Recipes/RecipeSections';
+import { getSpecialVersions, getVersionHistory, createSpecialVersion, saveVersionHistory } from '../../services/recipeVersions';
+import { formatTime } from '../../utils/timeFormatting';
+import { getRecipeImageUrl } from '../../services/thumbnailService';
+import { generateRecipePDF, enhancedPrint } from '../../services/pdfService';
 import './RecipeViewer.css';
 
 export default function RecipeViewer() {
   const { id } = useParams();
   const navigate = useNavigate();
   const { hasRole } = useAuth();
+  const { checkForNuts } = useDeezNuts();
   
   const [recipe, setRecipe] = useState(null);
   const [loading, setLoading] = useState(true);
@@ -41,6 +47,9 @@ export default function RecipeViewer() {
 
       const recipeData = { id: recipeDoc.id, ...recipeDoc.data() };
       setRecipe(recipeData);
+      
+      // Check for nuts when viewing
+      checkForNuts(recipeData, 'view');
       
       // Load versions in parallel
       const [specialVers, history] = await Promise.all([
@@ -78,12 +87,16 @@ export default function RecipeViewer() {
   };
 
   const handlePrint = () => {
-    window.print();
+    enhancedPrint(`${recipe.name || 'Recipe'} - Mountain Medicine Kitchen`);
   };
 
-  const handleExportPDF = () => {
-    // TODO: Implement PDF export
-    alert('PDF export coming soon!');
+  const handleExportPDF = async () => {
+    try {
+      await generateRecipePDF(recipe);
+    } catch (error) {
+      console.error('Error generating PDF:', error);
+      alert('Failed to generate PDF. Please try again.');
+    }
   };
 
   const handleCreateVersion = async () => {
@@ -94,15 +107,13 @@ export default function RecipeViewer() {
 
     setCreatingVersion(true);
     try {
-      // Get the base recipe (not a version)
+      // Use the current recipe data (which includes any saved changes)
       const baseRecipeId = recipe.parent_id || id;
-      const baseRecipe = recipe.parent_id ? 
-        await getDoc(doc(db, 'recipes', baseRecipeId)) : 
-        { data: () => recipe };
       
+      // Create version from the current recipe data, preserving sections
       await createSpecialVersion(
         baseRecipeId,
-        baseRecipe.data(),
+        recipe, // Use current recipe data, not base recipe
         newVersionName.trim(),
         `Created ${newVersionName.trim()} version`
       );
@@ -143,7 +154,11 @@ export default function RecipeViewer() {
   if (!recipe) return null;
 
   return (
-    <div className="recipe-viewer">
+    <div 
+      className="recipe-viewer"
+      data-recipe-name={recipe.name || 'Unnamed Recipe'}
+      data-print-date={new Date().toLocaleDateString()}
+    >
       {/* Header */}
       <div className="recipe-header">
         <div className="recipe-header-content">
@@ -308,16 +323,69 @@ export default function RecipeViewer() {
                         <span className="version-note">{version.edit_note}</span>
                       )}
                     </div>
-                    <button 
-                      className="btn btn-small"
-                      onClick={() => {
-                        setRecipe(version);
-                        setSelectedVersion(version.id);
-                        setShowVersionHistory(false);
-                      }}
-                    >
-                      View this version
-                    </button>
+                    <div className="version-actions">
+                      <button 
+                        className="btn btn-small"
+                        onClick={() => {
+                          setRecipe(version);
+                          setSelectedVersion(version.id);
+                          setShowVersionHistory(false);
+                        }}
+                      >
+                        View this version
+                      </button>
+                      
+                      {hasRole('user') && (
+                        <>
+                          <button 
+                            className="btn btn-small btn-primary"
+                            onClick={async () => {
+                              if (window.confirm('Make this version the primary recipe? This will preserve all version history.')) {
+                                try {
+                                  // Save current recipe as a version
+                                  await saveVersionHistory(id, recipe, 'Replaced by older version');
+                                  
+                                  // Update the main recipe with this version's data
+                                  const { id: versionId, timestamp, edit_note, ...versionData } = version;
+                                  await updateDoc(doc(db, 'recipes', id), {
+                                    ...versionData,
+                                    updated_at: serverTimestamp()
+                                  });
+                                  
+                                  // Reload to show updated recipe
+                                  loadRecipe();
+                                  setShowVersionHistory(false);
+                                  setSelectedVersion(null);
+                                } catch (error) {
+                                  console.error('Error making version primary:', error);
+                                  alert('Failed to update recipe. Please try again.');
+                                }
+                              }
+                            }}
+                          >
+                            Make Primary
+                          </button>
+                          
+                          <button 
+                            className="btn btn-small btn-secondary"
+                            onClick={() => {
+                              // Navigate to editor with this version's data as a new variant
+                              navigate(`/recipes/new`, { 
+                                state: { 
+                                  prefillData: {
+                                    ...version,
+                                    name: `${version.name} (Variant)`,
+                                    special_version: version.edit_note || 'Variant'
+                                  }
+                                }
+                              });
+                            }}
+                          >
+                            Add as Variant
+                          </button>
+                        </>
+                      )}
+                    </div>
                   </div>
                 ))
               )}
@@ -331,9 +399,13 @@ export default function RecipeViewer() {
         <div className="recipe-content-grid">
           {/* Left Column - Image and Meta */}
           <div className="recipe-sidebar">
-            {recipe.image_url && (
+            {getRecipeImageUrl(recipe, 'original') && (
               <div className="recipe-hero-image">
-                <img src={recipe.image_url} alt={recipe.name} />
+                <img 
+                  src={getRecipeImageUrl(recipe, 'original')} 
+                  alt={recipe.name} 
+                  loading="lazy"
+                />
               </div>
             )}
 
@@ -348,14 +420,23 @@ export default function RecipeViewer() {
               {recipe.prep_time && (
                 <div className="info-item">
                   <span className="info-label">Prep Time:</span>
-                  <span className="info-value">{recipe.prep_time} minutes</span>
+                  <span className="info-value">{formatTime(recipe.prep_time)}</span>
                 </div>
               )}
 
               {recipe.cook_time && (
                 <div className="info-item">
                   <span className="info-label">Cook Time:</span>
-                  <span className="info-value">{recipe.cook_time} minutes</span>
+                  <span className="info-value">{formatTime(recipe.cook_time)}</span>
+                </div>
+              )}
+
+              {(recipe.total_time || (recipe.prep_time && recipe.cook_time)) && (
+                <div className="info-item">
+                  <span className="info-label">Total Time:</span>
+                  <span className="info-value">
+                    {formatTime(recipe.total_time || (recipe.prep_time + recipe.cook_time))}
+                  </span>
                 </div>
               )}
 
@@ -381,6 +462,17 @@ export default function RecipeViewer() {
                 </div>
               )}
 
+              {recipe.diets && recipe.diets.length > 0 && (
+                <div className="info-item diet-section">
+                  <span className="info-label">✓ Suitable for:</span>
+                  <div className="diet-list">
+                    {recipe.diets.map(diet => (
+                      <span key={diet} className="diet-badge">{diet}</span>
+                    ))}
+                  </div>
+                </div>
+              )}
+
               {recipe.created_by && (
                 <div className="info-item">
                   <span className="info-label">Added by:</span>
@@ -401,59 +493,79 @@ export default function RecipeViewer() {
 
           {/* Right Column - Ingredients and Instructions */}
           <div className="recipe-details">
-            {/* Ingredients Section */}
-            <section className="recipe-section">
-              <h2>Ingredients</h2>
-              <div className="ingredients-list">
-                {recipe.ingredients ? (
-                  typeof recipe.ingredients === 'string' ? (
-                    <div className="ingredients-text">
-                      {recipe.ingredients.split('\n').map((line, index) => (
-                        line.trim() && <p key={index} className="ingredient-item">{line}</p>
-                      ))}
-                    </div>
-                  ) : Array.isArray(recipe.ingredients) && recipe.ingredients.length > 0 ? (
-                    <ul>
-                      {recipe.ingredients.map((ingredient, index) => (
-                        <li key={index} className="ingredient-item">
-                          {ingredient}
-                        </li>
-                      ))}
-                    </ul>
-                  ) : (
-                    <p className="empty-message">No ingredients listed</p>
-                  )
-                ) : (
-                  <p className="empty-message">No ingredients listed</p>
-                )}
-              </div>
-            </section>
+            {/* Check if recipe has sections */}
+            {recipe.sections && recipe.sections.length > 0 ? (
+              <RecipeSections
+                sections={recipe.sections}
+                editMode={false}
+              />
+            ) : (
+              <>
+                {/* Traditional format - Ingredients Section */}
+                <section className="recipe-section">
+                  <h2>Ingredients</h2>
+                  <div className="ingredients-list">
+                    {recipe.ingredients ? (
+                      typeof recipe.ingredients === 'string' ? (
+                        <div className="ingredients-text">
+                          {recipe.ingredients.split('\n').map((line, index) => (
+                            line.trim() && <p key={index} className="ingredient-item">{line}</p>
+                          ))}
+                        </div>
+                      ) : Array.isArray(recipe.ingredients) && recipe.ingredients.length > 0 ? (
+                        <ul>
+                          {recipe.ingredients.map((ingredient, index) => (
+                            <li key={index} className="ingredient-item">
+                              {typeof ingredient === 'string' 
+                                ? ingredient 
+                                : ingredient.item 
+                                  ? `${ingredient.amount || ''} ${ingredient.unit || ''} ${ingredient.item}`.trim()
+                                  : JSON.stringify(ingredient)}
+                            </li>
+                          ))}
+                        </ul>
+                      ) : (
+                        <p className="empty-message">No ingredients listed</p>
+                      )
+                    ) : (
+                      <p className="empty-message">No ingredients listed</p>
+                    )}
+                  </div>
+                </section>
 
-            {/* Instructions Section */}
-            <section className="recipe-section">
-              <h2>Instructions</h2>
-              <div className="instructions">
-                {recipe.instructions ? (
-                  typeof recipe.instructions === 'string' ? (
-                    <div className="instructions-text">
-                      {recipe.instructions.split('\n').map((line, index) => (
-                        <p key={index}>{line}</p>
-                      ))}
-                    </div>
-                  ) : Array.isArray(recipe.instructions) ? (
-                    <ol className="instructions-list">
-                      {recipe.instructions.map((step, index) => (
-                        <li key={index} className="instruction-step">
-                          {step}
-                        </li>
-                      ))}
-                    </ol>
-                  ) : null
-                ) : (
-                  <p className="empty-message">No instructions provided</p>
-                )}
-              </div>
-            </section>
+                {/* Traditional format - Instructions Section */}
+                <section className="recipe-section">
+                  <h2>Instructions</h2>
+                  <div className="instructions">
+                    {recipe.instructions ? (
+                      typeof recipe.instructions === 'string' ? (
+                        <div className="instructions-text">
+                          {recipe.instructions.split('\n').map((line, index) => (
+                            <p key={index}>{line}</p>
+                          ))}
+                        </div>
+                      ) : Array.isArray(recipe.instructions) ? (
+                        <ol className="instructions-list">
+                          {recipe.instructions.map((step, index) => (
+                            <li key={index} className="instruction-step">
+                              {typeof step === 'string' 
+                                ? step 
+                                : step.instruction 
+                                  ? step.instruction
+                                  : step.step
+                                    ? step.step
+                                    : JSON.stringify(step)}
+                            </li>
+                          ))}
+                        </ol>
+                      ) : null
+                    ) : (
+                      <p className="empty-message">No instructions provided</p>
+                    )}
+                  </div>
+                </section>
+              </>
+            )}
 
             {/* Notes Section */}
             {recipe.notes && (

@@ -1,0 +1,409 @@
+.meal-editor {
+  padding: 1.5rem;
+  border-radius: 8px;
+  margin: 0;
+  position: relative;
+  transition: all 0.2s ease;
+  border: 1px solid rgba(0, 0, 0, 0.1);
+}
+
+.meal-editor:hover {
+  transform: translateY(-1px);
+  box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+}
+
+/* Meal header */
+.meal-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 1rem;
+  gap: 1rem;
+}
+
+.meal-title {
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+  flex: 1;
+}
+
+.meal-icon {
+  font-size: 1.5rem;
+}
+
+.meal-type-select {
+  padding: 0.5rem;
+  border: 1px solid #d1d5db;
+  border-radius: 6px;
+  background: white;
+  font-weight: 600;
+  color: #374151;
+  cursor: pointer;
+}
+
+.meal-time-input {
+  padding: 0.5rem;
+  border: 1px solid #d1d5db;
+  border-radius: 6px;
+  background: white;
+  color: #374151;
+  font-weight: 500;
+}
+
+.meal-summary {
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+  font-size: 0.9rem;
+}
+
+.course-count,
+.recipe-count,
+.serving-count {
+  background: rgba(0,0,0,0.1);
+  padding: 0.25rem 0.75rem;
+  border-radius: 20px;
+  font-weight: 500;
+  color: #374151;
+}
+
+.conflict-warning {
+  background: #fbbf24;
+  color: #92400e;
+  padding: 0.25rem 0.75rem;
+  border-radius: 20px;
+  font-weight: 500;
+  font-size: 0.85rem;
+  cursor: help;
+}
+
+.meal-actions {
+  display: flex;
+  gap: 0.5rem;
+}
+
+/* Courses container */
+.courses-container {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+  padding: 0.5rem;
+}
+
+/* Course item */
+.course-item {
+  background: rgba(255,255,255,0.95);
+  padding: 1rem;
+  border-radius: 8px;
+  margin-bottom: 1rem;
+  border: 2px solid rgba(0,0,0,0.1);
+  box-shadow: 0 2px 4px rgba(0,0,0,0.05);
+  transition: all 0.2s;
+  position: relative;
+}
+
+.course-item:hover {
+  background: rgba(255,255,255,1);
+  box-shadow: 0 4px 8px rgba(0,0,0,0.1);
+  border-color: rgba(0,0,0,0.15);
+}
+
+/* Visual divider between courses */
+.course-item:not(:last-child)::after {
+  content: '';
+  position: absolute;
+  bottom: -0.5rem;
+  left: 50%;
+  transform: translateX(-50%);
+  width: 50%;
+  height: 1px;
+  background: linear-gradient(to right, transparent, rgba(0,0,0,0.2), transparent);
+}
+
+.course-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 0.75rem;
+  padding-bottom: 0.75rem;
+  border-bottom: 1px solid rgba(0,0,0,0.1);
+}
+
+.course-name {
+  margin: 0;
+  font-size: 1.1rem;
+  font-weight: 600;
+  color: #2d3748;
+  cursor: pointer;
+  transition: color 0.2s;
+}
+
+.course-name:hover {
+  color: var(--primary-color);
+  text-decoration: underline;
+}
+
+.course-name-editor {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  flex: 1;
+}
+
+.course-name-input {
+  flex: 1;
+  padding: 0.25rem 0.5rem;
+  font-size: 1.1rem;
+  font-weight: 600;
+  border: 2px solid var(--primary-color);
+  border-radius: 4px;
+}
+
+.course-actions {
+  display: flex;
+  gap: 0.5rem;
+  align-items: center;
+}
+
+.course-details {
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+}
+
+.course-meta {
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+  flex-wrap: wrap;
+}
+
+.servings-input {
+  width: 80px;
+  padding: 0.25rem 0.5rem;
+  border: 1px solid #d1d5db;
+  border-radius: 4px;
+  margin-left: 0.5rem;
+}
+
+.allergen-tags {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  flex-wrap: wrap;
+}
+
+.allergen-label {
+  font-weight: 500;
+  color: #666;
+  font-size: 0.9rem;
+}
+
+.allergen-tag {
+  background: #fef3cd;
+  color: #92400e;
+  padding: 0.2rem 0.6rem;
+  border-radius: 12px;
+  font-size: 0.8rem;
+  font-weight: 500;
+}
+
+.allergen-tag.conflict {
+  background: #fee2e2;
+  color: #dc2626;
+  border: 1px solid #fca5a5;
+}
+
+/* Scaling warning */
+.scaling-warning {
+  background: #fef3cd;
+  border: 1px solid #fbbf24;
+  border-radius: 8px;
+  padding: 0.75rem 1rem;
+  margin-bottom: 1rem;
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  font-size: 0.9rem;
+}
+
+.scaling-warning .warning-icon {
+  font-size: 1.2rem;
+  flex-shrink: 0;
+}
+
+.scaling-warning .warning-text {
+  color: #92400e;
+  font-weight: 500;
+  line-height: 1.4;
+}
+
+/* Recipes within a course */
+.course-recipes {
+  margin-bottom: 0.75rem;
+}
+
+.recipe-item {
+  background: rgba(0,0,0,0.03);
+  padding: 0.75rem;
+  border-radius: 6px;
+  margin-bottom: 0.5rem;
+  border: 1px solid rgba(0,0,0,0.05);
+  transition: all 0.2s;
+}
+
+.recipe-item:hover {
+  background: rgba(0,0,0,0.05);
+  border-color: rgba(0,0,0,0.1);
+}
+
+.recipe-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 0.5rem;
+}
+
+.recipe-name {
+  font-weight: 500;
+  color: #2d3748;
+  font-size: 0.95rem;
+}
+
+.recipe-details {
+  margin-left: 0.5rem;
+}
+
+.recipe-meta {
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+  margin-bottom: 0.5rem;
+  font-size: 0.85rem;
+}
+
+.recipe-meta label {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.recipe-notes {
+  margin-top: 0.5rem;
+}
+
+.notes-input {
+  width: 100%;
+  padding: 0.75rem;
+  border: 1px solid #d1d5db;
+  border-radius: 6px;
+  resize: vertical;
+  font-family: inherit;
+  font-size: 0.9rem;
+}
+
+.notes-input:focus {
+  outline: none;
+  border-color: #6b46c1;
+  box-shadow: 0 0 0 3px rgba(107, 70, 193, 0.1);
+}
+
+/* Empty course state */
+.empty-course {
+  padding: 1rem;
+  text-align: center;
+  color: #666;
+  background: rgba(0,0,0,0.02);
+  border-radius: 6px;
+  border: 1px dashed rgba(0,0,0,0.2);
+}
+
+.empty-course p {
+  margin: 0 0 0.5rem 0;
+  font-size: 0.9rem;
+}
+
+/* Course notes */
+.course-notes {
+  margin-top: 0.75rem;
+  padding-top: 0.75rem;
+  border-top: 1px solid rgba(0,0,0,0.1);
+}
+
+.course-notes-input {
+  width: 100%;
+  padding: 0.5rem;
+  border: 1px solid rgba(0,0,0,0.1);
+  border-radius: 4px;
+  font-size: 0.9rem;
+  resize: vertical;
+  background: rgba(0,0,0,0.02);
+}
+
+/* Empty meal state */
+.empty-meal {
+  text-align: center;
+  padding: 2rem;
+  color: #666;
+}
+
+.empty-meal p {
+  margin-bottom: 1rem;
+  font-style: italic;
+}
+
+/* Responsive design */
+@media (max-width: 768px) {
+  .meal-editor {
+    padding: 1rem;
+  }
+  
+  .meal-header {
+    flex-direction: column;
+    align-items: stretch;
+    gap: 0.75rem;
+  }
+  
+  .meal-title {
+    justify-content: center;
+    gap: 0.75rem;
+  }
+  
+  .meal-summary {
+    justify-content: center;
+    flex-wrap: wrap;
+    gap: 0.5rem;
+  }
+  
+  .meal-actions {
+    justify-content: center;
+  }
+  
+  .course-header {
+    flex-direction: column;
+    align-items: stretch;
+    gap: 0.5rem;
+  }
+  
+  .course-meta {
+    justify-content: space-between;
+  }
+}
+
+@media (max-width: 480px) {
+  .meal-title {
+    flex-direction: column;
+    gap: 0.5rem;
+  }
+  
+  .course-meta {
+    flex-direction: column;
+    align-items: stretch;
+    gap: 0.5rem;
+  }
+  
+  .allergen-tags {
+    justify-content: center;
+  }
+}

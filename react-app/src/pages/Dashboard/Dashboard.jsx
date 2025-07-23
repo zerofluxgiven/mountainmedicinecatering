@@ -23,59 +23,85 @@ export default function Dashboard() {
         </p>
       </div>
 
-      {/* Quick Stats */}
-      <div className="stats-grid">
-        <div className="stat-card">
-          <div className="stat-icon">📅</div>
-          <div className="stat-content">
-            <div className="stat-value">{events.length}</div>
-            <div className="stat-label">Total Events</div>
-          </div>
-        </div>
-
-        <div className="stat-card">
-          <div className="stat-icon">📖</div>
-          <div className="stat-content">
-            <div className="stat-value">{recipes.length}</div>
-            <div className="stat-label">Recipes</div>
-          </div>
-        </div>
-
-        <div className="stat-card">
-          <div className="stat-icon">🍽️</div>
-          <div className="stat-content">
-            <div className="stat-value">{menus.length}</div>
-            <div className="stat-label">Menus</div>
-          </div>
-        </div>
-
-      </div>
-
       {/* Quick Actions */}
       <div className="quick-actions">
         <h2>Quick Actions</h2>
-          <div className="action-buttons">
-            <button className="action-btn" onClick={() => navigate('/events/new')}>
-              <span className="action-icon">📅</span>
-              <span>Create Event</span>
-            </button>
-            <button className="action-btn" onClick={() => navigate('/recipes/new')}>
-              <span className="action-icon">📝</span>
-              <span>Add Recipe</span>
-            </button>
-            <button className="action-btn" onClick={() => navigate('/menus/new')}>
-              <span className="action-icon">🍽️</span>
-              <span>Create Menu</span>
-            </button>
-            <button className="action-btn" onClick={() => navigate('/shopping-list')}>
-              <span className="action-icon">📋</span>
-              <span>Shopping List</span>
-            </button>
-            <button className="action-btn" onClick={() => navigate('/export')}>
-              <span className="action-icon">📄</span>
-              <span>Export PDF</span>
-            </button>
+        <div className="stats-grid">
+          <div className="stat-card action-clickable" onClick={() => navigate('/events/new')}>
+            <div className="stat-icon">📅</div>
+            <div className="stat-content">
+              <div className="stat-label">Create Event</div>
+            </div>
           </div>
+          <div className="stat-card action-clickable" onClick={() => navigate('/recipes/new')}>
+            <div className="stat-icon">📝</div>
+            <div className="stat-content">
+              <div className="stat-label">Add Recipe</div>
+            </div>
+          </div>
+          <div className="stat-card action-clickable" onClick={() => navigate('/menus/new')}>
+            <div className="stat-icon">🍽️</div>
+            <div className="stat-content">
+              <div className="stat-label">Create Menu</div>
+            </div>
+          </div>
+          <div className="stat-card action-clickable" onClick={() => navigate('/shopping-list')}>
+            <div className="stat-icon">📋</div>
+            <div className="stat-content">
+              <div className="stat-label">Shopping List</div>
+            </div>
+          </div>
+          <div className="stat-card action-clickable" onClick={() => navigate('/recipes/import')}>
+            <div className="stat-icon">📥</div>
+            <div className="stat-content">
+              <div className="stat-label">Import Recipes</div>
+            </div>
+          </div>
+          <div className="stat-card action-clickable" onClick={() => navigate('/chat')}>
+            <div className="stat-icon">🤖</div>
+            <div className="stat-content">
+              <div className="stat-label">AI Assistant</div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      {/* Analytics */}
+      <div className="analytics-section">
+        <h2>Analytics</h2>
+        <div className="stats-grid">
+          <div className="stat-card">
+            <div className="stat-icon">📅</div>
+            <div className="stat-content">
+              <div className="stat-value">{events.length}</div>
+              <div className="stat-label">Total Events</div>
+            </div>
+          </div>
+
+          <div className="stat-card">
+            <div className="stat-icon">📖</div>
+            <div className="stat-content">
+              <div className="stat-value">{recipes.length}</div>
+              <div className="stat-label">Recipes</div>
+            </div>
+          </div>
+
+          <div className="stat-card">
+            <div className="stat-icon">🍽️</div>
+            <div className="stat-content">
+              <div className="stat-value">{menus.length}</div>
+              <div className="stat-label">Menus</div>
+            </div>
+          </div>
+
+          <div className="stat-card">
+            <div className="stat-icon">👥</div>
+            <div className="stat-content">
+              <div className="stat-value">{upcomingEvents.length}</div>
+              <div className="stat-label">Upcoming</div>
+            </div>
+          </div>
+        </div>
       </div>
 
       {/* Upcoming Events */}

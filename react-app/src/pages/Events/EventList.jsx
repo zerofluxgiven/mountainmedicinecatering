@@ -4,11 +4,13 @@ import { collection, query, orderBy, onSnapshot } from 'firebase/firestore';
 import { db } from '../../config/firebase';
 import { useAuth } from '../../contexts/AuthContext';
 import { useApp } from '../../contexts/AppContext';
+import { useScrollVisibility } from '../../hooks/useScrollDirection';
 import './EventList.css';
 
 export default function EventList() {
   const navigate = useNavigate();
   const { hasRole } = useAuth();
+  const isHeaderVisible = useScrollVisibility();
   
   const [events, setEvents] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -107,21 +109,22 @@ export default function EventList() {
 
   return (
     <div className="event-list">
-      <div className="event-list-header">
-        <h1>Events</h1>
-        {hasRole('user') && (
-          <button 
-            className="btn btn-primary"
-            onClick={handleCreateNew}
-          >
-            <span className="btn-icon">➕</span>
-            New Event
-          </button>
-        )}
-      </div>
+      <div className={`event-list-top ${!isHeaderVisible ? 'scroll-hidden' : ''}`}>
+        <div className="event-list-header">
+          <h1>Events</h1>
+          {hasRole('user') && (
+            <button 
+              className="btn btn-primary new-event-button"
+              onClick={handleCreateNew}
+            >
+              <span className="btn-icon">➕</span>
+              New Event
+            </button>
+          )}
+        </div>
 
-      {/* Filters */}
-      <div className="event-filters">
+        {/* Filters */}
+        <div className="event-filters">
         <div className="search-bar">
           <span className="search-icon">🔍</span>
           <input
@@ -143,24 +146,25 @@ export default function EventList() {
 
         <div className="filter-tabs">
           <button
-            className={`filter-tab ${filter === 'upcoming' ? 'active' : ''}`}
+            className={`filter-tab filter-button ${filter === 'upcoming' ? 'active' : ''}`}
             onClick={() => setFilter('upcoming')}
           >
             Upcoming
           </button>
           <button
-            className={`filter-tab ${filter === 'all' ? 'active' : ''}`}
+            className={`filter-tab filter-button ${filter === 'all' ? 'active' : ''}`}
             onClick={() => setFilter('all')}
           >
             All Events
           </button>
           <button
-            className={`filter-tab ${filter === 'past' ? 'active' : ''}`}
+            className={`filter-tab filter-button ${filter === 'past' ? 'active' : ''}`}
             onClick={() => setFilter('past')}
           >
             Past
           </button>
         </div>
+      </div>
       </div>
 
       {/* Results Summary */}

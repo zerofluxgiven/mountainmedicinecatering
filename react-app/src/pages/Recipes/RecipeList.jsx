@@ -3,6 +3,9 @@ import { useNavigate } from 'react-router-dom';
 import { useApp } from '../../contexts/AppContext';
 import { useAuth } from '../../contexts/AuthContext';
 import { getRecipesWithVersions } from '../../services/recipeVersions';
+import { formatTimeShort } from '../../utils/timeFormatting';
+import { getRecipeImage, ThumbnailSize } from '../../services/thumbnailService';
+import allergenManager from '../../services/allergenManager';
 import './RecipeList.css';
 
 export default function RecipeList() {
@@ -17,6 +20,21 @@ export default function RecipeList() {
   const [sortBy, setSortBy] = useState('name'); // name, serves, created_at
   const [recipesWithVersions, setRecipesWithVersions] = useState([]);
   const [loadingVersions, setLoadingVersions] = useState(true);
+  
+  // New states for autocomplete and show all
+  const [tagSearchTerm, setTagSearchTerm] = useState('');
+  const [allergenSearchTerm, setAllergenSearchTerm] = useState('');
+  const [showAllTags, setShowAllTags] = useState(false);
+  const [showAllAllergens, setShowAllAllergens] = useState(false);
+  const [showTagDropdown, setShowTagDropdown] = useState(false);
+  const [showAllergenDropdown, setShowAllergenDropdown] = useState(false);
+  const [allAllergensExpanded, setAllAllergensExpanded] = useState([]);
+  
+  // Initialize allergen manager
+  useEffect(() => {
+    allergenManager.initialize();
+    return () => allergenManager.cleanup();
+  }, []);
   
   // Load recipes with versions
   useEffect(() => {
@@ -34,7 +52,7 @@ export default function RecipeList() {
   }, [recipes]); // Reload when recipes change
 
   // Extract unique tags and allergens from recipes
-  const { allTags, allAllergens } = useMemo(() => {
+  const { allTags, allAllergens, expandedAllergens } = useMemo(() => {
     const tags = new Set();
     const allergens = new Set();
     
@@ -43,11 +61,36 @@ export default function RecipeList() {
       recipe.allergens?.forEach(allergen => allergens.add(allergen));
     });
     
+    // Get all allergens from allergen manager (includes custom ones)
+    const managerAllergens = allergenManager.getAllAllergens();
+    
+    // Merge recipe allergens with predefined/custom allergens
+    managerAllergens.forEach(allergen => {
+      allergens.add(allergen.id);
+    });
+    
     return {
       allTags: Array.from(tags).sort(),
-      allAllergens: Array.from(allergens).sort()
+      allAllergens: Array.from(allergens).sort(),
+      expandedAllergens: managerAllergens
     };
   }, [recipes]);
+  
+  // Filter tags based on search
+  const filteredTags = useMemo(() => {
+    if (!tagSearchTerm) return [];
+    return allTags.filter(tag => 
+      tag.toLowerCase().startsWith(tagSearchTerm.toLowerCase())
+    );
+  }, [allTags, tagSearchTerm]);
+  
+  // Filter allergens based on search
+  const filteredAllergens = useMemo(() => {
+    if (!allergenSearchTerm) return [];
+    return allAllergens.filter(allergen => 
+      allergen.toLowerCase().startsWith(allergenSearchTerm.toLowerCase())
+    );
+  }, [allAllergens, allergenSearchTerm]);
 
   // Filter and sort recipes
   const filteredRecipes = useMemo(() => {
@@ -69,9 +112,9 @@ export default function RecipeList() {
         }
       }
 
-      // Allergen filter (exclude recipes with selected allergens)
+      // Allergen filter (exclude recipes with selected allergens - using hierarchy)
       if (selectedAllergens.length > 0) {
-        if (recipe.allergens?.some(allergen => selectedAllergens.includes(allergen))) {
+        if (allergenManager.checkRecipeAllergens(recipe.allergens || [], selectedAllergens)) {
           return false;
         }
       }
@@ -104,6 +147,8 @@ export default function RecipeList() {
         ? prev.filter(t => t !== tag)
         : [...prev, tag]
     );
+    setTagSearchTerm(''); // Clear search after selection
+    setShowTagDropdown(false);
   };
 
   const handleAllergenToggle = (allergen) => {
@@ -112,6 +157,18 @@ export default function RecipeList() {
         ? prev.filter(a => a !== allergen)
         : [...prev, allergen]
     );
+    setAllergenSearchTerm(''); // Clear search after selection
+    setShowAllergenDropdown(false);
+  };
+  
+  const handleTagSearch = (value) => {
+    setTagSearchTerm(value);
+    setShowTagDropdown(value.length > 0);
+  };
+  
+  const handleAllergenSearch = (value) => {
+    setAllergenSearchTerm(value);
+    setShowAllergenDropdown(value.length > 0);
   };
 
   const handleRecipeClick = (recipeId) => {
@@ -183,7 +240,101 @@ export default function RecipeList() {
 
           <div className="filter-group">
             <label>Filter by Tags:</label>
-            <div className="tag-filters">
+            <div className="autocomplete-container">
+              <input
+                type="text"
+                placeholder="Type to search tags..."
+                value={tagSearchTerm}
+                onChange={(e) => handleTagSearch(e.target.value)}
+                onFocus={() => tagSearchTerm && setShowTagDropdown(true)}
+                className="autocomplete-input"
+              />
+              {showTagDropdown && filteredTags.length > 0 && (
+                <div className="autocomplete-dropdown">
+                  {filteredTags.map(tag => (
+                    <div
+                      key={tag}
+                      className="autocomplete-item"
+                      onClick={() => handleTagToggle(tag)}
+                    >
+                      {tag}
+                    </div>
+                  ))}
+                </div>
+              )}
+              <button 
+                className="show-all-btn"
+                onClick={() => setShowAllTags(!showAllTags)}
+              >
+                {showAllTags ? 'Hide' : 'Show All Tags'}
+              </button>
+            </div>
+          </div>
+
+          <div className="filter-group">
+            <label>Exclude Allergens:</label>
+            <div className="autocomplete-container">
+              <input
+                type="text"
+                placeholder="Type to exclude allergens..."
+                value={allergenSearchTerm}
+                onChange={(e) => handleAllergenSearch(e.target.value)}
+                onFocus={() => allergenSearchTerm && setShowAllergenDropdown(true)}
+                className="autocomplete-input"
+              />
+              {showAllergenDropdown && filteredAllergens.length > 0 && (
+                <div className="autocomplete-dropdown">
+                  {filteredAllergens.map(allergen => (
+                    <div
+                      key={allergen}
+                      className="autocomplete-item"
+                      onClick={() => handleAllergenToggle(allergen)}
+                    >
+                      🚫 {allergen}
+                    </div>
+                  ))}
+                </div>
+              )}
+              <button 
+                className="show-all-btn"
+                onClick={() => setShowAllAllergens(!showAllAllergens)}
+              >
+                {showAllAllergens ? 'Hide' : 'Show All Allergens'}
+              </button>
+            </div>
+          </div>
+        </div>
+        
+        {/* Selected filters display */}
+        <div className="selected-filters">
+          {selectedTags.length > 0 && (
+            <div className="selected-tags">
+              <span className="filter-label">Tags:</span>
+              {selectedTags.map(tag => (
+                <span key={tag} className="selected-filter tag-selected">
+                  {tag}
+                  <button onClick={() => handleTagToggle(tag)}>✕</button>
+                </span>
+              ))}
+            </div>
+          )}
+          {selectedAllergens.length > 0 && (
+            <div className="selected-allergens">
+              <span className="filter-label">Excluding:</span>
+              {selectedAllergens.map(allergen => (
+                <span key={allergen} className="selected-filter allergen-selected">
+                  🚫 {allergen}
+                  <button onClick={() => handleAllergenToggle(allergen)}>✕</button>
+                </span>
+              ))}
+            </div>
+          )}
+        </div>
+        
+        {/* Show all tags section */}
+        {showAllTags && (
+          <div className="all-tags-section">
+            <div className="all-tags-grid">
               {allTags.map(tag => (
                 <button
                   key={tag}
@@ -195,22 +346,74 @@ export default function RecipeList() {
               ))}
             </div>
           </div>
-
-          <div className="filter-group">
-            <label>Exclude Allergens:</label>
-            <div className="allergen-filters">
-              {allAllergens.map(allergen => (
-                <button
-                  key={allergen}
-                  className={`allergen-filter ${selectedAllergens.includes(allergen) ? 'active' : ''}`}
-                  onClick={() => handleAllergenToggle(allergen)}
-                >
-                  🚫 {allergen}
-                </button>
+        )}
+        
+        {/* Show all allergens section */}
+        {showAllAllergens && (
+          <div className="all-allergens-section">
+            <div className="allergen-section-title">Select allergens to exclude:</div>
+            <div className="allergens-hierarchy">
+              {/* Group allergens by category */}
+              {expandedAllergens.filter(a => !a.parent).map(parentAllergen => (
+                <div key={parentAllergen.id} className="allergen-category">
+                  <div className="allergen-parent">
+                    <button
+                      className={`allergen-filter parent-allergen ${selectedAllergens.includes(parentAllergen.id) ? 'active' : ''}`}
+                      onClick={() => handleAllergenToggle(parentAllergen.id)}
+                    >
+                      🚫 {parentAllergen.name}
+                    </button>
+                    {parentAllergen.children && parentAllergen.children.length > 0 && (
+                      <button
+                        className="expand-allergens"
+                        onClick={() => {
+                          setAllAllergensExpanded(prev =>
+                            prev.includes(parentAllergen.id)
+                              ? prev.filter(id => id !== parentAllergen.id)
+                              : [...prev, parentAllergen.id]
+                          );
+                        }}
+                      >
+                        {allAllergensExpanded.includes(parentAllergen.id) ? '−' : '+'}
+                      </button>
+                    )}
+                  </div>
+                  {parentAllergen.children && allAllergensExpanded.includes(parentAllergen.id) && (
+                    <div className="allergen-children">
+                      {parentAllergen.children.map(childId => {
+                        const childAllergen = expandedAllergens.find(a => a.id === childId);
+                        return childAllergen ? (
+                          <button
+                            key={childId}
+                            className={`allergen-filter child-allergen ${selectedAllergens.includes(childId) ? 'active' : ''}`}
+                            onClick={() => handleAllergenToggle(childId)}
+                          >
+                            🚫 {childAllergen.name}
+                          </button>
+                        ) : null;
+                      })}
+                    </div>
+                  )}
+                </div>
               ))}
+              
+              {/* Show standalone allergens (no parent) */}
+              <div className="allergen-standalone">
+                {expandedAllergens
+                  .filter(a => !a.parent && (!a.children || a.children.length === 0))
+                  .map(allergen => (
+                    <button
+                      key={allergen.id}
+                      className={`allergen-filter ${selectedAllergens.includes(allergen.id) ? 'active' : ''}`}
+                      onClick={() => handleAllergenToggle(allergen.id)}
+                    >
+                      🚫 {allergen.name}
+                    </button>
+                  ))}
+              </div>
             </div>
           </div>
-        </div>
+        )}
 
         {(selectedTags.length > 0 || selectedAllergens.length > 0) && (
           <button 
@@ -264,77 +467,106 @@ export default function RecipeList() {
 
 // Recipe Card Component
 function RecipeCard({ recipe, onClick }) {
-  const defaultImage = '/api/placeholder/300/200';
-  
   // Check if this recipe has special versions
   const hasVersions = recipe.versions && recipe.versions.length > 0;
+  const [isHovered, setIsHovered] = useState(false);
   
   return (
-    <div className="recipe-card" onClick={onClick}>
-      {recipe.image_url && (
-        <div className="recipe-image">
-          <img 
-            src={recipe.image_url} 
-            alt={recipe.name}
-            onError={(e) => { e.target.src = defaultImage; }}
-          />
-        </div>
-      )}
-      
-      <div className="recipe-content">
-        <h3 className="recipe-name">{recipe.name || 'Unnamed Recipe'}</h3>
+    <div 
+      className="recipe-card" 
+      onClick={onClick}
+      onMouseEnter={() => setIsHovered(true)}
+      onMouseLeave={() => setIsHovered(false)}
+    >
+      <div className="recipe-image">
+        <img 
+          src={getRecipeImage(recipe, ThumbnailSize.LIST)} 
+          alt={recipe.name}
+          loading="lazy"
+        />
         
-        {/* Show special version indicator if this is a version */}
-        {recipe.special_version && (
-          <span className="version-indicator">{recipe.special_version}</span>
-        )}
-        
-        {/* Show available versions if this is a parent recipe */}
+        {/* Versions indicator - always visible if has versions */}
         {hasVersions && (
-          <div className="available-versions">
-            <span className="versions-label">Available versions:</span>
-            {recipe.versions.map((version, index) => (
-              <span key={version.id} className="version-badge">
-                {version.special_version}
-              </span>
-            ))}
+          <div className="recipe-versions-indicator">
+            <span>🔀</span>
+            <span className="recipe-versions-count">{recipe.versions.length}</span>
           </div>
         )}
         
-        <div className="recipe-meta">
-          <span className="recipe-serves">
-            <span className="icon">🍽️</span>
-            Serves {recipe.serves || '?'}
-          </span>
-          
-          {recipe.prep_time && (
-            <span className="recipe-time">
-              <span className="icon">⏱️</span>
-              {recipe.prep_time} min
-            </span>
-          )}
-        </div>
-
-        {recipe.tags && recipe.tags.length > 0 && (
-          <div className="recipe-tags">
-            {recipe.tags.slice(0, 3).map(tag => (
-              <span key={tag} className="recipe-tag">{tag}</span>
-            ))}
-            {recipe.tags.length > 3 && (
-              <span className="recipe-tag">+{recipe.tags.length - 3}</span>
-            )}
+        {/* Hover overlay with recipe info */}
+        {isHovered && (
+          <div className="recipe-hover-overlay">
+            <div className="recipe-hover-content">
+              {/* Version info */}
+              {(recipe.special_version || hasVersions) && (
+                <div className="hover-section">
+                  {recipe.special_version && (
+                    <span className="version-indicator">{recipe.special_version}</span>
+                  )}
+                  {hasVersions && (
+                    <div className="available-versions">
+                      <span className="versions-label">Versions:</span>
+                      {recipe.versions.slice(0, 2).map((version) => (
+                        <span key={version.id} className="version-badge">
+                          {version.special_version}
+                        </span>
+                      ))}
+                      {recipe.versions.length > 2 && (
+                        <span className="version-badge">+{recipe.versions.length - 2}</span>
+                      )}
+                    </div>
+                  )}
+                </div>
+              )}
+              
+              {/* Serves and Times */}
+              <div className="hover-section">
+                <span className="recipe-serves">
+                  🍽️ Serves {recipe.serves || '?'}
+                </span>
+                {(recipe.total_time || recipe.prep_time || recipe.cook_time) && (
+                  <span className="recipe-time">
+                    ⏱️ {formatTimeShort(recipe.total_time || 
+                      (recipe.prep_time && recipe.cook_time ? recipe.prep_time + recipe.cook_time : 
+                       recipe.prep_time || recipe.cook_time))}
+                  </span>
+                )}
+              </div>
+              
+              {/* Tags */}
+              {recipe.tags && recipe.tags.length > 0 && (
+                <div className="hover-section">
+                  <div className="recipe-tags">
+                    {recipe.tags.slice(0, 3).map(tag => (
+                      <span key={tag} className="recipe-tag">{tag}</span>
+                    ))}
+                    {recipe.tags.length > 3 && (
+                      <span className="recipe-tag">+{recipe.tags.length - 3}</span>
+                    )}
+                  </div>
+                </div>
+              )}
+              
+              {/* Allergens */}
+              {recipe.allergens && recipe.allergens.length > 0 && (
+                <div className="hover-section">
+                  <div className="recipe-allergens">
+                    {recipe.allergens.map(allergen => (
+                      <span key={allergen} className="recipe-allergen">
+                        ⚠️ {allergen}
+                      </span>
+                    ))}
+                  </div>
+                </div>
+              )}
+            </div>
           </div>
         )}
-
-        {recipe.allergens && recipe.allergens.length > 0 && (
-          <div className="recipe-allergens">
-            {recipe.allergens.map(allergen => (
-              <span key={allergen} className="recipe-allergen">
-                ⚠️ {allergen}
-              </span>
-            ))}
-          </div>
-        )}
+      </div>
+      
+      {/* Always show recipe name below image */}
+      <div className="recipe-name-section">
+        <h3 className="recipe-name">{recipe.name || 'Unnamed Recipe'}</h3>
       </div>
     </div>
   );

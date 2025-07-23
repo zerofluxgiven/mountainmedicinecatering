@@ -2,6 +2,7 @@ import React from 'react';
 import { BrowserRouter as Router, Routes, Route } from 'react-router-dom';
 import { AuthProvider } from './contexts/AuthContext';
 import { AppProvider } from './contexts/AppContext';
+import { DeezNutsProvider } from './contexts/DeezNutsContext';
 import ProtectedRoute from './components/Auth/ProtectedRoute';
 import Layout from './components/Layout/Layout';
 import Login from './pages/Login/Login';
@@ -17,10 +18,23 @@ import AllergyManager from './pages/Events/AllergyManager';
 import MenuList from './pages/Menus/MenuList';
 import MenuViewer from './pages/Menus/MenuViewer';
 import MenuEditor from './pages/Menus/MenuEditor';
+import MenuPlanner from './pages/Menus/MenuPlanner';
+import MenuPlannerWrapper from './pages/Menus/MenuPlannerWrapper';
 import IngredientList from './pages/Ingredients/IngredientList';
 import IngredientViewer from './pages/Ingredients/IngredientViewer';
 import IngredientEditor from './pages/Ingredients/IngredientEditor';
 import AIChat from './pages/Chat/AIChat';
+import AIHistory from './pages/AI/AIHistory';
+import Settings from './pages/Settings/Settings';
+import ShoppingListList from './pages/ShoppingLists/ShoppingListList';
+import ShoppingListViewer from './pages/ShoppingLists/ShoppingListViewer';
+import ShoppingListEditor from './pages/ShoppingLists/ShoppingListEditor';
+import IngredientCleanup from './pages/Admin/IngredientCleanup';
+
+// Load test utilities in development
+if (process.env.NODE_ENV === 'development') {
+  import('./utils/exposeForTesting');
+}
 
 export default function App() {
   return (
@@ -36,8 +50,9 @@ export default function App() {
             element={
               <ProtectedRoute>
                 <AppProvider>
-                  <Layout>
-                    <Routes>
+                  <DeezNutsProvider>
+                    <Layout>
+                      <Routes>
                       <Route path="/" element={<Dashboard />} />
                       {/* Event Routes */}
                       <Route path="/events" element={<EventList />} />
@@ -53,18 +68,31 @@ export default function App() {
                       <Route path="/recipes/:id/edit" element={<RecipeEditor />} />
                       {/* Menu Routes */}
                       <Route path="/menus" element={<MenuList />} />
-                      <Route path="/menus/new" element={<MenuEditor />} />
+                      <Route path="/menus/new" element={<MenuPlannerWrapper />} />
                       <Route path="/menus/:id" element={<MenuViewer />} />
-                      <Route path="/menus/:id/edit" element={<MenuEditor />} />
+                      <Route path="/menus/:id/edit" element={<MenuPlannerWrapper />} />
+                      <Route path="/events/:eventId/menus/new/plan" element={<MenuPlannerWrapper />} />
+                      <Route path="/events/:eventId/menus/:menuId/plan" element={<MenuPlannerWrapper />} />
+                      <Route path="/menus/:menuId/plan" element={<MenuPlannerWrapper />} />
                       {/* Ingredient Routes */}
                       <Route path="/ingredients" element={<IngredientList />} />
                       <Route path="/ingredients/new" element={<IngredientEditor />} />
                       <Route path="/ingredients/:id" element={<IngredientViewer />} />
                       <Route path="/ingredients/:id/edit" element={<IngredientEditor />} />
+                      {/* Shopping Lists */}
+                      <Route path="/shopping-lists" element={<ShoppingListList />} />
+                      <Route path="/shopping-lists/new" element={<ShoppingListEditor />} />
+                      <Route path="/shopping-lists/:id" element={<ShoppingListViewer />} />
+                      <Route path="/shopping-lists/:id/edit" element={<ShoppingListEditor />} />
                       {/* Other Routes */}
                       <Route path="/chat" element={<AIChat />} />
+                      <Route path="/ai-history" element={<AIHistory />} />
+                      <Route path="/settings" element={<Settings />} />
+                      {/* Admin Routes */}
+                      <Route path="/admin/ingredient-cleanup" element={<IngredientCleanup />} />
                     </Routes>
                   </Layout>
+                  </DeezNutsProvider>
                 </AppProvider>
               </ProtectedRoute>
             }

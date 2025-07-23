@@ -42,9 +42,25 @@
   box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
 }
 
+/* Clickable action cards */
+.stat-card.action-clickable {
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.stat-card.action-clickable:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 4px 6px rgba(0, 0, 0, 0.15);
+  background-color: var(--primary-color);
+}
+
+.stat-card.action-clickable:hover .stat-icon,
+.stat-card.action-clickable:hover .stat-label {
+  color: white;
+}
+
 .stat-icon {
   font-size: 2.5rem;
-  opacity: 0.8;
 }
 
 .stat-content {
@@ -66,7 +82,7 @@
 
 /* Quick Actions */
 .quick-actions {
-  margin-bottom: 2rem;
+  margin-bottom: 3rem;
 }
 
 .quick-actions h2 {
@@ -74,39 +90,14 @@
   color: var(--text-primary);
 }
 
-.action-buttons {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 1rem;
-  justify-content: flex-start;
+/* Analytics Section */
+.analytics-section {
+  margin-bottom: 3rem;
 }
 
-.action-btn {
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  gap: 0.5rem;
-  padding: 1.25rem 1rem;
-  background-color: white;
-  border: 1px solid var(--border-color);
-  border-radius: 0.5rem;
-  cursor: pointer;
-  transition: all 0.2s;
-  font-size: 0.875rem;
+.analytics-section h2 {
+  margin-bottom: 1.5rem;
   color: var(--text-primary);
-  flex: 0 0 auto;
-  min-width: 120px;
-  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.05);
-}
-
-.action-btn:hover {
-  border-color: var(--primary-color);
-  box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
-  transform: translateY(-2px);
-}
-
-.action-icon {
-  font-size: 2rem;
 }
 
 /* Upcoming Events */
@@ -196,16 +187,42 @@
 
 /* Responsive */
 @media (max-width: 768px) {
-  .stats-grid {
-    grid-template-columns: 1fr 1fr;
-  }
-
-  .action-buttons {
-    justify-content: center;
+  /* Quick actions already at top on mobile */
+  .dashboard {
+    display: flex;
+    flex-direction: column;
   }
   
-  .action-btn {
-    min-width: 100px;
+  .quick-actions {
+    margin-bottom: 2rem;
+  }
+  
+  .action-grid,
+  .stats-grid {
+    grid-template-columns: 1fr 1fr;
+    gap: 1rem;
+  }
+  
+  .action-card,
+  .stat-card {
+    padding: 1rem;
+  }
+  
+  .action-card .action-icon,
+  .stat-icon {
+    font-size: 2rem;
+  }
+  
+  .action-card .action-label {
+    font-size: 0.875rem;
+  }
+  
+  .stat-value {
+    font-size: 1.5rem;
+  }
+  
+  .stat-label {
+    font-size: 0.75rem;
   }
 
   .event-card {

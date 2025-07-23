@@ -23,6 +23,21 @@
   box-shadow: 0 10px 25px rgba(0, 0, 0, 0.2);
 }
 
+/* Header Container for scroll-away */
+.picker-header-container {
+  position: sticky;
+  top: 0;
+  z-index: 100;
+  background: white;
+  border-radius: 0.5rem 0.5rem 0 0;
+  transition: transform 0.3s ease-in-out;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+}
+
+.picker-header-container.scroll-hidden {
+  transform: translateY(-100%);
+}
+
 /* Header */
 .picker-header {
   display: flex;

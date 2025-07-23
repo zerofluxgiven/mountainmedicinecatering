@@ -49,7 +49,27 @@
       "Bash(--member=\"allUsers\" )",
       "Bash(--role=\"roles/cloudfunctions.invoker\" )",
       "Bash(--project=mountainmedicine-6e572 )",
-      "Bash(--region=us-central1)"
+      "Bash(--region=us-central1)",
+      "Bash(gcloud functions describe:*)",
+      "Bash(gcloud functions get-iam-policy:*)",
+      "Bash(npm run firebase:emulators:export:*)",
+      "Bash(npm run:*)",
+      "Bash(node:*)",
+      "WebFetch(domain:peachie.recipes)",
+      "Bash(firebase hosting:version-history:*)",
+      "Bash(firebase hosting:channel:*)",
+      "Bash(firebase init:*)",
+      "Bash(git reset:*)",
+      "Bash(ccusage --help)",
+      "Bash(ccusage daily)",
+      "Bash(ccusage blocks:*)",
+      "Bash(ccusage monthly)",
+      "Bash(ccusage session)",
+      "Bash(ccusage daily --breakdown)",
+      "Bash(export FUNCTIONS_DISCOVERY_TIMEOUT=300)",
+      "Bash(./test-ai-endpoint.sh:*)",
+      "Bash(/Users/danmcfarland/Documents/mountainmedicinecatering/react-app/test-ai-endpoint.sh:*)",
+      "Bash(gcloud functions add-invoker-policy-binding:*)"
     ],
     "deny": []
   }

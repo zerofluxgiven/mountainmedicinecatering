@@ -134,6 +134,15 @@ export default function IngredientList() {
               Add Ingredient
             </button>
           )}
+          {hasRole('admin') && (
+            <button 
+              className="btn btn-warning"
+              onClick={() => navigate('/admin/ingredient-cleanup')}
+            >
+              <span className="btn-icon">🧹</span>
+              Cleanup Names
+            </button>
+          )}
         </div>
       </div>
 

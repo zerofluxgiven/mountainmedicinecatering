@@ -6,20 +6,16 @@ service firebase.storage {
       return request.auth != null;
     }
     
-    function hasRole(role) {
-      return isAuthenticated() && 
-        firestore.exists(/databases/(default)/documents/users/$(request.auth.uid)) &&
-        firestore.get(/databases/(default)/documents/users/$(request.auth.uid)).data.role == role;
-    }
-    
+    // Simplified write permission - any authenticated user can upload
+    // This matches the Firestore rules where any authenticated user can write recipes
     function canWrite() {
-      return hasRole('admin') || hasRole('editor');
+      return isAuthenticated();
     }
     
     // Recipe images
     match /recipes/{recipeId}/{allPaths=**} {
       allow read: if true; // Public read for recipe images
-      allow write: if canWrite();
+      allow write: if canWrite(); // Any authenticated user can upload
     }
     
     // Event files

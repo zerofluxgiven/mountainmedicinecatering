@@ -4,6 +4,11 @@ import { doc, getDoc, deleteDoc, collection, query, onSnapshot, where } from 'fi
 import { db } from '../../config/firebase';
 import { useAuth } from '../../contexts/AuthContext';
 import { useApp } from '../../contexts/AppContext';
+import { formatClockTime } from '../../utils/timeFormatting';
+import { formatDate, formatDateRange } from '../../utils/dateFormatting';
+import { useScrollVisibility } from '../../hooks/useScrollDirection';
+import SmartShoppingList from '../../components/Shopping/SmartShoppingList';
+import { generateEventPDF, enhancedPrint } from '../../services/pdfService';
 import './EventViewer.css';
 
 export default function EventViewer() {
@@ -19,6 +24,7 @@ export default function EventViewer() {
   const [error, setError] = useState(null);
   const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
   const [activeTab, setActiveTab] = useState('overview');
+  const isHeaderVisible = useScrollVisibility();
 
   useEffect(() => {
     loadEvent();
@@ -90,21 +96,7 @@ export default function EventViewer() {
   };
 
 
-  const formatDate = (date) => {
-    if (!date) return 'No date';
-    const d = date.toDate?.() || new Date(date);
-    return d.toLocaleDateString('en-US', {
-      weekday: 'long',
-      year: 'numeric',
-      month: 'long',
-      day: 'numeric'
-    });
-  };
 
-  const formatTime = (time) => {
-    if (!time) return 'No time';
-    return time;
-  };
 
 
   if (loading) {
@@ -134,8 +126,10 @@ export default function EventViewer() {
 
   return (
     <div className="event-viewer">
-      {/* Header */}
-      <div className="event-header">
+      {/* Header and Tabs Container */}
+      <div className={`event-header-container ${!isHeaderVisible ? 'scroll-hidden' : ''}`}>
+        {/* Header */}
+        <div className="event-header">
         <div className="event-header-content">
           <Link to="/events" className="back-link">
             ← Back to Events
@@ -147,6 +141,14 @@ export default function EventViewer() {
           <div className="event-actions">
             {hasRole('user') && (
               <>
+                <button 
+                  className="btn btn-primary"
+                  onClick={() => navigate(`/events/${id}/menus/new/plan`)}
+                  title="Create a comprehensive menu plan for this event"
+                >
+                  🍽️ Plan Menu
+                </button>
+                
                 <button 
                   className="btn btn-secondary"
                   onClick={handleEdit}
@@ -162,8 +164,70 @@ export default function EventViewer() {
                 </button>
               </>
             )}
+            
+            <button 
+              className="btn btn-secondary"
+              onClick={() => enhancedPrint(`${event.name || 'Event'} - Mountain Medicine Kitchen`)}
+            >
+              🖨️ Print
+            </button>
+            
+            <button 
+              className="btn btn-secondary"
+              onClick={async () => {
+                try {
+                  await generateEventPDF(event, menus);
+                } catch (error) {
+                  console.error('Error generating PDF:', error);
+                  alert('Failed to generate PDF. Please try again.');
+                }
+              }}
+            >
+              📄 Export PDF
+            </button>
           </div>
         </div>
+      </div>
+
+      {/* Tabs */}
+      <div className="event-tabs">
+        <button
+          className={`tab ${activeTab === 'overview' ? 'active' : ''}`}
+          onClick={() => setActiveTab('overview')}
+        >
+          Overview
+        </button>
+        <button
+          className={`tab ${activeTab === 'details' ? 'active' : ''}`}
+          onClick={() => setActiveTab('details')}
+        >
+          Details
+        </button>
+        <button
+          className={`tab ${activeTab === 'allergies' ? 'active' : ''}`}
+          onClick={() => setActiveTab('allergies')}
+        >
+          Allergies/Diet ({allergies.length})
+        </button>
+        <button
+          className={`tab ${activeTab === 'timeline' ? 'active' : ''}`}
+          onClick={() => setActiveTab('timeline')}
+        >
+          Timeline
+        </button>
+        <button
+          className={`tab ${activeTab === 'menus' ? 'active' : ''}`}
+          onClick={() => setActiveTab('menus')}
+        >
+          Menus
+        </button>
+        <button
+          className={`tab ${activeTab === 'shopping' ? 'active' : ''}`}
+          onClick={() => setActiveTab('shopping')}
+        >
+          Shopping List
+        </button>
+      </div>
       </div>
 
       {/* Delete Confirmation Modal */}
@@ -190,40 +254,6 @@ export default function EventViewer() {
         </div>
       )}
 
-      {/* Tabs */}
-      <div className="event-tabs">
-        <button
-          className={`tab ${activeTab === 'overview' ? 'active' : ''}`}
-          onClick={() => setActiveTab('overview')}
-        >
-          Overview
-        </button>
-        <button
-          className={`tab ${activeTab === 'details' ? 'active' : ''}`}
-          onClick={() => setActiveTab('details')}
-        >
-          Details
-        </button>
-        <button
-          className={`tab ${activeTab === 'allergies' ? 'active' : ''}`}
-          onClick={() => setActiveTab('allergies')}
-        >
-          Allergies ({allergies.length})
-        </button>
-        <button
-          className={`tab ${activeTab === 'timeline' ? 'active' : ''}`}
-          onClick={() => setActiveTab('timeline')}
-        >
-          Timeline
-        </button>
-        <button
-          className={`tab ${activeTab === 'menus' ? 'active' : ''}`}
-          onClick={() => setActiveTab('menus')}
-        >
-          Menus
-        </button>
-      </div>
-
       {/* Tab Content */}
       <div className="event-content">
         {activeTab === 'overview' && (
@@ -234,15 +264,26 @@ export default function EventViewer() {
               
               <div className="info-row">
                 <span className="info-label">Date:</span>
-                <span className="info-value">{formatDate(event.event_date)}</span>
-              </div>
-              
-              <div className="info-row">
-                <span className="info-label">Time:</span>
                 <span className="info-value">
-                  {formatTime(event.start_time)} - {formatTime(event.end_time)}
+                  {event.start_date && event.end_date ? 
+                    formatDateRange(event.start_date, event.end_date) : 
+                    formatDate(event.event_date || event.start_date)}
                 </span>
               </div>
+              
+              {(event.start_time || event.end_time) && (
+                <div className="info-row">
+                  <span className="info-label">Time:</span>
+                  <span className="info-value">
+                    {event.start_time && event.end_time ? 
+                      `${formatClockTime(event.start_time)} - ${formatClockTime(event.end_time)}` :
+                      event.start_time ? formatClockTime(event.start_time) :
+                      event.end_time ? formatClockTime(event.end_time) :
+                      'Not specified'
+                    }
+                  </span>
+                </div>
+              )}
               
               <div className="info-row">
                 <span className="info-label">Event Mode:</span>
@@ -254,13 +295,15 @@ export default function EventViewer() {
               
               <div className="info-row">
                 <span className="info-label">Guest Count:</span>
-                <span className="info-value">{event.guest_count || 'Not specified'}</span>
+                <span className="info-value">{event.guest_count || '0'}</span>
               </div>
               
-              <div className="info-row">
-                <span className="info-label">Staff Count:</span>
-                <span className="info-value">{event.staff_count || 'Not specified'}</span>
-              </div>
+              {event.staff_count && (
+                <div className="info-row">
+                  <span className="info-label">Staff Count:</span>
+                  <span className="info-value">{event.staff_count}</span>
+                </div>
+              )}
             </div>
 
             {/* Client Information */}
@@ -338,11 +381,35 @@ export default function EventViewer() {
                 </div>
                 
                 <div className="stat">
+                  <span className="stat-value">{allergies.filter(a => a.sub_menu_id).length}</span>
+                  <span className="stat-label">Special Menu Guests</span>
+                </div>
+                
+                <div className="stat">
                   <span className="stat-value">{event.menu_items?.length || 0}</span>
                   <span className="stat-label">Menu Items</span>
                 </div>
               </div>
             </div>
+
+            {/* Event Images */}
+            {event.event_images && event.event_images.length > 0 && (
+              <div className="info-card">
+                <h2>Event Images</h2>
+                <div className="event-images-grid">
+                  {event.event_images.map((imageUrl, index) => (
+                    <div key={index} className="event-image-container">
+                      <img 
+                        src={imageUrl} 
+                        alt={`Event ${event.name} - Image ${index + 1}`}
+                        className="event-image"
+                        onClick={() => window.open(imageUrl, '_blank')}
+                      />
+                    </div>
+                  ))}
+                </div>
+              </div>
+            )}
           </div>
         )}
 
@@ -397,7 +464,7 @@ export default function EventViewer() {
                   className="btn btn-primary"
                   onClick={() => navigate(`/events/${id}/allergies`)}
                 >
-                  ➕ Add Allergy
+                  ➕ Manage Allergies/Diets
                 </button>
               )}
             </div>
@@ -415,6 +482,16 @@ export default function EventViewer() {
               </div>
             )}
 
+            {/* Special Menu Assignments Summary */}
+            {allergies.filter(a => a.sub_menu_id).length > 0 && (
+              <div className="special-menu-summary">
+                <h3>Special Menu Assignments</h3>
+                <p className="special-menu-count">
+                  {allergies.filter(a => a.sub_menu_id).length} guest{allergies.filter(a => a.sub_menu_id).length !== 1 ? 's' : ''} assigned to special menus
+                </p>
+              </div>
+            )}
+
             {allergies.length > 0 ? (
               <div className="allergies-list">
                 <h3>Individual Allergies ({allergies.length})</h3>
@@ -424,6 +501,11 @@ export default function EventViewer() {
                       <h4>{allergy.guest_name}</h4>
                       <div className="allergy-details">
                         <span>Severity: {allergy.severity || 'Not specified'}</span>
+                        {allergy.sub_menu_id && (
+                          <span className="special-menu-indicator">
+                            🍽️ Special Menu Assigned
+                          </span>
+                        )}
                         {allergy.notes && <span>Notes: {allergy.notes}</span>}
                       </div>
                       <div className="allergy-allergens">
@@ -456,7 +538,7 @@ export default function EventViewer() {
               <div className="timeline">
                 {event.timeline.map((item, index) => (
                   <div key={index} className="timeline-item">
-                    <div className="timeline-time">{item.time}</div>
+                    <div className="timeline-time">{formatClockTime(item.time)}</div>
                     <div className="timeline-content">
                       <h4>{item.activity}</h4>
                       {item.notes && <p>{item.notes}</p>}
@@ -476,7 +558,7 @@ export default function EventViewer() {
               <h2>Event Menus</h2>
               {hasRole('user') && (
                 <button 
-                  onClick={() => navigate('/menus/new', { state: { eventId: id } })}
+                  onClick={() => navigate(`/events/${id}/menus/new/plan`)}
                   className="btn btn-primary"
                 >
                   + Add Menu
@@ -515,7 +597,7 @@ export default function EventViewer() {
                       </Link>
                       {hasRole('user') && (
                         <Link 
-                          to={`/menus/${menu.id}/edit`} 
+                          to={`/events/${id}/menus/${menu.id}/plan`} 
                           className="btn btn-secondary btn-sm"
                         >
                           Edit
@@ -530,7 +612,7 @@ export default function EventViewer() {
                 <p>No menus created for this event yet.</p>
                 {hasRole('user') && (
                   <button 
-                    onClick={() => navigate('/menus/new', { state: { eventId: id } })}
+                    onClick={() => navigate(`/events/${id}/menus/new/plan`)}
                     className="btn btn-primary"
                   >
                     Create First Menu
@@ -538,6 +620,12 @@ export default function EventViewer() {
                 )}
               </div>
             )}
+          </div>
+        )}
+
+        {activeTab === 'shopping' && (
+          <div className="shopping-section">
+            <SmartShoppingList eventId={id} />
           </div>
         )}
       </div>

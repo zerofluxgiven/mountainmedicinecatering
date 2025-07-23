@@ -1,8 +1,9 @@
 import React, { useState, useEffect } from 'react';
 import { useParams, useNavigate, Link } from 'react-router-dom';
-import { doc, getDoc, deleteDoc } from 'firebase/firestore';
+import { doc, getDoc, deleteDoc, collection, query, where, getDocs } from 'firebase/firestore';
 import { db } from '../../config/firebase';
 import { useAuth } from '../../contexts/AuthContext';
+import { generateMenuPDF, enhancedPrint } from '../../services/pdfService';
 import './MenuViewer.css';
 
 export default function MenuViewer() {
@@ -11,6 +12,8 @@ export default function MenuViewer() {
   const { hasRole } = useAuth();
   
   const [menu, setMenu] = useState(null);
+  const [event, setEvent] = useState(null);
+  const [subMenus, setSubMenus] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
   const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
@@ -36,11 +39,45 @@ export default function MenuViewer() {
       // Expand all meals by default
       const mealIds = data.meals?.map(m => m.id) || data.sections?.map(s => s.id) || [];
       setExpandedSections(new Set(mealIds));
+      
+      // Load event data if available
+      if (data.event_id) {
+        try {
+          const eventDoc = await getDoc(doc(db, 'events', data.event_id));
+          if (eventDoc.exists()) {
+            setEvent({ id: eventDoc.id, ...eventDoc.data() });
+          }
+        } catch (err) {
+          console.error('Error loading event:', err);
+        }
+      }
+      
+      // Load sub-menus if this is a parent menu
+      if (!data.is_sub_menu) {
+        await loadSubMenus(data.id);
+      }
     } catch (err) {
       console.error('Error loading menu:', err);
       setError('Failed to load menu');
     } finally {
       setLoading(false);
+    }
+  };
+
+  const loadSubMenus = async (parentMenuId) => {
+    try {
+      const q = query(
+        collection(db, 'menus'),
+        where('parent_menu_id', '==', parentMenuId)
+      );
+      const snapshot = await getDocs(q);
+      const subMenusData = snapshot.docs.map(doc => ({
+        id: doc.id,
+        ...doc.data()
+      }));
+      setSubMenus(subMenusData);
+    } catch (err) {
+      console.error('Error loading sub-menus:', err);
     }
   };
 
@@ -73,12 +110,16 @@ export default function MenuViewer() {
   };
 
   const handlePrint = () => {
-    window.print();
+    enhancedPrint(`${menu.name || 'Menu'} - Mountain Medicine Kitchen`);
   };
 
-  const handleExportPDF = () => {
-    // TODO: Implement PDF export
-    alert('PDF export coming soon!');
+  const handleExportPDF = async () => {
+    try {
+      await generateMenuPDF(menu, event);
+    } catch (error) {
+      console.error('Error generating PDF:', error);
+      alert('Failed to generate PDF. Please try again.');
+    }
   };
 
   const toggleSection = (sectionId) => {
@@ -261,6 +302,40 @@ export default function MenuViewer() {
           </div>
         )}
       </div>
+
+      {/* Sub-Menus */}
+      {subMenus.length > 0 && (
+        <div className="sub-menus-section">
+          <h2>Special Menus</h2>
+          <div className="sub-menus-grid">
+            {subMenus.map(subMenu => (
+              <Link 
+                key={subMenu.id} 
+                to={`/menus/${subMenu.id}`}
+                className="sub-menu-card"
+              >
+                <h3>{subMenu.name}</h3>
+                {subMenu.description && (
+                  <p className="sub-menu-description">{subMenu.description}</p>
+                )}
+                <span className="sub-menu-link">View Menu →</span>
+              </Link>
+            ))}
+          </div>
+        </div>
+      )}
+
+      {/* Parent Menu Link */}
+      {menu.is_sub_menu && menu.parent_menu_id && (
+        <div className="parent-menu-link">
+          <p>
+            This is a special menu. 
+            <Link to={`/menus/${menu.parent_menu_id}`}>
+              View main menu →
+            </Link>
+          </p>
+        </div>
+      )}
 
       {/* Menu Content */}
       <div className="menu-content printable">

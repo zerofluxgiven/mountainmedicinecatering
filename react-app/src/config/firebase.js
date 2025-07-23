@@ -1,5 +1,5 @@
 import { initializeApp } from 'firebase/app';
-import { getAuth, connectAuthEmulator, setPersistence, browserLocalPersistence } from 'firebase/auth';
+import { getAuth, connectAuthEmulator, setPersistence, browserLocalPersistence, browserSessionPersistence } from 'firebase/auth';
 import { getFirestore, connectFirestoreEmulator } from 'firebase/firestore';
 import { getStorage, connectStorageEmulator } from 'firebase/storage';
 import { getFunctions, connectFunctionsEmulator } from 'firebase/functions';
@@ -23,10 +23,40 @@ export const db = getFirestore(app);
 export const storage = getStorage(app);
 export const functions = getFunctions(app, 'us-central1');
 
-// Set auth persistence to local (survives browser refresh)
-setPersistence(auth, browserLocalPersistence).catch(error => {
+// Check if we're in private browsing mode
+// In private mode, localStorage might not work properly
+const isPrivateBrowsing = () => {
+  try {
+    const testKey = '_private_mode_test';
+    localStorage.setItem(testKey, 'test');
+    localStorage.removeItem(testKey);
+    return false;
+  } catch (e) {
+    return true;
+  }
+};
+
+// Set auth persistence based on browsing mode
+const persistence = isPrivateBrowsing() ? browserSessionPersistence : browserLocalPersistence;
+setPersistence(auth, persistence).catch(error => {
   console.error('Error setting auth persistence:', error);
+  // If persistence fails, try session persistence as fallback
+  setPersistence(auth, browserSessionPersistence).catch(fallbackError => {
+    console.error('Fallback persistence also failed:', fallbackError);
+  });
 });
+
+// Helper to manually clear auth data (for debugging)
+export function clearAuthData() {
+  // Clear Firebase auth
+  auth.signOut();
+  // Clear localStorage
+  localStorage.clear();
+  // Clear sessionStorage
+  sessionStorage.clear();
+  // Reload to ensure clean state
+  window.location.href = '/login';
+}
 
 // Connect to emulators in development
 if (window.location.hostname === 'localhost' && process.env.REACT_APP_USE_EMULATORS === 'true') {

@@ -306,6 +306,9 @@
   .filter-tab {
     flex: 1;
     text-align: center;
+    display: flex !important;
+    align-items: center !important;
+    justify-content: center !important;
   }
 
   .events-grid {

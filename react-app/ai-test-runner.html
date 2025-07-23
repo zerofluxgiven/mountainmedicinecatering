@@ -1,0 +1,185 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>AI Integration Test Runner</title>
+    <style>
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, sans-serif;
+            line-height: 1.6;
+            margin: 40px;
+            color: #333;
+        }
+        .container {
+            max-width: 800px;
+            margin: 0 auto;
+        }
+        h1 {
+            color: #4CAF50;
+        }
+        .step {
+            background: #f5f5f5;
+            border-left: 4px solid #4CAF50;
+            padding: 15px;
+            margin: 20px 0;
+            border-radius: 4px;
+        }
+        .code {
+            background: #2d2d2d;
+            color: #f8f8f2;
+            padding: 20px;
+            border-radius: 4px;
+            font-family: 'Consolas', 'Monaco', 'Courier New', monospace;
+            white-space: pre-wrap;
+            margin: 10px 0;
+            overflow-x: auto;
+        }
+        .button {
+            background: #4CAF50;
+            color: white;
+            border: none;
+            padding: 10px 20px;
+            border-radius: 4px;
+            cursor: pointer;
+            font-size: 16px;
+            text-decoration: none;
+            display: inline-block;
+            margin: 10px 0;
+        }
+        .button:hover {
+            background: #45a049;
+        }
+        .warning {
+            background: #fff3cd;
+            border-left: 4px solid #ffc107;
+            padding: 15px;
+            margin: 20px 0;
+            border-radius: 4px;
+        }
+        .checklist {
+            list-style: none;
+            padding: 0;
+        }
+        .checklist li {
+            padding: 8px 0;
+            border-bottom: 1px solid #eee;
+        }
+        .checklist input[type="checkbox"] {
+            margin-right: 10px;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>🧪 AI Integration Test Runner</h1>
+        
+        <div class="warning">
+            <strong>⚠️ Prerequisites:</strong>
+            <ul>
+                <li>Make sure the app is running on <a href="http://localhost:3000" target="_blank">localhost:3000</a></li>
+                <li>You must be logged in to the app</li>
+                <li>Have at least one event created</li>
+            </ul>
+        </div>
+
+        <h2>Step 1: Open the App</h2>
+        <div class="step">
+            <a href="http://localhost:3000" target="_blank" class="button">Open Mountain Medicine Kitchen</a>
+            <p>Log in if you haven't already.</p>
+        </div>
+
+        <h2>Step 2: Open Developer Console</h2>
+        <div class="step">
+            <p>Press <strong>F12</strong> or right-click and select <strong>Inspect → Console</strong></p>
+            <p>Make sure you're in the Console tab.</p>
+        </div>
+
+        <h2>Step 3: Run Automated Tests</h2>
+        <div class="step">
+            <p>Copy the test script below and paste it into the console:</p>
+            <button onclick="copyTestScript()" class="button">Copy Test Script</button>
+            <div class="code" id="testScript">// Load test script from external file
+fetch('/browser-ai-test.js')
+  .then(r => r.text())
+  .then(script => eval(script))
+  .catch(e => console.error('Failed to load test script:', e));</div>
+        </div>
+
+        <h2>Step 4: Watch the Results</h2>
+        <div class="step">
+            <p>The tests will run automatically and show results in the console.</p>
+            <p>Expected output:</p>
+            <ul>
+                <li>✅ Firebase Connection</li>
+                <li>✅ AI Chat Service</li>
+                <li>✅ Recipe Parser</li>
+                <li>✅ AI Monitoring</li>
+                <li>✅ AI History</li>
+            </ul>
+        </div>
+
+        <h2>Manual Testing Checklist</h2>
+        <div class="step">
+            <p>After automated tests, perform these manual checks:</p>
+            <ul class="checklist">
+                <li><input type="checkbox"> Test AI chat bubble (bottom right)</li>
+                <li><input type="checkbox"> Send a message and verify response</li>
+                <li><input type="checkbox"> Import a recipe (text/image/URL)</li>
+                <li><input type="checkbox"> Check recipe parsing accuracy</li>
+                <li><input type="checkbox"> Create menu with allergen conflicts</li>
+                <li><input type="checkbox"> Verify AI safety monitoring triggers</li>
+                <li><input type="checkbox"> Check AI History page</li>
+            </ul>
+        </div>
+
+        <h2>Common Issues</h2>
+        <div class="step">
+            <h3>CORS Error on AI Functions</h3>
+            <p>The app now uses HTTP endpoints to avoid CORS issues. This has been fixed.</p>
+            
+            <h3>Recipe Parsing Missing Instructions</h3>
+            <p>This was fixed by enhancing section detection. Test with multi-section recipes.</p>
+            
+            <h3>Firebase Storage Permission Errors</h3>
+            <p>Storage rules have been updated to allow authenticated users. This should be resolved.</p>
+        </div>
+    </div>
+
+    <script>
+        function copyTestScript() {
+            // Create the full test script content
+            const fullScript = `// AI Integration Browser Test
+console.log('%c🧪 Starting AI Integration Tests...', 'font-size: 20px; color: #4CAF50; font-weight: bold;');
+
+// First, let's load the actual test script
+const script = document.createElement('script');
+script.src = '/browser-ai-test.js';
+script.onload = () => console.log('Test script loaded successfully');
+script.onerror = () => {
+    console.error('Failed to load test script from file. Using inline version...');
+    // Fallback: run a simple connectivity test
+    console.log('Running basic connectivity test...');
+    
+    // Test 1: Check if user is logged in
+    import('./config/firebase').then(({auth}) => {
+        const user = auth.currentUser;
+        if (user) {
+            console.log('✅ User authenticated:', user.email);
+        } else {
+            console.log('❌ Not logged in');
+        }
+    });
+};
+document.head.appendChild(script);`;
+
+            navigator.clipboard.writeText(fullScript).then(() => {
+                alert('Test script copied to clipboard! Paste it in the console.');
+            }).catch(err => {
+                console.error('Failed to copy:', err);
+                alert('Failed to copy. Please select and copy the code manually.');
+            });
+        }
+    </script>
+</body>
+</html>

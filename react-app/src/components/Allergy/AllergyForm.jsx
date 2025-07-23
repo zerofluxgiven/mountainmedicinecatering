@@ -9,15 +9,15 @@ const COMMON_ALLERGENS = [
 
 const SEVERITY_LEVELS = ['Mild', 'Moderate', 'Severe'];
 
-export default function AllergyForm({ allergy, onSubmit, onCancel }) {
+export default function AllergyForm({ allergy, onSubmit, onCancel, eventMenus }) {
   const [formData, setFormData] = useState({
     guest_name: allergy?.guest_name || '',
     allergens: allergy?.allergens || [],
     severity: allergy?.severity || 'Moderate',
     notes: allergy?.notes || '',
-    dietary_restrictions: allergy?.dietary_restrictions || '',
     emergency_contact: allergy?.emergency_contact || '',
-    emergency_phone: allergy?.emergency_phone || ''
+    emergency_phone: allergy?.emergency_phone || '',
+    sub_menu_id: allergy?.sub_menu_id || ''
   });
 
   const [customAllergen, setCustomAllergen] = useState('');
@@ -223,16 +223,28 @@ export default function AllergyForm({ allergy, onSubmit, onCancel }) {
       <div className="form-section">
         <h3>Additional Information</h3>
         
-        <div className="form-group">
-          <label htmlFor="dietary_restrictions">Other Dietary Restrictions</label>
-          <input
-            id="dietary_restrictions"
-            type="text"
-            value={formData.dietary_restrictions}
-            onChange={(e) => handleInputChange('dietary_restrictions', e.target.value)}
-            placeholder="e.g., Vegetarian, Vegan, Kosher, Halal"
-          />
-        </div>
+
+        {eventMenus && eventMenus.length > 0 && (
+          <div className="form-group">
+            <label htmlFor="sub_menu_id">Special Menu Assignment</label>
+            <select
+              id="sub_menu_id"
+              value={formData.sub_menu_id}
+              onChange={(e) => handleInputChange('sub_menu_id', e.target.value)}
+            >
+              <option value="">Use main event menu</option>
+              {eventMenus.map(menu => (
+                <option key={menu.id} value={menu.id}>
+                  {menu.name}
+                  {menu.is_sub_menu && ' (Special Menu)'}
+                </option>
+              ))}
+            </select>
+            <p className="field-hint">
+              Assign this guest to a special menu (e.g., vegan, allergen-free)
+            </p>
+          </div>
+        )}
 
         <div className="form-group">
           <label htmlFor="notes">Notes</label>

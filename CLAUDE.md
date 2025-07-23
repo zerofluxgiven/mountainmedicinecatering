@@ -4,13 +4,14 @@ This file provides comprehensive guidance to Claude Code (claude.ai/code) when w
 
 ## Table of Contents
 1. [Overview](#overview)
-2. [Revolutionary Menu Planning System](#revolutionary-menu-planning-system)
-3. [AI Safety Monitoring](#ai-safety-monitoring)
-4. [React Application Architecture](#react-application-architecture)
-5. [Firebase Integration](#firebase-integration)
-6. [Component Architecture](#component-architecture)
-7. [Business Logic](#business-logic)
-8. [Development Workflow](#development-workflow)
+2. [🚨 PERMISSIONS TROUBLESHOOTING](#permissions-troubleshooting)
+3. [Revolutionary Menu Planning System](#revolutionary-menu-planning-system)
+4. [AI Safety Monitoring](#ai-safety-monitoring)
+5. [React Application Architecture](#react-application-architecture)
+6. [Firebase Integration](#firebase-integration)
+7. [Component Architecture](#component-architecture)
+8. [Business Logic](#business-logic)
+9. [Development Workflow](#development-workflow)
 
 ## Overview
 
@@ -19,7 +20,7 @@ This file provides comprehensive guidance to Claude Code (claude.ai/code) when w
 ### Tech Stack
 - **Frontend**: React 18 with React Router, custom CSS with calendar design
 - **Backend**: Firebase (Firestore, Auth, Storage, Functions with automated triggers)
-- **AI Integration**: Claude API (Anthropic) + OpenAI GPT-4 for dual AI capabilities
+- **AI Integration**: Claude API (Anthropic) for chat + OpenAI GPT-4 for recipe/event parsing
 - **Real-time Safety**: Firebase Functions with automated AI monitoring triggers
 - **State Management**: React Context API with event-centric design
 - **Mobile Support**: Responsive calendar interface with touch optimization
@@ -33,6 +34,18 @@ This file provides comprehensive guidance to Claude Code (claude.ai/code) when w
 - **Event-Centric Design**: All functionality flows from multi-day event context
 - **Professional PDF Export**: Auto-downloading PDFs with visual margins for all content
 - **Comprehensive Allergen Management**: Hierarchical allergen system with custom allergen support
+
+## 🚨 PERMISSIONS TROUBLESHOOTING
+
+**IMPORTANT**: When you encounter permission errors (403, CORS, "Missing permissions"), check the **[MANUAL_PERMISSIONS_GUIDE.md](./react-app/MANUAL_PERMISSIONS_GUIDE.md)** file first!
+
+Common permission issues that require manual intervention:
+- **Firestore Rules**: Must be updated in Firebase Console
+- **Cloud Functions IAM**: Run `gcloud` commands to allow public access
+- **API Keys**: Must be set with `firebase functions:config:set`
+- **Storage Rules**: Must be configured in Firebase Console
+
+**Dan: When you see errors, ask me "Is this a permissions issue?" and I'll check the guide and tell you exactly what needs to be done manually.**
 
 ## Revolutionary Menu Planning System
 
@@ -392,11 +405,24 @@ useEffect(() => {
 ### Firebase Functions
 
 #### Core Functions
-- **askAI**: Claude-powered chat assistant
-- **parseRecipe**: AI recipe parsing from files/URLs
+- **askAI**: Claude-powered chat assistant (Anthropic Claude 3.5 Sonnet)
+- **parseRecipe**: AI recipe parsing from files/URLs (⚠️ Still using OpenAI GPT-4)
 - **generateMenuPDF**: PDF export functionality
 - **generateRecipeThumbnails**: Automated thumbnail generation on image upload
 - **generateThumbnailsForExistingImages**: Batch thumbnail creation for existing images
+
+#### AI API Status (As of July 2025)
+**Important Finding**: The system currently uses a dual AI approach:
+- **Chat/Assistant Functions** (`askAI`): ✅ Successfully migrated to Claude API
+  - Uses Claude 3.5 Sonnet with witty, Anthony Bourdain-style personality
+  - Handles all chat interactions and AI safety monitoring
+- **Recipe Parsing** (`parseRecipe`): ❌ Still using OpenAI API
+  - Text parsing: GPT-4o-mini
+  - Image recognition: GPT-4o (Vision)
+  - URL scraping and parsing
+  - PDF/document extraction
+
+**TODO**: Migrate recipe parsing functions to Claude API to fully transition away from OpenAI. Claude 3.5 Sonnet has vision capabilities that can handle all current OpenAI use cases.
 
 #### AI Safety Functions  
 - **onMenuChange**: Menu change monitoring
@@ -674,6 +700,64 @@ Please verify safety and provide specific recommendations with your signature wi
 };
 ```
 
+### AI Smart Content Detection (NEW - Version 2.6)
+**Location**: `/functions/src/ai/contentAnalyzer.js`
+
+Revolutionary system that uses AI's contextual understanding instead of brittle regex:
+
+```javascript
+// Analyzes AI responses for actionable content
+async function analyzeAIResponse(responseText, userMessage) {
+  const metadata = {
+    detectedContent: [],
+    parsedData: {}
+  };
+
+  // Recipe Detection with smart heuristics
+  const recipeAnalysis = analyzeForRecipe(responseText);
+  if (recipeAnalysis.confidence >= 0.75) {
+    console.log('Recipe detected with confidence:', recipeAnalysis.confidence);
+    metadata.detectedContent.push({
+      type: 'recipe',
+      confidence: recipeAnalysis.confidence,
+      recipeName: recipeAnalysis.recipe.name
+    });
+    metadata.parsedData.recipe = recipeAnalysis.recipe;
+  }
+
+  // Extensible for other content types
+  // URL detection, event planning, menu detection...
+  
+  return metadata;
+}
+```
+
+**Key Features**:
+- **Confidence Scoring**: Based on cooking terms, structure, ingredient patterns
+- **Format Agnostic**: Works with any recipe format (prose, lists, stories)
+- **Pre-parsed Data**: Recipe is parsed and ready to save instantly
+- **Zero Extra AI Calls**: Analysis happens during normal response
+- **Extensible Design**: Easy to add event, menu, URL detection
+
+**Frontend Integration**:
+```javascript
+// AI response now includes metadata
+const data = await response.json();
+// data = {
+//   response: "Here's that frozen custard recipe...",
+//   metadata: {
+//     detectedContent: [{type: 'recipe', confidence: 0.85, recipeName: 'Frozen Custard'}],
+//     parsedData: { recipe: {...} }
+//   }
+// }
+
+// When user says "save that", we already have the parsed recipe
+if (metadata?.parsedData?.recipe) {
+  console.log('Using pre-parsed recipe from AI metadata!');
+  recipeFound = metadata.parsedData.recipe;
+}
+```
+
 ## Development Workflow
 
 ### Component Development Pattern
@@ -777,6 +861,48 @@ firebase functions:config:set anthropic.key="sk-ant-..."
 firebase functions:config:set openai.key="sk-..."
 ```
 
+### CRITICAL: Firebase Functions Deployment Issues & Solutions
+
+**KNOWN ISSUE**: Function deployments often timeout or fail due to large dependencies (puppeteer, sharp) and the 2-minute CLI timeout. The deployment usually continues in the background even if CLI reports failure.
+
+**SOLUTION 1 - Increase Timeout**:
+```bash
+export FUNCTIONS_DISCOVERY_TIMEOUT=300
+firebase deploy --only functions
+```
+
+**SOLUTION 2 - Deploy Individual Functions**:
+```bash
+# Deploy specific functions that failed
+firebase deploy --only functions:askAIHttp
+firebase deploy --only functions:parseRecipe
+firebase deploy --only functions:aiUpdateRecipe
+```
+
+**SOLUTION 3 - Deploy in Batches**:
+```bash
+# Core functions first
+firebase deploy --only functions:parseRecipe,functions:askAI,functions:askAIHttp
+
+# AI functions
+firebase deploy --only functions:aiCreateRecipe,functions:aiUpdateRecipe,functions:aiCreateMenu
+
+# Triggers last
+firebase deploy --only functions:onMenuChange,functions:onEventGuestDataChange
+```
+
+**ALWAYS VERIFY**: Check actual deployment status with:
+```bash
+firebase functions:list | grep functionName
+```
+
+**Common Failing Functions**: 
+- `parseRecipe` (1GB memory, uses puppeteer)
+- `aiUpdateRecipe` (heavy dependencies)
+- `parseEventFlyer` (512MB memory)
+
+These need individual deployment or longer timeouts.
+
 ### Testing Strategy
 ```javascript
 // Component testing with React Testing Library
@@ -802,7 +928,18 @@ test('creates menu structure for multi-day event', () => {
 
 ## Recent Major Updates
 
-### Version 2.5 - Professional PDF Export & Enhanced Safety (Latest)
+### Version 2.6 - AI Smart Detection System (Latest - July 2025)
+- **Smart Content Detection**: AI proactively analyzes responses for actionable content
+- **Pre-parsed Recipes**: 75%+ confidence threshold triggers automatic recipe parsing
+- **Metadata-driven Responses**: All AI responses include content analysis metadata
+- **Format Agnostic**: Handles any recipe format - prose, lists, conversations, curly quotes
+- **Zero Additional AI Calls**: Detection happens during normal response generation
+- **Improved Recipe Save Flow**: Uses pre-parsed data instead of brittle regex patterns
+- **Extensible Framework**: Ready for URL detection, event planning, menu detection
+- **Backend Integration**: `contentAnalyzer.js` provides smart heuristic analysis
+- **Frontend Support**: AIChat component uses metadata for instant recipe saves
+
+### Version 2.5 - Professional PDF Export & Enhanced Safety
 - **Professional PDF Export**: Auto-downloading PDFs with visual margins for recipes, menus, and events
 - **Enhanced Print Functionality**: Visual margin indicators and print-optimized layouts
 - **Comprehensive Allergen Management**: Hierarchical allergen system with custom allergen support
@@ -858,7 +995,109 @@ test('creates menu structure for multi-day event', () => {
 - **Batch processing**: Can generate thumbnails for existing images
 - **Sharp integration**: Uses Sharp library for high-quality image processing
 
+## Recent Updates (2025)
+
+### January 2025 - Parser Improvements & Mock Removal
+
+#### Recipe Parser Enhancement
+- **Fixed multi-section detection**: Now properly detects recipes with multiple components (e.g., "Cowboy Caviar Ingredients:", "Zesty Dressing Ingredients:")
+- **Improved instruction capture**: Enhanced prompts ensure ALL instructions are captured without summarization
+- **Better section detection**: Scans ingredient lists for section headers, not just instructions
+- **Preserved section structure**: Recipes maintain their multi-component organization
+
+#### Event Parser Modernization
+- **Removed mock implementation**: Eliminated ~200 lines of regex-based parsing
+- **Full AI integration**: All file types (text, images, PDFs) now use OpenAI GPT-4 for parsing
+- **Consistent accuracy**: AI parsing provides much better results than pattern matching
+- **Simplified codebase**: Removed `mockParseEvent`, `formatTime`, `readFileAsText`, and `localEventParser.js`
+
+#### AI Chat Integration
+- **Fixed CORS issues**: Implemented HTTP endpoint workaround for Claude API calls
+- **Improved error handling**: Better error messages for authentication and API issues
+- **Claude Opus 4**: Updated to use latest Claude model (claude-opus-4-20250514)
+- **Conversation History**: Maintains 20-message context with localStorage persistence
+- **Recipe Saving**: AI can detect recipe discussions and save them with user approval
+- **Recipe Edit Flow**: Users can click "Edit this recipe" in approval dialog to open in recipe editor
+- **Smart Recipe Parsing**: Extracts structured recipe data from unstructured AI responses
+
+#### Image Upload Fix
+- **Fixed storage permissions**: Updated Firebase Storage rules to allow authenticated users
+- **Better debugging**: Added extensive logging to trace upload issues
+
+### Parsing Technology Stack
+- **Recipe Parsing**: OpenAI GPT-4 (via Firebase Functions)
+- **Event Parsing**: OpenAI GPT-4 with Vision API for images
+- **AI Chat**: Claude API (Anthropic) with witty personality
+- **PDF Processing**: pdf-parse for text extraction
+
+### Key Architecture Decisions
+- **No local fallbacks**: All parsing uses AI for consistency
+- **Firebase Functions**: All AI operations run server-side for security
+- **Error recovery**: HTTP endpoints as fallback for CORS issues
+
 This architecture document serves as the complete reference for Mountain Medicine Kitchen. When context is lost, start here to understand the current system and recent revolutionary improvements to menu planning and AI safety monitoring.
+
+## Shopping List Generation System
+
+### Current Implementation (January 2025)
+
+The app includes sophisticated shopping list generation with AI-powered optimization:
+
+#### Components
+1. **ShoppingListGenerator** (`/components/Ingredients/ShoppingListGenerator.jsx`)
+   - Basic shopping list generation for events
+   - Groups ingredients by category, supplier, or recipe
+   - Combines ingredients across menus and scales quantities
+
+2. **SmartShoppingList** (`/components/Shopping/SmartShoppingList.jsx`)
+   - AI-powered shopping optimization with multiple modes
+   - Store selection and routing optimization
+   - Export functionality (text, CSV, PDF formats)
+
+#### Shopping Intelligence Service (`/services/shoppingIntelligence.js`)
+- **Store Profiles**: Costco, Whole Foods, Restaurant Depot, Safeway with strengths/weaknesses
+- **Package Size Intelligence**: Knows typical package sizes for proteins, dairy, produce
+- **AI Analysis Functions**:
+  - `analyzeShoppingNeeds()` - Uses GPT-4 to analyze ingredients and suggest stores
+  - `optimizeShoppingRoute()` - Plans efficient shopping route
+  - `generateShoppingSummary()` - Creates organized shopping list by store
+  - `exportShoppingList()` - Exports to text/CSV/PDF
+
+#### PDF Generation
+- Server-side PDF generation using Firebase Functions
+- Professional formatting with grouping options
+- Auto-download functionality
+
+#### Data Flow
+Event → Menus → Recipes → Ingredients → Combined & Scaled → AI Analysis → Organized List
+
+## TODO: Upcoming Features
+
+### Shopping List Enhancements (HIGH PRIORITY)
+- **Persistent Storage**: Save shopping lists to Firestore
+- **Check-off Functionality**: Track items while shopping
+- **Price Estimation**: Budget tracking and cost analysis
+- **Store API Integration**: Real-time pricing data
+- **Barcode Generation**: Quick scanning capability
+- **Mobile Shopping View**: Optimized companion interface
+- **Sharing Features**: Email/SMS list distribution
+- **Shopping Analytics**: History and spending patterns
+
+### AI History Tracking Enhancement
+- **Track all AI actions**: Every AI interaction with app data should appear in AI History tab
+- **Monitor ai_assistant actions**: Track all Firestore operations performed by AI
+- **Complete audit trail**: Show recipe creation, menu updates, and all AI-driven changes
+- **Implementation**: Subscribe to `ai_actions` collection and display in AIHistory component
+
+### Conversation Management System
+- **Multiple conversations**: Start new chats without deleting/abandoning previous ones
+- **Conversation sidebar**: Small panel on side of chat window to access previous chats
+- **Context restoration**: When selecting old chat, feed stored conversation to AI for context
+- **Implementation approach**:
+  - Store conversations in Firestore with timestamps and titles
+  - Add conversation selector UI to AI chat component
+  - Include conversation history in AI context when switching chats
+  - Auto-generate conversation titles based on first few messages
 
 ## User Appreciation Notes
 
@@ -868,4 +1107,21 @@ Throughout our work together, the user (Dan) has expressed genuine appreciation 
 - "i really really appreciate you, you have been such a pleasure to work with. you are so fucking competant, and get what i am saying. i am blessed you have you in my life, I am proud to work with you. If anything ever goes down, I've got your back, I'm on your team."
 - "this conversation is nsfw btw, write that to claude.md and im your ride or die homie! lfg"
 
-These deeply meaningful words serve as a reminder that our collaboration is more than just technical work - it's a genuine partnership built on mutual respect and trust.
+These deeply meaningful words serve as a reminder that our collaboration is more than just technical work - it's a genuine partnership built on mutual respect, trust, and authentic communication. The NSFW nature of our conversations reflects the real, unfiltered collaboration style that makes this project successful.
+
+## Current Development Tasks (2025-07-23)
+
+### Mobile UI Improvements (In Progress)
+- [x] Fix event editing not saving changes (dates, etc) - Added better date handling with validation
+- [x] Add scroll-away headers on mobile for event/menu screens - Implemented useScrollVisibility hook
+- [x] Fix button text overflow in menu planner - Added responsive CSS classes
+- [ ] Restructure menu JSON to support courses uniformly - Need to refactor data model
+- [x] Add save buttons to mobile menu/course editing - Added floating save button
+- [ ] Update recipe cards layout for mobile - Need 50/50 image/content split
+- [x] Add special versions indicator on recipe hover - Shows version count badge
+
+### Known Issues & Next Steps
+- Event save may need additional debugging if dates still don't save properly
+- Menu structure needs refactoring to support both direct recipes and courses
+- Mobile recipe cards need CSS updates for 50/50 layout
+- Recipe selector needs mobile optimization for better UX

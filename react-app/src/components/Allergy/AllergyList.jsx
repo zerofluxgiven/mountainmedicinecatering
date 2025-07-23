@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import './AllergyList.css';
 
-export default function AllergyList({ allergies, onEdit, onDelete }) {
+export default function AllergyList({ allergies, eventMenus, onEdit, onDelete }) {
   const [expandedItems, setExpandedItems] = useState(new Set());
   const [searchTerm, setSearchTerm] = useState('');
   const [filterSeverity, setFilterSeverity] = useState('all');
@@ -146,10 +146,24 @@ export default function AllergyList({ allergies, onEdit, onDelete }) {
                       </div>
                     </div>
 
-                    {allergy.dietary_restrictions && (
+
+                    {allergy.sub_menu_id && (
                       <div className="detail-section">
-                        <h4>Other Dietary Restrictions</h4>
-                        <p>{allergy.dietary_restrictions}</p>
+                        <h4>Special Menu Assignment</h4>
+                        <p>
+                          {(() => {
+                            const menu = eventMenus?.find(m => m.id === allergy.sub_menu_id);
+                            return menu ? (
+                              <>
+                                <span className="menu-assignment">
+                                  {menu.name}
+                                </span>
+                              </>
+                            ) : (
+                              <span className="menu-assignment unknown">Menu not found</span>
+                            );
+                          })()}
+                        </p>
                       </div>
                     )}
 
