@@ -12,6 +12,15 @@ If you're an AI assistant working on this codebase, start here:
 4. **Review recent changes**: `git log --oneline -10`
 5. **Understand the project state**: Read the relevant guides below
 
+## ⚠️ CRITICAL WARNING - Component Confusion Fixed
+
+**As of July 2025, duplicate components have been removed:**
+- **Menu Editing**: Use `MenuPlannerCalendar` (in MenuPlannerWrapper), NOT MenuEditor (deleted)
+- **AI Chat**: Use `components/AI/AIChat.jsx`, NOT pages/Chat/AIChat (deleted)
+- **Check App.jsx routes** to see which components are actually used
+
+**This cleanup fixed issues where changes didn't appear because the wrong component was being edited!**
+
 ## 🚨 CRITICAL: Permission Errors
 **If you encounter 403, CORS, or permission errors:**
 - IMMEDIATELY check `/react-app/MANUAL_PERMISSIONS_GUIDE.md`
@@ -34,6 +43,11 @@ If you're an AI assistant working on this codebase, start here:
    - Files: `/src/components/AI/AIChat.jsx`, `/src/services/aiConversationHistory.js`
 
 ### Recently Completed (July 2025)
+- ✅ **MAJOR CLEANUP: Fixed Duplicate Components**
+  - Removed duplicate AIChat (pages/Chat/AIChat.jsx) - was causing inconsistent behavior
+  - Deleted unused MenuEditor (658 lines) and MenuPlanner (29 lines) 
+  - Now only ONE version of each component exists
+  - Fixed issues where UI changes didn't appear (wrong components were being edited)
 - ✅ AI Smart Detection System - Recipes detected with 75%+ confidence
 - ✅ Pre-parsed Recipe Data - No more brittle regex patterns
 - ✅ Curly Quote Support - Handles 'You'll need:' regardless of quote style

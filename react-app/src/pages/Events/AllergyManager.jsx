@@ -110,7 +110,7 @@ export default function AllergyManager() {
 
   const subscribeToEventMenus = () => {
     const q = query(
-      collection(db, 'menus'),
+      collection(db, 'menu_items'),
       where('event_id', '==', eventId)
     );
     

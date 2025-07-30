@@ -1,116 +1,87 @@
 import React, { useState, useEffect } from 'react';
 import { useParams, useNavigate, Link } from 'react-router-dom';
-import { doc, getDoc, deleteDoc, collection, query, where, getDocs } from 'firebase/firestore';
+import { doc, getDoc } from 'firebase/firestore';
 import { db } from '../../config/firebase';
 import { useAuth } from '../../contexts/AuthContext';
 import { generateMenuPDF, enhancedPrint } from '../../services/pdfService';
+import { formatDate, formatDateRange } from '../../utils/dateFormatting';
 import './MenuViewer.css';
 
+// Meal type configurations
+const MEAL_TYPES = {
+  breakfast: { label: 'Breakfast', icon: '☀️', color: '#FFF8DC' },
+  lunch: { label: 'Lunch', icon: '🥗', color: '#F0F8FF' },
+  dinner: { label: 'Dinner', icon: '🍽️', color: '#F5F5DC' },
+  snack: { label: 'Snack', icon: '🍎', color: '#F0FFF0' },
+  beverage: { label: 'Beverage', icon: '☕', color: '#FAF0E6' },
+  ceremony: { label: 'Ceremony', icon: '🎊', color: '#FFE4E1' },
+  celebration: { label: 'Celebration', icon: '🎉', color: '#FFE4E1' }
+};
+
 export default function MenuViewer() {
-  const { id } = useParams();
+  const { eventId, menuId } = useParams();
   const navigate = useNavigate();
   const { hasRole } = useAuth();
   
-  const [menu, setMenu] = useState(null);
   const [event, setEvent] = useState(null);
-  const [subMenus, setSubMenus] = useState([]);
+  const [menu, setMenu] = useState(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
-  const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
-  const [expandedSections, setExpandedSections] = useState(new Set());
+  const [fullPageMode, setFullPageMode] = useState(false);
+  const [expandedDays, setExpandedDays] = useState(new Set());
 
   useEffect(() => {
-    loadMenu();
-  }, [id]); // eslint-disable-line react-hooks/exhaustive-deps
+    loadEventAndMenu();
+  }, [eventId]);
 
-  const loadMenu = async () => {
+  useEffect(() => {
+    // Handle ESC key for full page mode
+    const handleEsc = (e) => {
+      if (e.key === 'Escape' && fullPageMode) {
+        setFullPageMode(false);
+      }
+    };
+    window.addEventListener('keydown', handleEsc);
+    return () => window.removeEventListener('keydown', handleEsc);
+  }, [fullPageMode]);
+
+  const loadEventAndMenu = async () => {
     try {
       setLoading(true);
-      const menuDoc = await getDoc(doc(db, 'menus', id));
       
-      if (!menuDoc.exists()) {
-        setError('Menu not found');
+      // Load event data
+      const eventDoc = await getDoc(doc(db, 'events', eventId));
+      if (!eventDoc.exists()) {
+        setError('Event not found');
         return;
       }
 
-      const data = { id: menuDoc.id, ...menuDoc.data() };
-      setMenu(data);
+      const eventData = { id: eventDoc.id, ...eventDoc.data() };
+      setEvent(eventData);
       
-      // Expand all meals by default
-      const mealIds = data.meals?.map(m => m.id) || data.sections?.map(s => s.id) || [];
-      setExpandedSections(new Set(mealIds));
-      
-      // Load event data if available
-      if (data.event_id) {
-        try {
-          const eventDoc = await getDoc(doc(db, 'events', data.event_id));
-          if (eventDoc.exists()) {
-            setEvent({ id: eventDoc.id, ...eventDoc.data() });
-          }
-        } catch (err) {
-          console.error('Error loading event:', err);
-        }
-      }
-      
-      // Load sub-menus if this is a parent menu
-      if (!data.is_sub_menu) {
-        await loadSubMenus(data.id);
+      // Extract menu from event
+      if (eventData.menu) {
+        setMenu(eventData.menu);
+        // Expand all days by default
+        const dayIndices = eventData.menu.days?.map((_, index) => index) || [];
+        setExpandedDays(new Set(dayIndices));
+      } else {
+        setError('No menu found for this event');
       }
     } catch (err) {
-      console.error('Error loading menu:', err);
+      console.error('Error loading event/menu:', err);
       setError('Failed to load menu');
     } finally {
       setLoading(false);
     }
   };
 
-  const loadSubMenus = async (parentMenuId) => {
-    try {
-      const q = query(
-        collection(db, 'menus'),
-        where('parent_menu_id', '==', parentMenuId)
-      );
-      const snapshot = await getDocs(q);
-      const subMenusData = snapshot.docs.map(doc => ({
-        id: doc.id,
-        ...doc.data()
-      }));
-      setSubMenus(subMenusData);
-    } catch (err) {
-      console.error('Error loading sub-menus:', err);
-    }
-  };
-
   const handleEdit = () => {
-    navigate(`/menus/${id}/edit`);
-  };
-
-  const handleDelete = async () => {
-    try {
-      await deleteDoc(doc(db, 'menus', id));
-      navigate('/menus');
-    } catch (err) {
-      console.error('Error deleting menu:', err);
-      alert('Failed to delete menu');
-    }
-  };
-
-  const handleDuplicate = () => {
-    navigate('/menus/new', { 
-      state: { 
-        template: {
-          ...menu,
-          name: `${menu.name} (Copy)`,
-          id: undefined,
-          created_at: undefined,
-          created_by: undefined
-        }
-      }
-    });
+    navigate(`/events/${eventId}/menus/${menuId}/plan`);
   };
 
   const handlePrint = () => {
-    enhancedPrint(`${menu.name || 'Menu'} - Mountain Medicine Kitchen`);
+    enhancedPrint(`${menu.name || 'Menu'} - ${event.name}`);
   };
 
   const handleExportPDF = async () => {
@@ -122,46 +93,63 @@ export default function MenuViewer() {
     }
   };
 
-  const toggleSection = (sectionId) => {
-    setExpandedSections(prev => {
+  const toggleDay = (dayIndex) => {
+    setExpandedDays(prev => {
       const next = new Set(prev);
-      if (next.has(sectionId)) {
-        next.delete(sectionId);
+      if (next.has(dayIndex)) {
+        next.delete(dayIndex);
       } else {
-        next.add(sectionId);
+        next.add(dayIndex);
       }
       return next;
     });
   };
 
-  const getMenuTypeIcon = (type) => {
-    switch (type) {
-      case 'breakfast': return '🌅';
-      case 'lunch': return '☀️';
-      case 'dinner': return '🌙';
-      case 'ceremony': return '🎋';
-      case 'brunch': return '🥐';
-      case 'custom': return '✨';
-      default: return '🍽️';
+  const toggleAllDays = () => {
+    if (expandedDays.size === menu.days.length) {
+      setExpandedDays(new Set());
+    } else {
+      setExpandedDays(new Set(menu.days.map((_, index) => index)));
     }
   };
 
-  const getTotalItems = () => {
-    const meals = menu?.meals || menu?.sections || [];
-    return meals.reduce((total, meal) => 
-      total + (meal.recipes?.length || meal.items?.length || 0), 0
-    ) || 0;
+  const getMealConfig = (type) => {
+    return MEAL_TYPES[type] || { 
+      label: type?.charAt(0).toUpperCase() + type?.slice(1) || 'Meal', 
+      icon: '🍽️', 
+      color: '#F0F0F0' 
+    };
   };
 
-  const formatDate = (date) => {
-    if (!date) return 'No date';
-    const d = date.toDate?.() || new Date(date);
-    return d.toLocaleDateString('en-US', {
-      weekday: 'long',
-      year: 'numeric',
-      month: 'long',
-      day: 'numeric'
-    });
+  const getTotalCourses = () => {
+    if (!menu?.days) return 0;
+    return menu.days.reduce((total, day) => 
+      total + day.meals.reduce((mealTotal, meal) => 
+        mealTotal + (meal.courses?.length || 0), 0
+      ), 0
+    );
+  };
+
+  const getTotalRecipes = () => {
+    if (!menu?.days) return 0;
+    return menu.days.reduce((total, day) => 
+      total + day.meals.reduce((mealTotal, meal) => 
+        mealTotal + meal.courses.reduce((courseTotal, course) => {
+          let count = 0;
+          // Count main recipes
+          if (course.recipes) {
+            count += course.recipes.length;
+          } else if (course.recipe_id) {
+            count += 1;
+          }
+          // Count accommodation recipes
+          if (course.accommodations) {
+            count += course.accommodations.length;
+          }
+          return courseTotal + count;
+        }, 0), 0
+      ), 0
+    );
   };
 
   if (loading) {
@@ -178,53 +166,37 @@ export default function MenuViewer() {
       <div className="error-container">
         <h2>Error</h2>
         <p>{error}</p>
-        <Link to="/menus" className="btn btn-secondary">
-          Back to Menus
+        <Link to="/events" className="btn btn-secondary">
+          Back to Events
         </Link>
       </div>
     );
   }
 
-  if (!menu) return null;
+  if (!menu || !event) return null;
 
-  return (
-    <div className="menu-viewer">
+  const content = (
+    <div className={`menu-viewer ${fullPageMode ? 'full-page' : ''}`}>
       {/* Header */}
-      <div className="menu-header">
+      <div className="menu-header no-print">
         <div className="menu-header-content">
-          <Link to="/menus" className="back-link">
-            ← Back to Menus
+          <Link to={`/events/${eventId}`} className="back-link">
+            ← Back to Event
           </Link>
           
           <div className="menu-title-row">
-            <span className="menu-type-icon">{getMenuTypeIcon(menu.type)}</span>
-            <h1>{menu.name || 'Unnamed Menu'}</h1>
+            <h1>{menu.name || 'Menu'}</h1>
+            <span className="menu-type">{menu.type}</span>
           </div>
           
           <div className="menu-actions">
             {hasRole('user') && (
-              <>
-                <button 
-                  className="btn btn-secondary"
-                  onClick={handleEdit}
-                >
-                  ✏️ Edit
-                </button>
-                
-                <button 
-                  className="btn btn-secondary"
-                  onClick={handleDuplicate}
-                >
-                  📋 Duplicate
-                </button>
-                
-                <button 
-                  className="btn btn-danger"
-                  onClick={() => setShowDeleteConfirm(true)}
-                >
-                  🗑️ Delete
-                </button>
-              </>
+              <button 
+                className="btn btn-primary"
+                onClick={handleEdit}
+              >
+                ✏️ Edit Menu
+              </button>
             )}
             
             <button 
@@ -240,172 +212,164 @@ export default function MenuViewer() {
             >
               📄 Export PDF
             </button>
+            
+            <button 
+              className="btn btn-secondary"
+              onClick={() => setFullPageMode(!fullPageMode)}
+              title={fullPageMode ? "Exit full page" : "View full page"}
+            >
+              {fullPageMode ? '↙️' : '⛶'} {fullPageMode ? 'Exit' : 'Full Page'}
+            </button>
           </div>
         </div>
       </div>
 
-      {/* Delete Confirmation Modal */}
-      {showDeleteConfirm && (
-        <div className="modal-overlay" onClick={() => setShowDeleteConfirm(false)}>
-          <div className="modal-content" onClick={e => e.stopPropagation()}>
-            <h3>Delete Menu?</h3>
-            <p>Are you sure you want to delete "{menu.name}"? This action cannot be undone.</p>
-            <div className="modal-actions">
-              <button 
-                className="btn btn-secondary"
-                onClick={() => setShowDeleteConfirm(false)}
-              >
-                Cancel
-              </button>
-              <button 
-                className="btn btn-danger"
-                onClick={handleDelete}
-              >
-                Delete Menu
-              </button>
-            </div>
+      {/* Event Info Bar */}
+      <div className="event-info-bar">
+        <div className="event-info-content">
+          <h2>{event.name}</h2>
+          <div className="event-meta">
+            <span>📅 {formatDateRange(event.start_date, event.end_date)}</span>
+            <span>👥 {event.guest_count} guests</span>
+            <span>📍 {event.location || 'Location TBD'}</span>
           </div>
-        </div>
-      )}
-
-      {/* Menu Info */}
-      <div className="menu-info">
-        <div className="info-grid">
-          <div className="info-item">
-            <span className="info-label">Meals:</span>
-            <span className="info-value">
-              {menu.meals?.length || menu.sections?.length || 0}
-            </span>
-          </div>
-          
-          <div className="info-item">
-            <span className="info-label">Total Items:</span>
-            <span className="info-value">{getTotalItems()}</span>
-          </div>
-          
-          {menu.event_name && (
-            <div className="info-item">
-              <span className="info-label">Event:</span>
-              <span className="info-value">{menu.event_name}</span>
+          {(event.allergens?.length > 0 || event.dietary_restrictions?.length > 0) && (
+            <div className="dietary-info">
+              {event.allergens?.length > 0 && (
+                <span className="allergen-warning">
+                  ⚠️ Allergens: {event.allergens.join(', ')}
+                </span>
+              )}
+              {event.dietary_restrictions?.length > 0 && (
+                <span className="dietary-restrictions">
+                  🥗 Diets: {event.dietary_restrictions.join(', ')}
+                </span>
+              )}
             </div>
           )}
-          
-          <div className="info-item">
-            <span className="info-label">Created:</span>
-            <span className="info-value">{formatDate(menu.created_at)}</span>
-          </div>
         </div>
-
-        {menu.description && (
-          <div className="menu-description">
-            <p>{menu.description}</p>
-          </div>
-        )}
       </div>
 
-      {/* Sub-Menus */}
-      {subMenus.length > 0 && (
-        <div className="sub-menus-section">
-          <h2>Special Menus</h2>
-          <div className="sub-menus-grid">
-            {subMenus.map(subMenu => (
-              <Link 
-                key={subMenu.id} 
-                to={`/menus/${subMenu.id}`}
-                className="sub-menu-card"
-              >
-                <h3>{subMenu.name}</h3>
-                {subMenu.description && (
-                  <p className="sub-menu-description">{subMenu.description}</p>
-                )}
-                <span className="sub-menu-link">View Menu →</span>
-              </Link>
-            ))}
+      {/* Menu Stats */}
+      <div className="menu-stats no-print">
+        <div className="stats-grid">
+          <div className="stat-item">
+            <span className="stat-value">{menu.days?.length || 0}</span>
+            <span className="stat-label">Days</span>
+          </div>
+          <div className="stat-item">
+            <span className="stat-value">{menu.days?.reduce((sum, day) => sum + day.meals.length, 0) || 0}</span>
+            <span className="stat-label">Meals</span>
+          </div>
+          <div className="stat-item">
+            <span className="stat-value">{getTotalCourses()}</span>
+            <span className="stat-label">Courses</span>
+          </div>
+          <div className="stat-item">
+            <span className="stat-value">{getTotalRecipes()}</span>
+            <span className="stat-label">Recipes</span>
           </div>
         </div>
-      )}
-
-      {/* Parent Menu Link */}
-      {menu.is_sub_menu && menu.parent_menu_id && (
-        <div className="parent-menu-link">
-          <p>
-            This is a special menu. 
-            <Link to={`/menus/${menu.parent_menu_id}`}>
-              View main menu →
-            </Link>
-          </p>
-        </div>
-      )}
+        
+        <button 
+          className="expand-all-btn"
+          onClick={toggleAllDays}
+        >
+          {expandedDays.size === menu.days?.length ? 'Collapse All' : 'Expand All'}
+        </button>
+      </div>
 
       {/* Menu Content */}
       <div className="menu-content printable">
         <div className="print-header">
           <h2>{menu.name}</h2>
-          {menu.event_name && <p className="print-event">For: {menu.event_name}</p>}
+          <p className="print-event">{event.name} • {formatDateRange(event.start_date, event.end_date)}</p>
+          <p className="print-meta">{event.guest_count} guests • {event.location}</p>
         </div>
 
-        {(menu.meals && menu.meals.length > 0) || (menu.sections && menu.sections.length > 0) ? (
-          <div className="menu-sections">
-            {(menu.meals || menu.sections).map((meal) => (
-              <div key={meal.id} className="menu-section meal-section">
+        {menu.days && menu.days.length > 0 ? (
+          <div className="menu-days">
+            {menu.days.map((day, dayIndex) => (
+              <div key={dayIndex} className={`menu-day ${expandedDays.has(dayIndex) ? 'expanded' : ''}`}>
                 <div 
-                  className="section-header"
-                  onClick={() => toggleSection(meal.id)}
+                  className="day-header"
+                  onClick={() => toggleDay(dayIndex)}
                 >
-                  <div className="meal-header-info">
-                    <span className="meal-type-badge">
-                      {getMenuTypeIcon(meal.type || 'dinner')} {(meal.type || meal.name || 'Meal').charAt(0).toUpperCase() + (meal.type || meal.name || 'meal').slice(1)}
-                    </span>
-                    {meal.name && !meal.type && <h3>{meal.name}</h3>}
+                  <div className="day-info">
+                    <h3>{day.day_label}</h3>
+                    <span className="day-date">{formatDate(day.date)}</span>
                   </div>
-                  <span className="section-toggle">
-                    {expandedSections.has(meal.id) ? '−' : '+'}
-                  </span>
+                  <div className="day-summary">
+                    <span>{day.meals.length} meals</span>
+                    <span className="toggle-icon no-print">
+                      {expandedDays.has(dayIndex) ? '−' : '+'}
+                    </span>
+                  </div>
                 </div>
                 
-                {expandedSections.has(meal.id) && (
-                  <div className="meal-content">
-                    {(meal.description || meal.instructions || meal.notes) && (
-                      <div className="meal-details">
-                        {meal.description && (
-                          <div className="meal-detail">
-                            <strong>Description:</strong>
-                            <p>{meal.description}</p>
-                          </div>
-                        )}
-                        {meal.instructions && (
-                          <div className="meal-detail">
-                            <strong>Instructions:</strong>
-                            <p>{meal.instructions}</p>
-                          </div>
-                        )}
-                        {meal.notes && (
-                          <div className="meal-detail">
-                            <strong>Notes:</strong>
-                            <p>{meal.notes}</p>
-                          </div>
-                        )}
-                      </div>
-                    )}
-                    
-                    <div className="section-items">
-                      {((meal.recipes && meal.recipes.length > 0) || (meal.items && meal.items.length > 0)) ? (
-                        (meal.recipes || meal.items).map((item, index) => (
-                          <div key={item.id || index} className="menu-item-display">
-                            <div className="item-main-info">
-                              <h4>{item.recipe_name}</h4>
-                              <span className="item-serves">Serves {item.serves || '?'}</span>
+                {expandedDays.has(dayIndex) && (
+                  <div className="day-meals">
+                    {day.meals.map((meal, mealIndex) => {
+                      const mealConfig = getMealConfig(meal.type);
+                      return (
+                        <div 
+                          key={mealIndex} 
+                          className="meal-card"
+                          style={{ backgroundColor: mealConfig.color }}
+                        >
+                          <div className="meal-header">
+                            <div className="meal-title">
+                              <span className="meal-icon">{mealConfig.icon}</span>
+                              <h4>{mealConfig.label}</h4>
+                              <span className="meal-time">{meal.time}</span>
                             </div>
-                            
-                            {item.notes && (
-                              <p className="item-notes">{item.notes}</p>
+                          </div>
+                          
+                          <div className="meal-courses">
+                            {meal.courses && meal.courses.length > 0 ? (
+                              meal.courses.map((course, courseIndex) => (
+                                <div key={courseIndex} className="course-section">
+                                  <h5 className="course-name">{course.name}</h5>
+                                  
+                                  {/* Main recipes */}
+                                  <div className="course-recipes">
+                                    {course.recipes?.map((recipe, recipeIndex) => (
+                                      <div key={recipeIndex} className="recipe-item">
+                                        <span className="recipe-name">{recipe.recipe_name}</span>
+                                        <span className="recipe-servings">({recipe.servings} servings)</span>
+                                        {recipe.notes && (
+                                          <p className="recipe-notes">{recipe.notes}</p>
+                                        )}
+                                      </div>
+                                    ))}
+                                  </div>
+                                  
+                                  {/* Accommodations */}
+                                  {course.accommodations && course.accommodations.length > 0 && (
+                                    <div className="accommodations-list">
+                                      <h6>Dietary Accommodations:</h6>
+                                      {course.accommodations.map((acc, accIndex) => (
+                                        <div key={accIndex} className="accommodation-item">
+                                          <span className="acc-name">{acc.name}</span>
+                                          <span className="acc-servings">({acc.servings} servings)</span>
+                                          <span className="acc-for">for {acc.for_guests?.join(', ')}</span>
+                                        </div>
+                                      ))}
+                                    </div>
+                                  )}
+                                  
+                                  {course.notes && (
+                                    <p className="course-notes">{course.notes}</p>
+                                  )}
+                                </div>
+                              ))
+                            ) : (
+                              <p className="empty-meal">No courses added</p>
                             )}
                           </div>
-                        ))
-                      ) : (
-                        <p className="empty-section">No recipes in this meal</p>
-                      )}
-                    </div>
+                        </div>
+                      );
+                    })}
                   </div>
                 )}
               </div>
@@ -413,10 +377,27 @@ export default function MenuViewer() {
           </div>
         ) : (
           <div className="empty-menu">
-            <p>This menu has no meals yet.</p>
+            <p>This menu has no days configured yet.</p>
           </div>
         )}
       </div>
+
+      {/* Full Page Mode Close Button */}
+      {fullPageMode && (
+        <button 
+          className="full-page-close"
+          onClick={() => setFullPageMode(false)}
+          title="Exit full page (ESC)"
+        >
+          ✕
+        </button>
+      )}
     </div>
   );
+
+  return fullPageMode ? (
+    <div className="full-page-container">
+      {content}
+    </div>
+  ) : content;
 }

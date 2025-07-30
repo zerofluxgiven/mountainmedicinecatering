@@ -221,7 +221,7 @@ class AIActionServiceEnhanced {
   async addRecipeToMenuWithApproval(menuId, dayIndex, mealIndex, recipeId, servings, context = {}) {
     // Get menu and recipe details
     const [menuDoc, recipeDoc] = await Promise.all([
-      getDoc(doc(db, 'menus', menuId)),
+      getDoc(doc(db, 'menu_items', menuId)),
       getDoc(doc(db, 'recipes', recipeId))
     ]);
 
@@ -292,7 +292,7 @@ class AIActionServiceEnhanced {
     const event = eventDoc.data();
     
     // Get menus for this event
-    const menusQuery = query(collection(db, 'menus'), where('event_id', '==', eventId));
+    const menusQuery = query(collection(db, 'menu_items'), where('event_id', '==', eventId));
     const menusSnapshot = await getDocs(menusQuery);
     
     const recipeCount = menusSnapshot.docs.reduce((count, doc) => {
@@ -327,7 +327,7 @@ class AIActionServiceEnhanced {
     
     switch (type) {
       case 'menu':
-        const menuDoc = await getDoc(doc(db, 'menus', id));
+        const menuDoc = await getDoc(doc(db, 'menu_items', id));
         const menu = menuDoc.data();
         documentType = 'Menu PDF';
         contentDescription = `Menu "${menu.name}" with all recipes and instructions`;

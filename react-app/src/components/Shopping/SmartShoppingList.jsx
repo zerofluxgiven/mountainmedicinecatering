@@ -62,7 +62,7 @@ export default function SmartShoppingList({ eventId }) {
       setEvent(eventData);
 
       // Load menus for this event
-      const menusQuery = query(collection(db, 'menus'), where('event_id', '==', eventId));
+      const menusQuery = query(collection(db, 'menu_items'), where('event_id', '==', eventId));
       const menusSnapshot = await getDocs(menusQuery);
       const menusData = menusSnapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
       setMenus(menusData);

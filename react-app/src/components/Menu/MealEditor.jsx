@@ -154,6 +154,7 @@ export default function MealEditor({
       name: courseName,
       position: meal.courses.length,
       recipes: [],
+      accommodations: [], // NEW: Support for inline accommodations
       notes: ''
     };
 
@@ -201,24 +202,44 @@ export default function MealEditor({
   };
 
   const handleRemoveCourse = (courseIndex) => {
-    if (window.confirm('Remove this course and all its recipes from the meal?')) {
-      onUpdate({
-        ...meal,
-        courses: meal.courses.filter((_, index) => index !== courseIndex)
-      });
+    // Remove without confirmation for smoother UX with auto-save
+    onUpdate({
+      ...meal,
+      courses: meal.courses.filter((_, index) => index !== courseIndex)
+    });
+  };
+
+  const handleRemoveAccommodation = (courseIndex, accIndex) => {
+    const updatedCourses = [...meal.courses];
+    const course = updatedCourses[courseIndex];
+    
+    // Remove the accommodation
+    course.accommodations = course.accommodations.filter((_, i) => i !== accIndex);
+    
+    // Recalculate main recipe servings if needed
+    if (course.recipes.length > 0 && event) {
+      const totalAccommodationServings = course.accommodations.reduce(
+        (sum, acc) => sum + (acc.servings || 0), 
+        0
+      );
+      course.recipes[0].servings = event.guest_count - totalAccommodationServings;
     }
+    
+    onUpdate({
+      ...meal,
+      courses: updatedCourses
+    });
   };
 
   const handleRemoveRecipe = (courseIndex, recipeIndex) => {
-    if (window.confirm('Remove this recipe from the course?')) {
-      const updatedCourses = [...meal.courses];
-      updatedCourses[courseIndex].recipes = updatedCourses[courseIndex].recipes.filter((_, index) => index !== recipeIndex);
-      
-      onUpdate({
-        ...meal,
-        courses: updatedCourses
-      });
-    }
+    // Remove without confirmation for smoother UX with auto-save
+    const updatedCourses = [...meal.courses];
+    updatedCourses[courseIndex].recipes = updatedCourses[courseIndex].recipes.filter((_, index) => index !== recipeIndex);
+    
+    onUpdate({
+      ...meal,
+      courses: updatedCourses
+    });
   };
 
   const handleCourseNameEdit = (courseIndex) => {
@@ -512,6 +533,41 @@ export default function MealEditor({
                   >
                     Add Recipe
                   </button>
+                </div>
+              )}
+
+              {/* Accommodations Section */}
+              {course.accommodations && course.accommodations.length > 0 && (
+                <div className="accommodations-section">
+                  <h6 className="accommodations-header">Dietary Accommodations:</h6>
+                  <div className="accommodations-list">
+                    {course.accommodations.map((acc, accIndex) => (
+                      <div key={acc.id} className="accommodation-item">
+                        <div className="accommodation-header">
+                          <span className="accommodation-name">{acc.name}</span>
+                          <span className="accommodation-servings">({acc.servings} servings)</span>
+                          <button 
+                            className="btn btn-sm btn-outline"
+                            onClick={() => handleRemoveAccommodation(courseIndex, accIndex)}
+                            title="Remove accommodation"
+                          >
+                            ✕
+                          </button>
+                        </div>
+                        <div className="accommodation-details">
+                          <span className="for-guests">For: {acc.for_guests?.join(', ') || 'TBD'}</span>
+                          {acc.reason && <span className="reason">({acc.reason})</span>}
+                        </div>
+                        {acc.allergens && acc.allergens.length > 0 && (
+                          <div className="accommodation-allergens">
+                            {acc.allergens.map(allergen => (
+                              <span key={allergen} className="allergen-tag">{allergen}</span>
+                            ))}
+                          </div>
+                        )}
+                      </div>
+                    ))}
+                  </div>
                 </div>
               )}
 

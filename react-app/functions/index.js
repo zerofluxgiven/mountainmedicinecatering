@@ -95,7 +95,7 @@ exports.generateMenuPDF = functions.https.onCall(async (data, context) => {
 
   try {
     // Fetch menu data
-    const menuDoc = await admin.firestore().collection("menus").doc(menuId).get();
+    const menuDoc = await admin.firestore().collection("menu_items").doc(menuId).get();
     if (!menuDoc.exists) {
       throw new functions.https.HttpsError("not-found", "Menu not found");
     }
@@ -140,7 +140,7 @@ exports.generateShoppingListPDF = functions.https.onCall(async (data, context) =
 
     // Fetch associated menus
     const menusSnapshot = await admin.firestore()
-      .collection("menus")
+      .collection("menu_items")
       .where("event_id", "==", eventId)
       .get();
 

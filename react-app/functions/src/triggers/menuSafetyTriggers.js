@@ -3,7 +3,7 @@ const admin = require('firebase-admin');
 
 // Trigger when a menu is created or updated
 exports.onMenuChange = functions.firestore
-  .document('menus/{menuId}')
+  .document('menu_items/{menuId}')
   .onWrite(async (change, context) => {
     const { menuId } = context.params;
     
@@ -97,7 +97,7 @@ exports.onEventGuestDataChange = functions.firestore
 
       // Get all menus for this event
       const menusSnapshot = await admin.firestore()
-        .collection('menus')
+        .collection('menu_items')
         .where('event_id', '==', eventId)
         .get();
 
@@ -235,7 +235,7 @@ exports.onDietChange = functions.firestore
       
       // Get all menus for this event
       const menusSnapshot = await admin.firestore()
-        .collection('menus')
+        .collection('menu_items')
         .where('event_id', '==', eventId)
         .get();
       
@@ -338,7 +338,7 @@ exports.dailySafetySweep = functions.pubsub.schedule('every day 08:00').onRun(as
 
       // Get menus for this event
       const menusSnapshot = await admin.firestore()
-        .collection('menus')
+        .collection('menu_items')
         .where('event_id', '==', eventId)
         .get();
 

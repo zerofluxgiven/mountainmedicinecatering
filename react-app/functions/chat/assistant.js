@@ -74,7 +74,7 @@ async function buildConversationContext(conversationId, eventContext, admin) {
 
         // Get menus for this event
         const menusSnapshot = await admin.firestore()
-          .collection("menus")
+          .collection("menu_items")
           .where("event_id", "==", eventContext.selectedEventId)
           .get();
         

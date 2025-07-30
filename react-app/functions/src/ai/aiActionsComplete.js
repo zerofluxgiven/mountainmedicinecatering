@@ -188,7 +188,7 @@ exports.aiGenerateShoppingList = functions.https.onCall(async (data, context) =>
 
     // Get all menus for this event
     const menusSnapshot = await admin.firestore()
-      .collection('menus')
+      .collection('menu_items')
       .where('event_id', '==', eventId)
       .get();
 

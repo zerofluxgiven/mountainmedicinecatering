@@ -1,0 +1,463 @@
+/* Recipe Scaler Overlay */
+.recipe-scaler-overlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background-color: rgba(0, 0, 0, 0.5);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 1000;
+  cursor: pointer;
+}
+
+/* Recipe Scaler Modal */
+.recipe-scaler {
+  position: relative;
+  background: white;
+  border-radius: 0.5rem;
+  box-shadow: 0 10px 25px rgba(0, 0, 0, 0.2);
+  max-width: 800px;
+  width: 90%;
+  max-height: 90vh;
+  overflow-y: auto;
+  cursor: default;
+}
+
+.scaler-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 1.5rem;
+  border-bottom: 1px solid var(--border);
+}
+
+.scaler-header h2 {
+  margin: 0;
+  color: var(--text-primary);
+}
+
+.close-btn {
+  background: none;
+  border: none;
+  font-size: 1.5rem;
+  color: var(--text-secondary);
+  cursor: pointer;
+  padding: 0.25rem;
+  line-height: 1;
+}
+
+.close-btn:hover {
+  color: var(--text-primary);
+}
+
+/* Controls Section */
+.scaler-controls {
+  padding: 1.5rem;
+  background-color: var(--background);
+  display: grid;
+  grid-template-columns: 1fr 1fr auto;
+  gap: 2rem;
+  align-items: center;
+}
+
+.serving-selector {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+}
+
+.serving-selector label {
+  font-weight: 500;
+  color: var(--text-secondary);
+  font-size: 0.875rem;
+}
+
+.original-servings {
+  font-size: 1.5rem;
+  font-weight: 600;
+  color: var(--text-primary);
+}
+
+.serving-input-group {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.serving-btn {
+  width: 2.5rem;
+  height: 2.5rem;
+  border-radius: 50%;
+  border: 2px solid var(--primary-color);
+  background: white;
+  color: var(--primary-color);
+  font-size: 1.25rem;
+  font-weight: bold;
+  cursor: pointer;
+  transition: all 0.2s;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.serving-btn:hover {
+  background-color: var(--primary-color);
+  color: white;
+}
+
+.serving-input {
+  width: 4rem;
+  padding: 0.5rem;
+  text-align: center;
+  border: 2px solid var(--border);
+  border-radius: 0.375rem;
+  font-size: 1.25rem;
+  font-weight: 600;
+}
+
+.serving-input:focus {
+  outline: none;
+  border-color: var(--primary-color);
+}
+
+.scale-factor {
+  font-size: 1.125rem;
+  color: var(--text-secondary);
+}
+
+.scale-factor strong {
+  color: var(--primary-color);
+  font-size: 1.5rem;
+}
+
+/* Quick Scale Buttons */
+.quick-scale-buttons {
+  padding: 0 1.5rem;
+  display: flex;
+  gap: 0.75rem;
+  justify-content: center;
+}
+
+.quick-scale-btn {
+  padding: 0.5rem 1rem;
+  border: 1px solid var(--border);
+  border-radius: 0.375rem;
+  background: white;
+  cursor: pointer;
+  transition: all 0.2s;
+  font-weight: 500;
+}
+
+.quick-scale-btn:hover {
+  border-color: var(--primary-color);
+  background-color: rgba(107, 70, 193, 0.05);
+}
+
+.quick-scale-btn.active {
+  background-color: var(--primary-color);
+  color: white;
+  border-color: var(--primary-color);
+}
+
+/* Scaling Notes */
+.scaling-notes {
+  margin: 1.5rem;
+  background-color: rgba(107, 70, 193, 0.05);
+  border-radius: 0.375rem;
+  overflow: hidden;
+}
+
+.notes-header {
+  padding: 0.75rem 1rem;
+  background-color: rgba(107, 70, 193, 0.1);
+  cursor: pointer;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  font-weight: 500;
+  color: var(--primary-color);
+}
+
+.toggle-icon {
+  font-size: 1.25rem;
+}
+
+.notes-content {
+  padding: 1rem;
+  color: var(--text-primary);
+  line-height: 1.6;
+}
+
+/* Scaled Recipe Display */
+.scaled-recipe {
+  padding: 1.5rem;
+  background: white;
+}
+
+.scaled-recipe h3 {
+  font-size: 1.5rem;
+  color: var(--text-primary);
+  margin: 0 0 1.5rem 0;
+  padding-bottom: 0.75rem;
+  border-bottom: 2px solid var(--border);
+}
+
+.scaled-section {
+  margin-bottom: 2rem;
+}
+
+.scaled-section:last-child {
+  margin-bottom: 0;
+}
+
+.scaled-section h4 {
+  font-size: 1.125rem;
+  color: var(--text-primary);
+  margin-bottom: 1rem;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+}
+
+/* Ingredients */
+.scaled-ingredients {
+  list-style: none;
+  padding: 0;
+  margin: 0;
+}
+
+.scaled-ingredients li {
+  padding: 0.5rem 0;
+  border-bottom: 1px solid var(--border);
+  color: var(--text-primary);
+}
+
+.scaled-ingredients li:last-child {
+  border-bottom: none;
+}
+
+.scaled-ingredients li::before {
+  content: "•";
+  color: var(--primary-color);
+  font-weight: bold;
+  margin-right: 0.75rem;
+  font-size: 1.25rem;
+}
+
+/* Instructions */
+.scaled-instructions p {
+  margin-bottom: 1rem;
+  line-height: 1.6;
+  color: var(--text-primary);
+}
+
+.scaled-instructions ol {
+  counter-reset: step-counter;
+  list-style: none;
+  padding: 0;
+  margin: 0;
+}
+
+.scaled-instructions li {
+  position: relative;
+  padding-left: 3rem;
+  margin-bottom: 1.5rem;
+  line-height: 1.6;
+  color: var(--text-primary);
+}
+
+.scaled-instructions li::before {
+  counter-increment: step-counter;
+  content: counter(step-counter);
+  position: absolute;
+  left: 0;
+  top: 0;
+  width: 2rem;
+  height: 2rem;
+  background-color: var(--primary-color);
+  color: white;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-weight: bold;
+  font-size: 0.875rem;
+}
+
+/* Actions */
+.scaler-actions {
+  padding: 1.5rem;
+  border-top: 1px solid var(--border);
+  display: flex;
+  gap: 1rem;
+  justify-content: flex-end;
+}
+
+/* Print Styles */
+@media print {
+  /* When printing from scaler */
+  body.printing-scaled-recipe .recipe-scaler {
+    position: static;
+    transform: none;
+    box-shadow: none;
+    max-width: 100%;
+    width: 100%;
+    height: auto;
+    max-height: none;
+    overflow: visible;
+    border-radius: 0;
+  }
+
+  body.printing-scaled-recipe {
+    font-size: 11pt;
+    line-height: 1.4;
+    color: #000;
+    background: white;
+  }
+
+  /* Hide non-printable elements */
+  .scaler-header,
+  .scaler-controls,
+  .quick-scale-buttons,
+  .scaling-notes,
+  .scaler-actions,
+  .close-btn {
+    display: none !important;
+  }
+
+  /* Recipe content styling */
+  .scaled-recipe {
+    padding: 0;
+    background: white !important;
+    color: black !important;
+  }
+
+  .scaled-recipe h3 {
+    font-size: 20pt;
+    margin: 0 0 16pt 0;
+    padding-bottom: 8pt;
+    border-bottom: 2pt solid #000;
+    color: #000;
+    page-break-after: avoid;
+  }
+
+  .scaled-section {
+    margin-bottom: 16pt;
+    page-break-inside: avoid;
+  }
+
+  .scaled-section h4 {
+    font-size: 14pt;
+    color: #000;
+    margin-bottom: 8pt;
+    text-transform: uppercase;
+    letter-spacing: 0.5pt;
+    page-break-after: avoid;
+  }
+
+  /* Ingredients with checkboxes */
+  .scaled-ingredients {
+    margin: 0;
+    padding: 0;
+  }
+
+  .scaled-ingredients li {
+    padding: 4pt 0;
+    border-bottom: 0.5pt dotted #ccc;
+    color: #000;
+    page-break-inside: avoid;
+  }
+
+  .scaled-ingredients li::before {
+    content: "□ ";
+    color: #000;
+    margin-right: 8pt;
+    font-size: 10pt;
+  }
+
+  /* Instructions */
+  .scaled-instructions {
+    color: #000;
+  }
+
+  .scaled-instructions p {
+    margin-bottom: 8pt;
+    line-height: 1.5;
+    page-break-inside: avoid;
+  }
+
+  .scaled-instructions ol {
+    margin: 0;
+    padding: 0;
+  }
+
+  .scaled-instructions li {
+    padding-left: 24pt;
+    margin-bottom: 12pt;
+    color: #000;
+    page-break-inside: avoid;
+  }
+
+  .scaled-instructions li::before {
+    background-color: #333;
+    color: white;
+    width: 18pt;
+    height: 18pt;
+    font-size: 10pt;
+  }
+
+  /* Add footer with scale info */
+  .scaled-recipe::after {
+    content: "Recipe scaled for " attr(data-servings) " servings. Printed on " attr(data-print-date);
+    display: block;
+    margin-top: 24pt;
+    padding-top: 12pt;
+    border-top: 1pt solid #ccc;
+    font-size: 9pt;
+    color: #666;
+    text-align: center;
+  }
+
+  /* Page setup */
+  @page {
+    margin: 0.75in;
+    size: letter;
+  }
+}
+
+/* Responsive */
+@media (max-width: 768px) {
+  .recipe-scaler {
+    width: 100%;
+    height: 100%;
+    max-height: 100vh;
+    border-radius: 0;
+  }
+
+  .scaler-controls {
+    grid-template-columns: 1fr;
+    gap: 1rem;
+    padding: 1rem;
+  }
+
+  .quick-scale-buttons {
+    flex-wrap: wrap;
+    padding: 0 1rem;
+  }
+
+  .scaled-recipe {
+    padding: 1rem;
+  }
+
+  .scaler-actions {
+    flex-wrap: wrap;
+    padding: 1rem;
+  }
+
+  .scaler-actions button {
+    flex: 1;
+    min-width: 140px;
+  }
+}

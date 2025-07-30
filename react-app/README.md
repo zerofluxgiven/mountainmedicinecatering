@@ -148,7 +148,15 @@ Event Creation → Auto Menu Generation → Recipe Assignment → AI Safety Chec
 - Claude API key (for AI features)
 - OpenAI API key (for recipe parsing features)
 
-## ✨ Latest Features (Version 2.6 - January 2025)
+## ✨ Latest Features (Version 2.7 - July 2025)
+
+### 🧹 Major Codebase Cleanup
+- **Fixed Duplicate Components**: Removed duplicate AIChat (361 lines) that was causing inconsistent behavior between chat button and /chat route
+- **Deleted Legacy Menu Code**: Removed unused MenuEditor (658 lines) and MenuPlanner (29 lines) - these were old versions replaced by MenuPlannerCalendar
+- **Unified Component System**: Now only one version of each component exists, eliminating confusion
+- **Result**: Fixed issues where UI changes didn't appear because they were applied to unused components
+
+## ✨ Previous Features (Version 2.6 - January 2025)
 
 ### 📄 Professional PDF Export
 - **Visual margins**: 40mm margins with dashed border indicators visible on screen and print

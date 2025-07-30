@@ -19,7 +19,7 @@ export default function EventViewer() {
   
   const [event, setEvent] = useState(null);
   const [allergies, setAllergies] = useState([]);
-  const [menus, setMenus] = useState([]);
+  const [menu, setMenu] = useState(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
   const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
@@ -29,7 +29,6 @@ export default function EventViewer() {
   useEffect(() => {
     loadEvent();
     loadAllergies();
-    loadMenus();
   }, [id]); // eslint-disable-line react-hooks/exhaustive-deps
 
   const loadEvent = async () => {
@@ -42,7 +41,13 @@ export default function EventViewer() {
         return;
       }
 
-      setEvent({ id: eventDoc.id, ...eventDoc.data() });
+      const eventData = { id: eventDoc.id, ...eventDoc.data() };
+      setEvent(eventData);
+      
+      // Set menu from event document if it exists
+      if (eventData.menu) {
+        setMenu(eventData.menu);
+      }
     } catch (err) {
       console.error('Error loading event:', err);
       setError('Failed to load event');
@@ -66,20 +71,6 @@ export default function EventViewer() {
     return () => unsubscribe();
   };
 
-  const loadMenus = () => {
-    // Subscribe to menus for this event
-    const q = query(collection(db, 'menus'), where('event_id', '==', id));
-    
-    const unsubscribe = onSnapshot(q, (snapshot) => {
-      const menuData = snapshot.docs.map(doc => ({
-        id: doc.id,
-        ...doc.data()
-      }));
-      setMenus(menuData);
-    });
-
-    return () => unsubscribe();
-  };
 
   const handleEdit = () => {
     navigate(`/events/${id}/edit`);
@@ -176,7 +167,7 @@ export default function EventViewer() {
               className="btn btn-secondary"
               onClick={async () => {
                 try {
-                  await generateEventPDF(event, menus);
+                  await generateEventPDF(event, menu ? [menu] : []);
                 } catch (error) {
                   console.error('Error generating PDF:', error);
                   alert('Failed to generate PDF. Please try again.');
@@ -566,9 +557,9 @@ export default function EventViewer() {
               )}
             </div>
             
-            {menus.length > 0 ? (
-              <div className="menus-grid">
-                {menus.map(menu => (
+            {menu ? (
+              <div className="menu-container">
+                {[menu].map(menu => (
                   <div key={menu.id} className="menu-card">
                     <div className="menu-card-header">
                       <h3>{menu.name}</h3>
@@ -580,11 +571,11 @@ export default function EventViewer() {
                     )}
                     
                     <div className="menu-stats">
-                      <span>{menu.sections?.length || 0} sections</span>
+                      <span>{menu.days?.length || 0} days</span>
                       <span>
-                        {menu.sections?.reduce((total, section) => 
-                          total + (section.items?.length || 0), 0
-                        ) || 0} items
+                        {menu.days?.reduce((total, day) => 
+                          total + (day.meals?.length || 0), 0
+                        ) || 0} meals
                       </span>
                     </div>
                     
@@ -609,7 +600,7 @@ export default function EventViewer() {
               </div>
             ) : (
               <div className="empty-state">
-                <p>No menus created for this event yet.</p>
+                <p>No menu created for this event yet.</p>
                 {hasRole('user') && (
                   <button 
                     onClick={() => navigate(`/events/${id}/menus/new/plan`)}

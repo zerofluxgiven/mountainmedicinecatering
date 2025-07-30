@@ -30,7 +30,7 @@ class AIMonitorService {
 
     // Monitor event menus
     const menusUnsubscribe = onSnapshot(
-      query(collection(db, 'menus'), where('event_id', '==', eventId)),
+      query(collection(db, 'menu_items'), where('event_id', '==', eventId)),
       (snapshot) => this.handleMenusUpdate(eventId, snapshot)
     );
 

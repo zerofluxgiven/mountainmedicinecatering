@@ -1,0 +1,393 @@
+.accommodation-planner {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  z-index: 1001;
+}
+
+.planner-overlay {
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: rgba(0,0,0,0.6);
+}
+
+.planner-modal {
+  position: absolute;
+  top: 5%;
+  left: 50%;
+  transform: translateX(-50%);
+  background: white;
+  border-radius: 12px;
+  box-shadow: 0 10px 30px rgba(0,0,0,0.3);
+  width: 95vw;
+  max-width: 1200px;
+  max-height: 90vh;
+  display: flex;
+  flex-direction: column;
+}
+
+/* Header */
+.planner-header {
+  padding: 1.5rem;
+  border-bottom: 1px solid #e5e7eb;
+  background: linear-gradient(135deg, #6b46c1 0%, #805ad5 100%);
+  color: white;
+  border-radius: 12px 12px 0 0;
+  position: relative;
+}
+
+.planner-header h2 {
+  margin: 0 0 0.5rem 0;
+  font-size: 1.5rem;
+}
+
+.planner-header p {
+  margin: 0;
+  opacity: 0.9;
+  font-size: 1rem;
+}
+
+.close-btn {
+  position: absolute;
+  top: 1rem;
+  right: 1rem;
+  background: rgba(255,255,255,0.2);
+  border: none;
+  color: white;
+  font-size: 1.5rem;
+  cursor: pointer;
+  padding: 0.5rem;
+  border-radius: 50%;
+  transition: all 0.2s;
+}
+
+.close-btn:hover {
+  background: rgba(255,255,255,0.3);
+}
+
+/* Content */
+.planner-content {
+  flex: 1;
+  overflow-y: auto;
+  padding: 1.5rem;
+}
+
+/* Processing state */
+.processing-state {
+  text-align: center;
+  padding: 3rem;
+}
+
+.processing-state h3 {
+  margin: 1rem 0 0.5rem 0;
+  color: #2d3748;
+}
+
+.processing-state p {
+  color: #666;
+  margin: 0;
+}
+
+/* No conflicts */
+.no-conflicts {
+  text-align: center;
+  padding: 3rem;
+}
+
+.success-icon {
+  font-size: 4rem;
+  margin-bottom: 1rem;
+}
+
+.no-conflicts h3 {
+  color: #059669;
+  margin-bottom: 1rem;
+}
+
+.no-conflicts p {
+  color: #666;
+  margin-bottom: 2rem;
+  font-size: 1.1rem;
+}
+
+/* Conflicts list */
+.conflicts-list {
+  display: flex;
+  flex-direction: column;
+  gap: 1.5rem;
+}
+
+.conflict-item {
+  background: white;
+  border: 2px solid #e5e7eb;
+  border-radius: 12px;
+  padding: 1.5rem;
+  transition: all 0.2s;
+}
+
+.conflict-item.priority-high {
+  border-color: #dc2626;
+  background: #fef2f2;
+}
+
+.conflict-item.priority-medium {
+  border-color: #f59e0b;
+  background: #fffbeb;
+}
+
+.conflict-item.priority-low {
+  border-color: #3b82f6;
+  background: #eff6ff;
+}
+
+.conflict-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 1rem;
+}
+
+.conflict-header h4 {
+  margin: 0;
+  color: #2d3748;
+  font-size: 1.2rem;
+}
+
+.priority-badge {
+  padding: 0.25rem 0.75rem;
+  border-radius: 20px;
+  font-size: 0.8rem;
+  font-weight: 600;
+  text-transform: uppercase;
+}
+
+.priority-badge.priority-high {
+  background: #dc2626;
+  color: white;
+}
+
+.priority-badge.priority-medium {
+  background: #f59e0b;
+  color: white;
+}
+
+.priority-badge.priority-low {
+  background: #3b82f6;
+  color: white;
+}
+
+.conflict-course h5 {
+  margin: 0 0 0.75rem 0;
+  color: #374151;
+  font-size: 1.1rem;
+}
+
+.conflict-details {
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+  margin-bottom: 1rem;
+}
+
+.allergen-conflicts,
+.dietary-conflicts,
+.affected-guests {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  flex-wrap: wrap;
+}
+
+.conflict-label {
+  font-weight: 600;
+  color: #374151;
+  font-size: 0.9rem;
+}
+
+.conflict-tag {
+  padding: 0.2rem 0.6rem;
+  border-radius: 12px;
+  font-size: 0.8rem;
+  font-weight: 500;
+}
+
+.conflict-tag.allergen {
+  background: #fee2e2;
+  color: #dc2626;
+}
+
+.conflict-tag.dietary {
+  background: #ecfdf5;
+  color: #047857;
+}
+
+.guest-count {
+  background: #e0e7ff;
+  color: #3730a3;
+  padding: 0.2rem 0.6rem;
+  border-radius: 12px;
+  font-size: 0.8rem;
+  font-weight: 600;
+}
+
+.guest-names {
+  color: #666;
+  font-size: 0.85rem;
+  font-style: italic;
+}
+
+/* Suggestions */
+.suggested-alternatives h6 {
+  margin: 0 0 1rem 0;
+  color: #374151;
+  font-size: 1rem;
+}
+
+.suggestions-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+  gap: 1rem;
+  margin-bottom: 1rem;
+}
+
+.suggestion-card {
+  background: #f9fafb;
+  border: 1px solid #e5e7eb;
+  border-radius: 8px;
+  padding: 1rem;
+}
+
+.suggestion-card h6 {
+  margin: 0 0 0.5rem 0;
+  color: #2d3748;
+  font-size: 0.95rem;
+}
+
+.suggestion-card p {
+  margin: 0 0 0.75rem 0;
+  color: #666;
+  font-size: 0.85rem;
+}
+
+.modifications-list {
+  margin: 0 0 1rem 0;
+  padding-left: 1.25rem;
+  color: #374151;
+}
+
+.modifications-list li {
+  font-size: 0.85rem;
+  margin-bottom: 0.25rem;
+}
+
+.suggestion-actions {
+  text-align: center;
+}
+
+.conflict-actions {
+  text-align: center;
+  margin-top: 1rem;
+}
+
+/* Created accommodations */
+.created-accommodations {
+  background: #f0fdf4;
+  border: 1px solid #bbf7d0;
+  border-radius: 8px;
+  padding: 1rem;
+  margin-top: 1.5rem;
+}
+
+.created-accommodations h3 {
+  margin: 0 0 1rem 0;
+  color: #047857;
+  font-size: 1.1rem;
+}
+
+.accommodations-summary {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+}
+
+.accommodation-summary {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 0.5rem;
+  background: white;
+  border-radius: 6px;
+  border: 1px solid #d1fae5;
+}
+
+.accommodation-name {
+  font-weight: 500;
+  color: #047857;
+}
+
+.accommodation-serves {
+  font-size: 0.85rem;
+  color: #666;
+}
+
+/* Footer */
+.planner-footer {
+  padding: 1rem 1.5rem;
+  border-top: 1px solid #e5e7eb;
+  background: #f9fafb;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 1rem;
+}
+
+.footer-note {
+  margin: 0;
+  color: #666;
+  font-size: 0.9rem;
+  font-style: italic;
+}
+
+/* Responsive design */
+@media (max-width: 768px) {
+  .planner-modal {
+    width: 98vw;
+    top: 2%;
+    max-height: 96vh;
+  }
+  
+  .planner-header {
+    padding: 1rem;
+  }
+  
+  .planner-content {
+    padding: 1rem;
+  }
+  
+  .conflict-header {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 0.5rem;
+  }
+  
+  .suggestions-grid {
+    grid-template-columns: 1fr;
+  }
+  
+  .planner-footer {
+    flex-direction: column;
+    text-align: center;
+  }
+  
+  .allergen-conflicts,
+  .dietary-conflicts,
+  .affected-guests {
+    flex-direction: column;
+    align-items: flex-start;
+  }
+}

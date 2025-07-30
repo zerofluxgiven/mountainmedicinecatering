@@ -245,16 +245,22 @@ Events now support multi-day retreats with enhanced dietary tracking:
 ### Component Structure
 
 #### Core Menu Components
-- **MenuPlannerCalendar**: Main calendar interface
+- **MenuPlannerCalendar**: Main calendar interface (THE active menu editor)
 - **DayEditor**: Expandable day component with meal management
 - **MealEditor**: Individual meal with course management  
 - **RecipeSelector**: Smart recipe selection with conflict detection
 - **AccommodationPlanner**: Conflict analysis and alternative generation
+- **MenuPlannerWrapper**: Wrapper that loads MenuPlannerCalendar with proper context
 
 #### AI Integration Components
-- **AIChat**: Claude-powered assistant with witty personality
+- **AIChat**: Claude-powered assistant with witty personality (components/AI/AIChat.jsx)
 - **AIHistory**: Monitoring question tracking
 - **AI Safety Triggers**: Background monitoring system
+
+#### REMOVED Components (July 2025 Cleanup)
+- ~~MenuEditor~~ - Old 658-line component, replaced by MenuPlannerCalendar
+- ~~MenuPlanner~~ - Old 29-line component, replaced by MenuPlannerWrapper
+- ~~pages/Chat/AIChat~~ - Duplicate AI chat (361 lines), caused inconsistent behavior
 
 #### Shared Components
 - **Layout**: Main app navigation and structure
@@ -605,6 +611,28 @@ const AccommodationPlanner = ({ menu, event, onClose }) => {
 };
 ```
 
+### MenuViewer Component (Updated July 2025)
+```javascript
+const MenuViewer = () => {
+  // Polished read-only menu display
+  // Loads menu from event.menu (embedded structure)
+  // Supports full-page mode with ESC key
+  // Expandable/collapsible days
+  // Shows inline accommodations
+  // Print and PDF export
+};
+```
+
+**Route**: `/events/:eventId/menus/:menuId`
+
+**Key Features**:
+- Multi-day menu display with color-coded meals
+- Full-page mode for presentations
+- Real-time statistics (days, meals, courses, recipes)
+- Inline accommodation display
+- Professional print/PDF export
+- Mobile responsive design
+
 ## Business Logic
 
 ### Menu Planning Workflow
@@ -928,7 +956,14 @@ test('creates menu structure for multi-day event', () => {
 
 ## Recent Major Updates
 
-### Version 2.6 - AI Smart Detection System (Latest - July 2025)
+### Version 2.7 - Major Codebase Cleanup (Latest - July 2025)
+- **Fixed Duplicate Components**: Removed duplicate AIChat (pages/Chat/AIChat.jsx) that caused inconsistent behavior
+- **Deleted Legacy Menu Code**: Removed MenuEditor (658 lines) and MenuPlanner (29 lines) - old unused components
+- **Unified Component System**: Now only one version of each component exists
+- **Import Cleanup**: Fixed App.jsx imports to use correct components
+- **Result**: Resolved issues where UI changes didn't appear because they were applied to wrong/unused components
+
+### Version 2.6 - AI Smart Detection System (July 2025)
 - **Smart Content Detection**: AI proactively analyzes responses for actionable content
 - **Pre-parsed Recipes**: 75%+ confidence threshold triggers automatic recipe parsing
 - **Metadata-driven Responses**: All AI responses include content analysis metadata
@@ -1125,3 +1160,49 @@ These deeply meaningful words serve as a reminder that our collaboration is more
 - Menu structure needs refactoring to support both direct recipes and courses
 - Mobile recipe cards need CSS updates for 50/50 layout
 - Recipe selector needs mobile optimization for better UX
+
+## Dashboard Styling Architecture
+
+### Component Structure
+The Dashboard uses a unified `stat-card` class for both Quick Actions and Analytics sections to ensure consistent appearance. The styling is structured as follows:
+
+#### CSS Organization (`/src/pages/Dashboard/Dashboard.css`)
+```css
+.stat-card {
+  /* Base styling for all cards */
+  min-height: 100px; /* Desktop */
+  min-height: 90px;  /* Mobile */
+}
+
+.stat-card.action-clickable {
+  /* Additional styling for Quick Action cards */
+}
+
+.stat-content {
+  /* Flex container for consistent content height */
+  min-height: 58px; /* Mobile - ensures uniform height */
+}
+```
+
+#### Component Structure (`/src/pages/Dashboard/Dashboard.jsx`)
+- **Quick Actions**: Uses `stat-card action-clickable` classes
+- **Analytics**: Uses base `stat-card` class
+- Both sections use the same HTML structure for consistency:
+  ```jsx
+  <div className="stat-card">
+    <div className="stat-icon">📅</div>
+    <div className="stat-content">
+      <div className="stat-value">3</div>
+      <div className="stat-label">Total Events</div>
+    </div>
+  </div>
+  ```
+
+#### Key Design Decisions
+1. **Unified Card System**: All dashboard cards use `stat-card` base class
+2. **Consistent Heights**: Enforced via `min-height` on both card and content
+3. **No Inline Styles**: All styling handled via CSS classes for maintainability
+4. **Responsive Design**: Different min-heights for desktop vs mobile
+5. **Hover States**: Action cards change background color, all text turns white
+
+This architecture ensures that all dashboard cards maintain consistent heights regardless of content differences.

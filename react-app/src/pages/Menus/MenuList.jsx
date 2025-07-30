@@ -1,7 +1,8 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { collection, query, orderBy, onSnapshot, doc, deleteDoc } from 'firebase/firestore';
+import { collection, query, orderBy, onSnapshot, doc, deleteDoc, updateDoc } from 'firebase/firestore';
 import { db } from '../../config/firebase';
+import { COLLECTIONS } from '../../config/collections';
 import { useAuth } from '../../contexts/AuthContext';
 import { useApp } from '../../contexts/AppContext';
 import './MenuList.css';
@@ -21,18 +22,36 @@ export default function MenuList() {
   const [availableMealTypes, setAvailableMealTypes] = useState([...DEFAULT_MEAL_TYPES]);
 
   useEffect(() => {
-    // Subscribe to menus
-    const q = query(collection(db, 'menus'), orderBy('created_at', 'desc'));
+    // Subscribe to events to extract menus from them
+    const q = query(collection(db, 'events'), orderBy('created_at', 'desc'));
     
     const unsubscribe = onSnapshot(q, (snapshot) => {
-      const menusData = snapshot.docs.map(doc => ({
-        id: doc.id,
-        ...doc.data()
-      }));
+      const menusData = [];
+      
+      snapshot.docs.forEach(doc => {
+        const eventData = doc.data();
+        
+        // Extract menu from event if it exists
+        if (eventData.menu) {
+          menusData.push({
+            id: `${doc.id}_menu`, // Create a unique ID combining event ID and menu suffix
+            ...eventData.menu,
+            event_id: doc.id,
+            event_name: eventData.name,
+            event_start_date: eventData.start_date,
+            event_end_date: eventData.end_date,
+            guest_count: eventData.guest_count,
+            // Use event's created_at if menu doesn't have one
+            created_at: eventData.menu.created_at || eventData.created_at,
+            created_by: eventData.menu.created_by || eventData.created_by
+          });
+        }
+      });
+      
       setMenus(menusData);
       setLoading(false);
     }, (error) => {
-      console.error('Error fetching menus:', error);
+      console.error('Error fetching events/menus:', error);
       setLoading(false);
     });
 
@@ -57,9 +76,14 @@ export default function MenuList() {
       if (!nameMatch && !descMatch) return false;
     }
 
-    // Type filter - check meal types within the menu
+    // Type filter - check meal types within the menu days
     if (filterType !== 'all') {
-      const mealTypes = menu.meals?.map(meal => meal.type) || [];
+      const mealTypes = [];
+      menu.days?.forEach(day => {
+        day.meals?.forEach(meal => {
+          if (meal.type) mealTypes.push(meal.type);
+        });
+      });
       if (!mealTypes.includes(filterType)) return false;
     }
 
@@ -67,41 +91,34 @@ export default function MenuList() {
     return true;
   });
 
-  const handleMenuClick = (menuId) => {
-    // Check if user wants to edit (holding alt/option key)
-    if (window.event?.altKey) {
-      navigate(`/menus/${menuId}/plan`);
-    } else {
-      navigate(`/menus/${menuId}`);
+  const handleMenuClick = (menu) => {
+    // Navigate to the event's menu planner
+    if (menu.event_id) {
+      navigate(`/events/${menu.event_id}/menus/${menu.id}/plan`);
     }
   };
 
   const handleCreateNew = () => {
-    navigate('/menus/new');
+    // Navigate to events page since menus are now created within events
+    navigate('/events');
   };
 
-  const handleDuplicate = (e, menu) => {
-    e.stopPropagation();
-    navigate('/menus/new', { 
-      state: { 
-        template: {
-          ...menu,
-          name: `${menu.name} (Copy)`,
-          id: undefined,
-          created_at: undefined,
-          created_by: undefined
-        }
-      }
-    });
-  };
 
-  const handleDelete = async (menuId) => {
+  const handleDelete = async (menu) => {
     try {
-      await deleteDoc(doc(db, 'menus', menuId));
+      // Delete menu from event document
+      if (menu.event_id) {
+        const eventRef = doc(db, 'events', menu.event_id);
+        await updateDoc(eventRef, {
+          menu: null
+        });
+      }
       setShowDeleteConfirm(null);
+      // Update local state immediately for better UX
+      setMenus(prevMenus => prevMenus.filter(m => m.id !== menu.id));
     } catch (err) {
       console.error('Error deleting menu:', err);
-      alert('Failed to delete menu');
+      alert('Failed to delete menu: ' + err.message);
     }
   };
 
@@ -146,7 +163,7 @@ export default function MenuList() {
             onClick={handleCreateNew}
           >
             <span className="btn-icon">➕</span>
-            Create Menu
+            Go to Events
           </button>
         )}
       </div>
@@ -154,7 +171,6 @@ export default function MenuList() {
       {/* Filters */}
       <div className="menu-filters">
         <div className="search-bar">
-          <span className="search-icon">🔍</span>
           <input
             type="text"
             placeholder="Search menus..."
@@ -210,8 +226,8 @@ export default function MenuList() {
         {filteredMenus.map(menu => (
           <div 
             key={menu.id} 
-            className="menu-card"
-            onClick={() => handleMenuClick(menu.id)}
+            className="menu-card menu-card-purple"
+            onClick={() => handleMenuClick(menu)}
           >
             {/* Delete Confirmation Modal */}
             {showDeleteConfirm === menu.id && (
@@ -234,7 +250,7 @@ export default function MenuList() {
                     className="btn btn-sm btn-danger"
                     onClick={(e) => {
                       e.stopPropagation();
-                      handleDelete(menu.id);
+                      handleDelete(menu);
                     }}
                   >
                     Delete
@@ -247,27 +263,6 @@ export default function MenuList() {
               <span className="menu-type-icon">
                 {getMenuTypeIcon(menu.type)}
               </span>
-              {hasRole('user') && (
-                <div className="menu-actions">
-                  <button
-                    className="action-btn"
-                    onClick={(e) => handleDuplicate(e, menu)}
-                    title="Duplicate menu"
-                  >
-                    📋
-                  </button>
-                  <button
-                    className="action-btn delete"
-                    onClick={(e) => {
-                      e.stopPropagation();
-                      setShowDeleteConfirm(menu.id);
-                    }}
-                    title="Delete menu"
-                  >
-                    🗑️
-                  </button>
-                </div>
-              )}
             </div>
 
             <div className="menu-card-body">
@@ -284,9 +279,7 @@ export default function MenuList() {
                     : (menu.type ? menu.type.charAt(0).toUpperCase() + menu.type.slice(1) : 'General')}
                 </span>
                 <span className="menu-items">
-                  {menu.sections?.reduce((total, section) => 
-                    total + (section.items?.length || 0), 0
-                  ) || 0} items
+                  {menu.days?.length || 0} days
                 </span>
               </div>
 
@@ -300,6 +293,30 @@ export default function MenuList() {
                 <span className="menu-date">
                   Created {formatDate(menu.created_at)}
                 </span>
+                <div className="menu-actions-footer">
+                  <button
+                    className="btn btn-sm btn-primary"
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      navigate(`/events/${menu.event_id}/menus/${menu.id}`);
+                    }}
+                    title="View menu"
+                  >
+                    👁️ View Menu
+                  </button>
+                  {hasRole('user') && (
+                    <button
+                      className="btn btn-sm btn-danger"
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        setShowDeleteConfirm(menu.id);
+                      }}
+                      title="Delete menu"
+                    >
+                      🗑️ Delete
+                    </button>
+                  )}
+                </div>
               </div>
             </div>
           </div>
@@ -314,7 +331,7 @@ export default function MenuList() {
               className="btn btn-primary"
               onClick={handleCreateNew}
             >
-              Create Your First Menu
+              Go to Events to Create Menu
             </button>
           )}
         </div>

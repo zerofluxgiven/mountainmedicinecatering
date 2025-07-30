@@ -1,0 +1,426 @@
+/* Diet List Styles */
+.diet-list {
+  display: flex;
+  flex-direction: column;
+  gap: 1.5rem;
+}
+
+/* Filters */
+.list-filters {
+  display: flex;
+  gap: 1rem;
+  align-items: flex-end;
+}
+
+.search-bar {
+  position: relative;
+  flex: 1;
+}
+
+.search-icon {
+  position: absolute;
+  left: 1rem;
+  top: 50%;
+  transform: translateY(-50%);
+  font-size: 1rem;
+  opacity: 0.5;
+}
+
+.search-input {
+  width: 100%;
+  padding: 0.75rem 1rem 0.75rem 2.5rem;
+  border: 2px solid var(--border);
+  border-radius: 0.375rem;
+  font-size: 1rem;
+  transition: border-color 0.2s;
+}
+
+.search-input:focus {
+  outline: none;
+  border-color: var(--primary-color);
+}
+
+.clear-search {
+  position: absolute;
+  right: 1rem;
+  top: 50%;
+  transform: translateY(-50%);
+  background: none;
+  border: none;
+  font-size: 1.25rem;
+  color: var(--text-secondary);
+  cursor: pointer;
+  padding: 0.25rem;
+}
+
+.clear-search:hover {
+  color: var(--text-primary);
+}
+
+.diet-filter {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.diet-filter label {
+  font-size: 0.875rem;
+  color: var(--text-secondary);
+  font-weight: 500;
+}
+
+.diet-filter select {
+  padding: 0.75rem;
+  border: 2px solid var(--border);
+  border-radius: 0.375rem;
+  background: white;
+  font-size: 1rem;
+  cursor: pointer;
+}
+
+.diet-filter select:focus {
+  outline: none;
+  border-color: var(--primary-color);
+}
+
+/* Results */
+.no-results {
+  text-align: center;
+  color: var(--text-secondary);
+  padding: 2rem;
+}
+
+.diet-items {
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+}
+
+/* Diet Item */
+.diet-item {
+  background: white;
+  border: 2px solid var(--border);
+  border-radius: 0.5rem;
+  overflow: hidden;
+  transition: all 0.2s;
+}
+
+.diet-item:hover {
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+}
+
+/* Diet-specific border colors */
+.diet-item.diet-vegan {
+  border-color: rgba(72, 187, 120, 0.3);
+}
+
+.diet-item.diet-vegetarian {
+  border-color: rgba(52, 211, 153, 0.3);
+}
+
+.diet-item.diet-religious {
+  border-color: rgba(147, 51, 234, 0.3);
+}
+
+.diet-item.diet-specialty {
+  border-color: rgba(237, 137, 54, 0.3);
+}
+
+/* Item Header */
+.item-header {
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+  padding: 1rem 1.5rem;
+  cursor: pointer;
+  user-select: none;
+}
+
+.header-main {
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+  min-width: 250px;
+}
+
+.guest-name {
+  font-size: 1.125rem;
+  font-weight: 600;
+  color: var(--text-primary);
+  margin: 0;
+}
+
+.diet-badge {
+  padding: 0.25rem 0.75rem;
+  border-radius: 1rem;
+  font-size: 0.75rem;
+  font-weight: 600;
+  text-transform: uppercase;
+}
+
+/* Diet badges */
+.diet-badge.diet-vegan {
+  background-color: rgba(72, 187, 120, 0.1);
+  color: #16a34a;
+}
+
+.diet-badge.diet-vegetarian {
+  background-color: rgba(52, 211, 153, 0.1);
+  color: #059669;
+}
+
+.diet-badge.diet-religious {
+  background-color: rgba(147, 51, 234, 0.1);
+  color: #7c3aed;
+}
+
+.diet-badge.diet-specialty {
+  background-color: rgba(237, 137, 54, 0.1);
+  color: #ea580c;
+}
+
+.diet-badge.diet-other {
+  background-color: var(--background);
+  color: var(--text-secondary);
+}
+
+.header-restrictions {
+  flex: 1;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.375rem;
+}
+
+.restriction-chip {
+  padding: 0.25rem 0.5rem;
+  background-color: var(--background);
+  border-radius: 0.25rem;
+  font-size: 0.875rem;
+  color: var(--text-secondary);
+}
+
+.restriction-chip.more {
+  font-style: italic;
+}
+
+.expand-btn {
+  width: 2rem;
+  height: 2rem;
+  border: none;
+  background: none;
+  font-size: 1.5rem;
+  color: var(--text-secondary);
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 0.25rem;
+  transition: all 0.2s;
+}
+
+.expand-btn:hover {
+  background-color: var(--background);
+}
+
+/* Item Details */
+.item-details {
+  padding: 0 1.5rem 1.5rem;
+  border-top: 1px solid var(--border);
+  background-color: var(--background);
+}
+
+.detail-section {
+  margin-top: 1.5rem;
+}
+
+.detail-section h4 {
+  font-size: 0.875rem;
+  color: var(--text-secondary);
+  margin: 0 0 0.75rem 0;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+}
+
+.detail-section p {
+  margin: 0;
+  color: var(--text-primary);
+  line-height: 1.5;
+}
+
+.diet-type {
+  display: inline-block;
+  padding: 0.5rem 1rem;
+  border-radius: 0.375rem;
+  font-weight: 500;
+}
+
+.diet-type.diet-vegan {
+  background-color: rgba(72, 187, 120, 0.1);
+  color: #16a34a;
+}
+
+.diet-type.diet-vegetarian {
+  background-color: rgba(52, 211, 153, 0.1);
+  color: #059669;
+}
+
+.diet-type.diet-religious {
+  background-color: rgba(147, 51, 234, 0.1);
+  color: #7c3aed;
+}
+
+.diet-type.diet-specialty {
+  background-color: rgba(237, 137, 54, 0.1);
+  color: #ea580c;
+}
+
+.diet-type.diet-other {
+  background-color: var(--background);
+  color: var(--text-primary);
+}
+
+.restriction-list {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+}
+
+.restriction-tag {
+  padding: 0.375rem 0.75rem;
+  background-color: rgba(107, 70, 193, 0.1);
+  color: var(--primary-color);
+  border-radius: 0.375rem;
+  font-size: 0.875rem;
+  font-weight: 500;
+}
+
+.menu-assignment {
+  display: inline-block;
+  padding: 0.375rem 0.75rem;
+  background-color: rgba(107, 70, 193, 0.1);
+  color: var(--primary-color);
+  border-radius: 0.375rem;
+  font-weight: 500;
+}
+
+.menu-assignment.unknown {
+  background-color: rgba(0, 0, 0, 0.05);
+  color: var(--text-secondary);
+}
+
+.meta-info {
+  font-size: 0.875rem;
+  color: var(--text-light);
+}
+
+/* Item Actions */
+.item-actions {
+  display: flex;
+  gap: 1rem;
+  margin-top: 1.5rem;
+  padding-top: 1.5rem;
+  border-top: 1px solid var(--border);
+}
+
+/* Multiple diet types display */
+.diet-type-list, 
+.custom-diet-list {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+  margin-bottom: 0.5rem;
+}
+
+.diet-type-tag {
+  padding: 0.375rem 0.75rem;
+  border-radius: 0.375rem;
+  font-size: 0.875rem;
+  font-weight: 500;
+}
+
+.diet-type-tag.diet-vegan {
+  background-color: rgba(72, 187, 120, 0.1);
+  color: #16a34a;
+}
+
+.diet-type-tag.diet-vegetarian {
+  background-color: rgba(52, 211, 153, 0.1);
+  color: #059669;
+}
+
+.diet-type-tag.diet-religious {
+  background-color: rgba(147, 51, 234, 0.1);
+  color: #7c3aed;
+}
+
+.diet-type-tag.diet-specialty {
+  background-color: rgba(237, 137, 54, 0.1);
+  color: #ea580c;
+}
+
+.diet-type-tag.diet-other {
+  background-color: var(--background);
+  color: var(--text-primary);
+}
+
+.diet-type-tag.custom {
+  background-color: rgba(59, 130, 246, 0.1);
+  color: #2563eb;
+  border: 1px dashed #2563eb;
+}
+
+.diet-badge.custom {
+  background-color: rgba(59, 130, 246, 0.1);
+  color: #2563eb;
+  border: 1px dashed #2563eb;
+}
+
+/* Responsive */
+@media (max-width: 768px) {
+  .list-filters {
+    flex-direction: column;
+    align-items: stretch;
+  }
+
+  .diet-filter {
+    flex-direction: column;
+    align-items: stretch;
+  }
+
+  .diet-filter select {
+    width: 100%;
+  }
+
+  .item-header {
+    flex-wrap: wrap;
+    padding: 1rem;
+  }
+
+  .header-main {
+    width: 100%;
+    justify-content: space-between;
+  }
+
+  .header-restrictions {
+    width: 100%;
+    margin-bottom: 0.5rem;
+  }
+
+  .expand-btn {
+    position: absolute;
+    top: 1rem;
+    right: 1rem;
+  }
+
+  .item-details {
+    padding: 0 1rem 1rem;
+  }
+
+  .item-actions {
+    flex-direction: column;
+  }
+
+  .item-actions button {
+    width: 100%;
+  }
+}

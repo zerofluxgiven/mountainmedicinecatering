@@ -6,7 +6,7 @@ import { useAuth } from '../../contexts/AuthContext';
 import { formatDate, formatDateRange, getDateRange } from '../../utils/dateFormatting';
 import { getMealTypes, subscribeMealTypes, addMealType } from '../../services/mealTypes';
 import DayEditor from './DayEditor';
-import AccommodationPlanner from './AccommodationPlanner';
+import AccommodationPlannerInline from './AccommodationPlannerInline';
 import { aiMonitor } from '../../services/aiMonitor';
 import './MenuPlannerCalendar.css';
 
@@ -101,7 +101,7 @@ export default function MenuPlannerCalendar({ eventId, menuId, onMenuChange, sta
         // Create standalone menu
         if (menuId && menuId !== 'new') {
           // Load existing standalone menu
-          const menuDoc = await getDoc(doc(db, 'menus', menuId));
+          const menuDoc = await getDoc(doc(db, 'menu_items', menuId));
           if (menuDoc.exists()) {
             setMenu({ id: menuDoc.id, ...menuDoc.data() });
           } else {
@@ -122,17 +122,11 @@ export default function MenuPlannerCalendar({ eventId, menuId, onMenuChange, sta
         const eventData = { id: eventDoc.id, ...eventDoc.data() };
         setEvent(eventData);
 
-        // Load or create menu
-        if (menuId && menuId !== 'new') {
-          // Load existing menu
-          const menuDoc = await getDoc(doc(db, 'menus', menuId));
-          if (menuDoc.exists()) {
-            const menuData = { id: menuDoc.id, ...menuDoc.data() };
-            console.log('Loaded menu:', menuData);
-            setMenu(menuData);
-          } else {
-            throw new Error('Menu not found');
-          }
+        // Load menu from event document or create new one
+        if (eventData.menu) {
+          // Menu exists in event document
+          console.log('Loaded menu from event:', eventData.menu);
+          setMenu(eventData.menu);
         } else {
           // Create new menu structure
           const newMenu = createEventMenu(eventData);
@@ -154,7 +148,6 @@ export default function MenuPlannerCalendar({ eventId, menuId, onMenuChange, sta
     const days = getDateRange(eventData.start_date, eventData.end_date);
     
     return {
-      event_id: eventId,
       name: `${eventData.name} - Primary Menu`,
       type: 'primary',
       days: days.map((date, index) => ({
@@ -230,31 +223,29 @@ export default function MenuPlannerCalendar({ eventId, menuId, onMenuChange, sta
   };
 
   const saveMenuToDatabase = useCallback(async (menuToSave) => {
+    if (!eventId) {
+      console.error('Cannot save menu without event ID');
+      return;
+    }
+
     setSaving(true);
     setError(null);
 
     try {
       const menuData = {
         ...menuToSave,
-        updated_at: serverTimestamp()
+        updated_at: serverTimestamp(),
+        updated_by: currentUser.email
       };
+      
+      // Remove fields that shouldn't be stored
+      delete menuData.id;
+      delete menuData.event_id; // Not needed since it's part of event
 
-      if (menuId && menuId !== 'new') {
-        // Update existing menu
-        await updateDoc(doc(db, 'menus', menuId), menuData);
-      } else {
-        // Create new menu
-        menuData.created_at = serverTimestamp();
-        menuData.created_by = currentUser.email;
-        
-        const docRef = await addDoc(collection(db, 'menus'), menuData);
-        menuToSave.id = docRef.id;
-        
-        // Update URL if this was a new menu
-        if (onMenuChange) {
-          onMenuChange(docRef.id);
-        }
-      }
+      // Update the event document with the menu
+      await updateDoc(doc(db, 'events', eventId), {
+        menu: menuData
+      });
 
       setLastSaved(new Date());
       setHasUnsavedChanges(false);
@@ -268,11 +259,24 @@ export default function MenuPlannerCalendar({ eventId, menuId, onMenuChange, sta
     } finally {
       setSaving(false);
     }
-  }, [menuId, currentUser, onMenuChange, event]);
+  }, [eventId, currentUser]);
+
+  const sortDaysChronologically = (days) => {
+    return days.sort((a, b) => new Date(a.date) - new Date(b.date)).map((day, index) => ({
+      ...day,
+      day_label: `Day ${index + 1}`
+    }));
+  };
 
   const handleMenuUpdate = useCallback((updatedMenu, immediate = false) => {
+    // Sort days chronologically before updating
+    const menuWithSortedDays = {
+      ...updatedMenu,
+      days: sortDaysChronologically(updatedMenu.days)
+    };
+    
     // Update local state immediately
-    setMenu(updatedMenu);
+    setMenu(menuWithSortedDays);
     setHasUnsavedChanges(true);
 
     // Clear existing timeout
@@ -282,11 +286,11 @@ export default function MenuPlannerCalendar({ eventId, menuId, onMenuChange, sta
 
     if (immediate) {
       // Save immediately
-      saveMenuToDatabase(updatedMenu);
+      saveMenuToDatabase(menuWithSortedDays);
     } else {
       // Debounce the save (auto-save after 2 seconds of no changes)
       saveTimeoutRef.current = setTimeout(() => {
-        saveMenuToDatabase(updatedMenu);
+        saveMenuToDatabase(menuWithSortedDays);
       }, 2000);
     }
   }, [saveMenuToDatabase]);
@@ -296,7 +300,7 @@ export default function MenuPlannerCalendar({ eventId, menuId, onMenuChange, sta
 
     try {
       // Create AI monitoring question for menu safety check
-      await aiMonitor.addQuestion(eventId, {
+      await aiMonitor.storeQuestions(eventId, [{
         type: 'menu_safety_check',
         priority: 'high',
         question: 'A menu has been updated. Please verify all recipes are safe for guests with the following restrictions:',
@@ -308,7 +312,7 @@ export default function MenuPlannerCalendar({ eventId, menuId, onMenuChange, sta
           check_type: 'comprehensive_menu_review'
         },
         auto_trigger: true
-      });
+      }]);
     } catch (err) {
       console.error('Error triggering AI safety check:', err);
     }
@@ -358,15 +362,10 @@ export default function MenuPlannerCalendar({ eventId, menuId, onMenuChange, sta
       ]
     };
 
-    // Insert at beginning and renumber all days
-    const updatedDays = [newDay, ...menu.days].map((day, index) => ({
-      ...day,
-      day_label: `Day ${index + 1}`
-    }));
-
+    // Insert at beginning - sorting will handle the proper order
     const updatedMenu = {
       ...menu,
-      days: updatedDays
+      days: [newDay, ...menu.days]
     };
 
     handleMenuUpdate(updatedMenu);
@@ -376,9 +375,16 @@ export default function MenuPlannerCalendar({ eventId, menuId, onMenuChange, sta
     if (!menu || menu.days.length <= 1) return;
 
     if (window.confirm('Remove this entire day from the menu?')) {
+      const updatedDays = menu.days.filter((_, index) => index !== dayIndex);
+      // Renumber days after removal
+      const renumberedDays = updatedDays.map((day, index) => ({
+        ...day,
+        day_label: `Day ${index + 1}`
+      }));
+      
       const updatedMenu = {
         ...menu,
-        days: menu.days.filter((_, index) => index !== dayIndex)
+        days: renumberedDays
       };
 
       handleMenuUpdate(updatedMenu);
@@ -516,12 +522,9 @@ export default function MenuPlannerCalendar({ eventId, menuId, onMenuChange, sta
           <button 
             className="btn btn-primary"
             onClick={() => {
-              if (menu?.id) {
-                // If menu is saved, navigate to the menu viewer
-                navigate(`/menus/${menu.id}`);
-              } else {
-                // If menu is not saved yet, save it first then navigate
-                alert('Please save the menu first before previewing');
+              // Navigate to the new menu viewer
+              if (eventId && menuId) {
+                navigate(`/events/${eventId}/menus/${menuId}`);
               }
             }}
             disabled={getTotalCourses() === 0}
@@ -574,12 +577,14 @@ export default function MenuPlannerCalendar({ eventId, menuId, onMenuChange, sta
       </div>
 
       {showAccommodationPlanner && (
-        <AccommodationPlanner
+        <AccommodationPlannerInline
           menu={menu}
           event={event}
-          accommodationMenus={accommodationMenus}
           onClose={() => setShowAccommodationPlanner(false)}
-          onAccommodationChange={setAccommodationMenus}
+          onMenuUpdate={(updatedMenu) => {
+            setMenu(updatedMenu);
+            handleMenuUpdate(updatedMenu, true); // Trigger immediate save
+          }}
         />
       )}
       

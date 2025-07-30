@@ -1,0 +1,316 @@
+/* Meal Type Settings Styles */
+.meal-type-settings {
+  max-width: 1200px;
+}
+
+.settings-section-header {
+  margin-bottom: 2rem;
+}
+
+.settings-section-header h2 {
+  font-size: 1.75rem;
+  color: var(--text-primary);
+  margin: 0 0 0.5rem 0;
+}
+
+.unsaved-indicator {
+  color: #f59e0b;
+  font-size: 1rem;
+  font-weight: 400;
+  animation: pulse 2s ease-in-out infinite;
+}
+
+@keyframes pulse {
+  0%, 100% { opacity: 1; }
+  50% { opacity: 0.5; }
+}
+
+.settings-section-header p {
+  color: var(--text-secondary);
+  font-size: 1rem;
+  margin: 0;
+}
+
+/* Messages */
+.settings-message {
+  padding: 1rem;
+  border-radius: 0.375rem;
+  margin-bottom: 1.5rem;
+  font-weight: 500;
+  animation: slideIn 0.3s ease-out;
+}
+
+.settings-message.success {
+  background-color: rgba(72, 187, 120, 0.1);
+  color: #16a34a;
+  border: 1px solid rgba(72, 187, 120, 0.3);
+}
+
+.settings-message.error {
+  background-color: rgba(239, 68, 68, 0.1);
+  color: #dc2626;
+  border: 1px solid rgba(239, 68, 68, 0.3);
+}
+
+@keyframes slideIn {
+  from {
+    transform: translateY(-10px);
+    opacity: 0;
+  }
+  to {
+    transform: translateY(0);
+    opacity: 1;
+  }
+}
+
+/* Container */
+.meal-type-container {
+  display: grid;
+  grid-template-columns: 350px 1fr;
+  gap: 2rem;
+}
+
+/* Meal Type List */
+.meal-type-list {
+  background-color: var(--background);
+  border-radius: 0.5rem;
+  padding: 1.5rem;
+}
+
+.meal-type-list h3 {
+  font-size: 1.25rem;
+  color: var(--text-primary);
+  margin: 0 0 1rem 0;
+}
+
+.meal-type-items {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+  margin-bottom: 2rem;
+}
+
+.meal-type-item {
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+  padding: 0.75rem;
+  background-color: white;
+  border: 2px solid transparent;
+  border-radius: 0.375rem;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.meal-type-item:hover {
+  border-color: var(--border);
+}
+
+.meal-type-item.selected {
+  border-color: var(--primary-color);
+  box-shadow: 0 0 0 3px rgba(107, 70, 193, 0.1);
+}
+
+.meal-type-preview {
+  width: 40px;
+  height: 40px;
+  border-radius: 0.375rem;
+  border: 1px solid var(--border);
+}
+
+.meal-type-name {
+  flex: 1;
+  font-weight: 500;
+  color: var(--text-primary);
+}
+
+.default-badge {
+  font-size: 0.75rem;
+  background-color: var(--background);
+  color: var(--text-secondary);
+  padding: 0.25rem 0.5rem;
+  border-radius: 0.25rem;
+  font-weight: 500;
+}
+
+/* Add Meal Type */
+.add-meal-type {
+  border-top: 2px solid var(--border);
+  padding-top: 1.5rem;
+}
+
+.add-meal-type h4 {
+  font-size: 1rem;
+  color: var(--text-primary);
+  margin: 0 0 1rem 0;
+}
+
+.add-meal-type-form {
+  display: flex;
+  gap: 0.5rem;
+}
+
+.add-meal-type-form input {
+  flex: 1;
+  padding: 0.5rem 0.75rem;
+  border: 2px solid var(--border);
+  border-radius: 0.375rem;
+  font-size: 0.875rem;
+  transition: border-color 0.2s;
+}
+
+.add-meal-type-form input:focus {
+  outline: none;
+  border-color: var(--primary-color);
+}
+
+.add-meal-type-form .btn {
+  padding: 0.5rem 1rem;
+  font-size: 0.875rem;
+}
+
+/* Color Picker Section */
+.color-picker-section {
+  display: flex;
+  flex-direction: column;
+  gap: 2rem;
+}
+
+.color-picker-section h3 {
+  font-size: 1.25rem;
+  color: var(--text-primary);
+  margin: 0;
+}
+
+.no-selection {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  height: 400px;
+  text-align: center;
+  color: var(--text-secondary);
+}
+
+/* Preview Section */
+.preview-section {
+  background-color: var(--background);
+  border-radius: 0.5rem;
+  padding: 1.5rem;
+}
+
+.preview-section h4 {
+  font-size: 1rem;
+  color: var(--text-primary);
+  margin: 0 0 1rem 0;
+}
+
+.meal-preview-card {
+  border-radius: 0.5rem;
+  padding: 1.5rem;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+  transition: all 0.3s ease;
+}
+
+.preview-meal-type {
+  font-size: 1.25rem;
+  font-weight: 600;
+  color: var(--text-primary);
+  margin-bottom: 0.5rem;
+}
+
+.preview-content {
+  color: var(--text-secondary);
+}
+
+.preview-time {
+  font-size: 0.875rem;
+  margin-bottom: 0.75rem;
+}
+
+.preview-items {
+  font-size: 0.875rem;
+  line-height: 1.5;
+}
+
+/* Responsive */
+@media (max-width: 1024px) {
+  .meal-type-container {
+    grid-template-columns: 1fr;
+  }
+
+  .meal-type-list {
+    order: 2;
+  }
+
+  .color-picker-section {
+    order: 1;
+  }
+}
+
+@media (max-width: 768px) {
+  .meal-type-settings {
+    padding: 0;
+  }
+
+  .meal-type-list {
+    padding: 1rem;
+  }
+
+  .meal-type-item {
+    padding: 0.5rem;
+  }
+
+  .meal-type-preview {
+    width: 32px;
+    height: 32px;
+  }
+
+  .add-meal-type-form {
+    flex-direction: column;
+  }
+
+  .add-meal-type-form .btn {
+    width: 100%;
+  }
+}
+
+/* Save/Cancel Actions */
+.settings-actions {
+  position: sticky;
+  bottom: 0;
+  display: flex;
+  gap: 1rem;
+  justify-content: center;
+  padding: 1.5rem;
+  background: white;
+  border-top: 2px solid var(--border);
+  box-shadow: 0 -2px 10px rgba(0, 0, 0, 0.1);
+  margin-top: 2rem;
+  z-index: 10;
+}
+
+.settings-actions .btn {
+  padding: 0.75rem 2rem;
+  font-size: 1rem;
+  font-weight: 500;
+}
+
+.settings-actions .btn-primary {
+  min-width: 150px;
+}
+
+.settings-actions .btn-secondary {
+  min-width: 100px;
+}
+
+/* Responsive for save actions */
+@media (max-width: 768px) {
+  .settings-actions {
+    flex-direction: column;
+    padding: 1rem;
+  }
+  
+  .settings-actions .btn {
+    width: 100%;
+  }
+}

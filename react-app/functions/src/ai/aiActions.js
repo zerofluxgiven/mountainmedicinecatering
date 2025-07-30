@@ -218,7 +218,7 @@ exports.aiCreateMenu = functions.https.onCall(async (data, context) => {
       ai_context: aiContext
     };
 
-    const menuRef = await admin.firestore().collection('menus').add(menu);
+    const menuRef = await admin.firestore().collection('menu_items').add(menu);
 
     // Log AI action
     await admin.firestore().collection('ai_actions').add({
@@ -252,7 +252,7 @@ exports.aiAddRecipeToMenu = functions.https.onCall(async (data, context) => {
   try {
     // Get menu and recipe
     const [menuDoc, recipeDoc] = await Promise.all([
-      admin.firestore().collection('menus').doc(menuId).get(),
+      admin.firestore().collection('menu_items').doc(menuId).get(),
       admin.firestore().collection('recipes').doc(recipeId).get()
     ]);
 
@@ -280,7 +280,7 @@ exports.aiAddRecipeToMenu = functions.https.onCall(async (data, context) => {
     menu.days[dayIndex].meals[mealIndex].courses.push(newCourse);
     menu.updated_at = admin.firestore.FieldValue.serverTimestamp();
 
-    await admin.firestore().collection('menus').doc(menuId).update(menu);
+    await admin.firestore().collection('menu_items').doc(menuId).update(menu);
 
     // Log AI action
     await admin.firestore().collection('ai_actions').add({

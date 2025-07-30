@@ -17,13 +17,11 @@ import EventEditor from './pages/Events/EventEditor';
 import AllergyManager from './pages/Events/AllergyManager';
 import MenuList from './pages/Menus/MenuList';
 import MenuViewer from './pages/Menus/MenuViewer';
-import MenuEditor from './pages/Menus/MenuEditor';
-import MenuPlanner from './pages/Menus/MenuPlanner';
 import MenuPlannerWrapper from './pages/Menus/MenuPlannerWrapper';
 import IngredientList from './pages/Ingredients/IngredientList';
 import IngredientViewer from './pages/Ingredients/IngredientViewer';
 import IngredientEditor from './pages/Ingredients/IngredientEditor';
-import AIChat from './pages/Chat/AIChat';
+import AIChat from './components/AI/AIChat';
 import AIHistory from './pages/AI/AIHistory';
 import Settings from './pages/Settings/Settings';
 import ShoppingListList from './pages/ShoppingLists/ShoppingListList';
@@ -31,9 +29,25 @@ import ShoppingListViewer from './pages/ShoppingLists/ShoppingListViewer';
 import ShoppingListEditor from './pages/ShoppingLists/ShoppingListEditor';
 import IngredientCleanup from './pages/Admin/IngredientCleanup';
 
+// Firebase debugging helpers
+import { db } from './config/firebase';
+import { collection, getDocs, doc, deleteDoc, setDoc } from 'firebase/firestore';
+
 // Load test utilities in development
 if (process.env.NODE_ENV === 'development') {
   import('./utils/exposeForTesting');
+}
+
+// Expose Firebase to window for debugging
+if (typeof window !== 'undefined') {
+  window._debugFirebase = {
+    db,
+    collection,
+    getDocs,
+    doc,
+    deleteDoc,
+    setDoc
+  };
 }
 
 export default function App() {
@@ -69,7 +83,7 @@ export default function App() {
                       {/* Menu Routes */}
                       <Route path="/menus" element={<MenuList />} />
                       <Route path="/menus/new" element={<MenuPlannerWrapper />} />
-                      <Route path="/menus/:id" element={<MenuViewer />} />
+                      <Route path="/events/:eventId/menus/:menuId" element={<MenuViewer />} />
                       <Route path="/menus/:id/edit" element={<MenuPlannerWrapper />} />
                       <Route path="/events/:eventId/menus/new/plan" element={<MenuPlannerWrapper />} />
                       <Route path="/events/:eventId/menus/:menuId/plan" element={<MenuPlannerWrapper />} />

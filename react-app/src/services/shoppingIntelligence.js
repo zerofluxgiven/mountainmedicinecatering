@@ -388,7 +388,7 @@ export async function generateShoppingList(eventId, options = {}) {
     const eventData = { id: eventDoc.id, ...eventDoc.data() };
     
     // Get all menus for this event
-    const menusQuery = query(collection(db, 'menus'), where('event_id', '==', eventId));
+    const menusQuery = query(collection(db, 'menu_items'), where('event_id', '==', eventId));
     const menusSnapshot = await getDocs(menusQuery);
     
     // Collect all ingredients from all menus

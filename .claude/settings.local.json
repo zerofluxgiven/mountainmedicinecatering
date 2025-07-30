@@ -69,7 +69,20 @@
       "Bash(export FUNCTIONS_DISCOVERY_TIMEOUT=300)",
       "Bash(./test-ai-endpoint.sh:*)",
       "Bash(/Users/danmcfarland/Documents/mountainmedicinecatering/react-app/test-ai-endpoint.sh:*)",
-      "Bash(gcloud functions add-invoker-policy-binding:*)"
+      "Bash(gcloud functions add-invoker-policy-binding:*)",
+      "Bash(AI_MANUAL_TEST_CHECKLIST.md AI_TEST_DOCUMENTATION.md AI_TEST_EXECUTION_GUIDE.md )",
+      "Bash(AI_TEST_INSTRUCTIONS.md AI_TEST_RESULTS.md CLEANUP_SUMMARY.md )",
+      "Bash(DEPLOYED_APP_TEST.md EVENT_FLYER_UPLOAD_ANALYSIS.md EVENT_PARSER_FIX_SUMMARY.md )",
+      "Bash(FIREBASE_DEPLOYMENT_INVESTIGATION.md FIX_AUTH_ERROR.md FIX_LOCALHOST_AUTH.md )",
+      "Bash(FIX_RECIPE_PARSING.md FIX_SUMMARY.md IMAGE_EXTRACTION_FIX.md )",
+      "Bash(PARSER_ISSUES_ANALYSIS.md RECIPE_BULLET_POINTS_FIX.md RECIPE_PARSER_FIX_2025.md )",
+      "Bash(RECIPE_PARSER_FIX_SUMMARY.md RECIPE_PARSER_FIX.md RECIPE_PARSING_DEBUG.md )",
+      "Bash(TEST_CLARIFICATION.md TEST_RECIPE_PARSER.md TEST_RESULTS.md )",
+      "Bash(TESTING_GUIDE.md TESTING_STRATEGY.md TESTING_SUMMARY.md )",
+      "Bash(UNUSED_CODE_ANALYSIS.md .archive/obsolete-docs/)",
+      "Bash(./quick-fix-collections.sh:*)",
+      "Bash(gcloud functions list:*)",
+      "Bash(./fix-functions-menus.sh:*)"
     ],
     "deny": []
   }
